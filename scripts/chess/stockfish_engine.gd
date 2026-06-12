@@ -26,8 +26,9 @@ const CANDIDATES := [
 	"/usr/local/bin/stockfish",
 ]
 
-## Safety cap on the extension poll loop (frames) so a stuck engine can't hang us.
-const EXT_MAX_FRAMES := 2400
+## Safety timeout (wall-clock ms) on the extension poll loop, so a stuck engine
+## can't hang us — and so it's independent of frame rate.
+const EXT_TIMEOUT_MS := 15000
 
 var available := false
 var _mode := ""  # "ext" | "pipe" | ""
@@ -147,8 +148,8 @@ func _run_ext(cmds: Array) -> Dictionary:
 	for c in cmds:
 		_sf.call("send", c)
 	var by_index := {}
-	var frames := 0
-	while frames < EXT_MAX_FRAMES:
+	var deadline := Time.get_ticks_msec() + EXT_TIMEOUT_MS
+	while Time.get_ticks_msec() < deadline:
 		var lines: PackedStringArray = _sf.call("poll_lines")
 		for line in lines:
 			if line.begins_with("bestmove"):
@@ -159,7 +160,6 @@ func _run_ext(cmds: Array) -> Dictionary:
 				if not info.is_empty():
 					by_index[info["k"]] = {"uci": info["uci"], "score": info["score"]}
 		await get_tree().process_frame
-		frames += 1
 	return _build_result(by_index, "")
 
 
