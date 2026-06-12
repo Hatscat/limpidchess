@@ -1,17 +1,28 @@
 extends Control
 
-## The game screen — ties [ChessRules], [ChessBot] and the board together.
+## The game screen — ties ChessRules, the engine, and the board together.
+##
+## The BRAIN is Stockfish (via [StockfishEngine]) when available, otherwise the
+## built-in GDScript [ChessBot]. Either way, [ChessRules] stays the source of
+## truth for legality / SAN / draws / highlights.
 ##
 ## Loop per human turn:
-##   1. rank every legal move (ChessBot analysis pass)
+##   1. analyse the position (full-strength MultiPV)
 ##   2. pick three options — best / not-bad / blunder — shuffle, show as arrows
 ##   3. player taps one → grade it, award coins, REVEAL the qualities, feedback
 ##   4. play it, then the bot replies (or the other human, in pass-and-play)
 ##
-## The whole point: the best move is always on the board in front of you. You
-## just have to see it.
+## Every game: the player's colour is RANDOM, and White's first move is an
+## auto-chosen random good opening — so you keep meeting fresh positions.
 
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
+const StockfishEngineScript := preload("res://scripts/chess/stockfish_engine.gd")
+
+## Depth of the full-strength teaching/analysis pass (the 3 options + grading).
+## Depth 10 keeps the move ranking solid while keeping the per-turn wait short.
+const ANALYSIS_DEPTH_SF := 10
+## Moves within this many centipawns of the best count as "good" openings.
+const OPENING_WINDOW_CP := 55
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -25,42 +36,47 @@ const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
 @onready var result_quote: Label = %ResultQuote
 
 var rules: ChessRules
-var bot: ChessBot
+var bot: ChessBot                 ## fallback engine (used only if Stockfish absent)
+var stockfish: StockfishEngine
+var _use_sf := false
 var bot_def: Dictionary
 var player_color: int
 
-var _ranked: Array = []          ## current ranked move list (player's turn)
-var _history: Array = []         ## position_key()s for threefold detection
-var _busy := false               ## blocks input while bot is thinking / animating
+var _ranked: Array = []
+var _history: Array = []
+var _busy := false
 var _game_over := false
 
 
 func _ready() -> void:
 	rules = ChessRules.new()
 	bot = ChessBotScript.new()
+	stockfish = StockfishEngineScript.new()
+	add_child(stockfish)
 	bot_def = GameManager.current_bot if not GameManager.current_bot.is_empty() else BotRoster.default()
-	player_color = ChessRules.WHITE if GameManager.player_is_white else ChessRules.BLACK
 
-	board.flipped = (not GameManager.pass_and_play) and not GameManager.player_is_white
 	board.set_rules(rules)
 	board.option_chosen.connect(_on_option_chosen)
-
 	_setup_opponent_panel()
 	_refresh_coins()
 	GameManager.coins_changed.connect(_refresh_coins)
 	result_overlay.visible = false
 
-	# Respect the device safe area for the top bar.
 	var safe := DisplayServer.get_display_safe_area()
 	$TopBar.offset_top = max(safe.position.y, 16)
 
-	_record_position()
-	_advance()
+	_begin()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		GameManager.go_to_home()
+
+
+func _exit_tree() -> void:
+	if GameManager.coins_changed.is_connected(_refresh_coins):
+		GameManager.coins_changed.disconnect(_refresh_coins)
+	# stockfish stops itself in its own _exit_tree.
 
 
 func _setup_opponent_panel() -> void:
@@ -76,15 +92,37 @@ func _refresh_coins() -> void:
 	coins_label.text = str(GameManager.coins_best)
 
 
-func _exit_tree() -> void:
-	# GameManager is an autoload that outlives this scene — disconnect explicitly.
-	if GameManager.coins_changed.is_connected(_refresh_coins):
-		GameManager.coins_changed.disconnect(_refresh_coins)
+# --- Game lifecycle ---
+
+func _begin() -> void:
+	status_label.text = "Setting up…"
+	feedback.text = ""
+	_busy = true
+	_use_sf = stockfish.start()
+	_new_game()
+
+
+## Start a fresh board: random colour, random opening for White, then play.
+func _new_game() -> void:
+	if not GameManager.pass_and_play:
+		GameManager.player_is_white = randi() % 2 == 0
+	player_color = ChessRules.WHITE if GameManager.player_is_white else ChessRules.BLACK
+	board.flipped = (not GameManager.pass_and_play) and not GameManager.player_is_white
+
+	rules.reset_startpos()
+	_history.clear()
+	_game_over = false
+	board.set_last_move(-1)
+	board.set_check_square(-1)
+	board.clear_options()
+	board.set_rules(rules)
+	result_overlay.visible = false
+	_record_position()
+	_play_random_opening()
 
 
 # --- Turn flow ---
 
-## Decide whose turn it is and act: present options to a human, or let the bot move.
 func _advance() -> void:
 	_update_check_highlight()
 	if _check_game_over():
@@ -99,9 +137,36 @@ func _is_human_turn() -> bool:
 	return GameManager.pass_and_play or rules.side_to_move == player_color
 
 
+## Auto-play White's first move (a random good opening) so games never start
+## identically and the White player keeps discovering openings.
+func _play_random_opening() -> void:
+	_busy = true
+	status_label.text = "A fresh opening…"
+	feedback.text = ""
+	var ranked := await _rank_position()
+	var move := _pick_random_good(ranked)
+	if move != -1:
+		_play_move(move)
+	_advance()
+
+
+func _pick_random_good(ranked: Array) -> int:
+	if ranked.is_empty():
+		return -1
+	var best: int = ranked[0]["score"]
+	var pool: Array = []
+	for e in ranked:
+		if best - int(e["score"]) <= OPENING_WINDOW_CP:
+			pool.append(e["move"])
+	return pool[randi() % pool.size()]
+
+
 func _present_options() -> void:
-	_busy = false
-	_ranked = bot.rank_moves(rules, ChessBotScript.ANALYSIS_DEPTH)
+	_busy = true
+	status_label.text = "Reading the position…"
+	feedback.text = ""
+	_ranked = await _rank_position()
+
 	var picks := ChessBotScript.select_options(_ranked)
 	var options: Array = []
 	if picks["best"] >= 0:
@@ -120,6 +185,33 @@ func _present_options() -> void:
 		status_label.text = "Your move — find the best!"
 	var n := options.size()
 	feedback.text = "Tap one of the %d moves." % n if n != 1 else "Only one move here — tap it."
+	_busy = false
+
+
+## Rank every legal move from the moving side's view (best first). Stockfish when
+## available, else the built-in engine.
+func _rank_position() -> Array:
+	if _use_sf and stockfish.available:
+		var legal := rules.generate_legal_moves()
+		var mpv := maxi(1, mini(legal.size(), 50))
+		var lines: Array = await stockfish.analyse(rules.get_fen(), mpv, ANALYSIS_DEPTH_SF)
+		var ranked := _ranked_from_sf(lines)
+		if not ranked.is_empty():
+			return ranked
+	return bot.rank_moves(rules, ChessBotScript.ANALYSIS_DEPTH)
+
+
+## Convert Stockfish's UCI/centipawn lines into our {move, score} ranked list.
+func _ranked_from_sf(lines: Array) -> Array:
+	var by_uci := {}
+	for m in rules.generate_legal_moves():
+		by_uci[rules.move_to_uci(m)] = m
+	var ranked: Array = []
+	for e in lines:
+		if by_uci.has(e["uci"]):
+			ranked.append({"move": by_uci[e["uci"]], "score": int(e["score"])})
+	ranked.sort_custom(func(a, b): return a["score"] > b["score"])
+	return ranked
 
 
 func _on_option_chosen(opt: Dictionary) -> void:
@@ -132,7 +224,6 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	var best_move: int = grade["best_move"]
 	var best_san := rules.to_san(best_move)
 
-	# Rewards + feedback.
 	match opt.get("quality", ""):
 		"best":
 			GameManager.add_best_coin()
@@ -157,16 +248,24 @@ func _bot_move() -> void:
 	_busy = true
 	status_label.text = "%s is thinking…" % bot_def.get("name", "Bot")
 	feedback.text = ""
-	# Defer one frame so the "thinking" text paints before the (brief) search.
 	await get_tree().process_frame
-	await get_tree().create_timer(0.35).timeout
 
-	var move := bot.choose_move(rules, bot_def.get("depth", 2), bot_def.get("weakness", 0.3))
+	var move := -1
+	if _use_sf and stockfish.available:
+		var uci: String = await stockfish.best_move(rules.get_fen(), {
+			"skill": bot_def.get("sf_skill", 10),
+			"movetime": bot_def.get("movetime", 200),
+		})
+		move = rules.move_from_uci(uci)
+	if move == -1:
+		await get_tree().create_timer(0.2).timeout
+		move = bot.choose_move(rules, bot_def.get("depth", 2), bot_def.get("weakness", 0.3))
 	if move < 0:
 		_advance()
 		return
+
 	_play_move(move)
-	await get_tree().create_timer(0.2).timeout
+	await get_tree().create_timer(0.15).timeout
 	_busy = false
 	_advance()
 
@@ -205,7 +304,6 @@ func _check_game_over() -> bool:
 	var quote_key := "draw"
 	match outcome:
 		ChessRules.Outcome.CHECKMATE:
-			# Side to move is checkmated → the other side won.
 			var winner := 1 - rules.side_to_move
 			var human_won := (not GameManager.pass_and_play) and winner == player_color
 			if GameManager.pass_and_play:
@@ -252,17 +350,9 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 # --- Buttons ---
 
 func _on_restart_pressed() -> void:
-	rules.reset_startpos()
-	_history.clear()
-	_game_over = false
-	_busy = false
-	board.set_last_move(-1)
-	board.set_check_square(-1)
-	board.clear_options()
-	board.set_rules(rules)
-	result_overlay.visible = false
-	_record_position()
-	_advance()
+	if _busy and not _game_over:
+		return  # don't restart mid-think
+	_new_game()
 
 
 func _on_give_up_pressed() -> void:
@@ -276,7 +366,7 @@ func _on_give_up_pressed() -> void:
 
 
 func _on_play_again_pressed() -> void:
-	_on_restart_pressed()
+	_new_game()
 
 
 func _on_home_pressed() -> void:

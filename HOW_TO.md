@@ -86,29 +86,68 @@ run `--import`. Keep the OpenMoji credit on the About screen.
 > attribution-free bot portraits. Drop PNGs into `assets/avatars/` and update
 > `BotRoster`.
 
-## Android build
+## Stockfish (the chess brain)
 
-Toolchain present: Android SDK (`~/Android/Sdk`) + JDK (`~/android-studio/jbr`).
+The game drives Stockfish over UCI via
+[`scripts/chess/stockfish_engine.gd`](scripts/chess/stockfish_engine.gd). On
+desktop it's a **child process**; if none is found it falls back to the built-in
+GDScript engine.
+
+Binary lookup order (`CANDIDATES`): `user://stockfish`, then `/usr/games/stockfish`,
+`/usr/bin/stockfish`, `/usr/local/bin/stockfish`. Override with an env var:
+
+```bash
+LIMPID_STOCKFISH=/path/to/stockfish godot --path ~/limpid-chess
+
+# Test the integration:
+godot --headless --path . -s res://scripts/dev/test_engine.gd     # UCI + threading
+godot --headless --path . -s res://scripts/dev/test_selfplay.gd   # full game pipeline
+```
+
+This dev box already has Stockfish 17.1 at `/usr/games/stockfish` (76 MB, dual NNUE).
+
+### Shipping Stockfish — the outstanding work
+
+- **Desktop builds:** bundle a Stockfish binary (extract to `user://stockfish`,
+  `chmod +x`) so it doesn't depend on a system install. Prefer a smaller single-net
+  build than the 76 MB SF17 to keep download size down.
+- **Android (the real target):** you can't reliably spawn a subprocess on modern
+  Android (W^X). You need a **native build** — compile Stockfish for `arm64-v8a`
+  and call it in-process via a **GDExtension (godot-cpp + NDK)** or a JNI Android
+  plugin, then back `StockfishEngine` with that transport instead of
+  `OS.execute_with_pipe`. Use a small NNUE build (~a few MB). This needs the NDK
+  (install via `~/Android/Sdk` `sdkmanager`), SCons, and a C++ toolchain (none are
+  installed yet). Until done, Android runs the GDScript fallback engine.
+
+## Android build (APK/AAB)
+
+Android SDK (`~/Android/Sdk`) + JDK (`~/android-studio/jbr`) are present.
 Export config: [`export_presets.cfg`](export_presets.cfg) — arm64-v8a, AAB,
-min SDK 24, package `ai.groovin.limpidchess`. No native libraries, so **no NDK is
-needed** (this is a benefit of the pure-GDScript engine).
+min SDK 24, package `ai.groovin.limpidchess`.
 
-1. In the editor: Project → Export → install Android build template + Android
-   export templates if prompted; set a keystore for release signing.
-2. Or headless once templates/keystore are set:
+1. In the editor: Project → Export → install the Android build template; set a
+   keystore for release signing.
+2. Headless once templates/keystore are set:
 
 ```bash
 godot --headless --path ~/limpid-chess --export-release "Android" ../limpid-chess.aab
 ```
 
-The first export will ask Godot to install the gradle build template into
-`android/` (git-ignored).
+The first export installs the gradle build template into `android/` (git-ignored).
+Note: a release AAB will run the **fallback** engine until the native Stockfish
+build above is wired in.
+
+## License (GPL-3.0)
+
+The project is GPL-3.0 (it ships Stockfish). [`LICENSE`](LICENSE) holds the full
+text; the About screen discloses Stockfish + the licence in-app. When you publish,
+make the source and the exact Stockfish build you ship available.
 
 ## TODOs wired but not implemented
 
+- **Android-native Stockfish** — see above; the main remaining task.
 - **In-app purchase**: [`scripts/premium.gd`](scripts/premium.gd) `_on_get_pressed()`
-  currently sets the premium flag locally. Wire Google Play Billing (and later
-  StoreKit) there; call `GameManager.set_premium(true)` on a successful purchase.
-- **App icon**: still the default Godot `icon.svg`. Replace with a Limpid Chess
-  icon and point `launcher_icons/main_192x192` in `export_presets.cfg` at it.
+  sets the premium flag locally. Wire Google Play Billing there; call
+  `GameManager.set_premium(true)` on a successful purchase.
+- **App icon**: still the default Godot `icon.svg`.
 - **Sound**: none yet (move/capture/reward cues would add a lot of game feel).

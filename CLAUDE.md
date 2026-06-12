@@ -27,15 +27,16 @@ and explain what the best move was. Errors are the lesson, not the punishment.
 3. **Stay simple & offline.** No backend, no accounts, no ads, no online play. One
    local save file. Premium is a local flag (clock-cheating is explicitly *not*
    worth fighting — see the business model).
-4. **Beginner-appropriate AI.** The bot does NOT need to be strong; it needs to be
-   *beatable and human-feeling*. A shallow alpha-beta tuned DOWN is correct here.
-5. **Performance on mid-range Android.** Search depth is small; keep it that way.
-   The board is custom-drawn 2D — cheap. Don't introduce per-frame allocations.
+4. **Beginner-appropriate AI.** The opponent is Stockfish dialled DOWN (low Skill
+   Level + short movetime) so it's *beatable and human-feeling*. Don't crank it up.
+5. **Keep the per-turn wait short.** The options analysis runs Stockfish each human
+   turn — tune `ANALYSIS_DEPTH_SF` / MultiPV so it stays ~sub-second. The board is
+   custom-drawn 2D — cheap. Don't introduce per-frame allocations.
 
 ## 🧩 Architecture
 
-Everything is plain GDScript. There is **no native code, no GDExtension, no
-Stockfish** (see Licensing — that was a deliberate decision).
+The **rules layer is plain GDScript**; the **brain is Stockfish** (driven over
+UCI), with the GDScript engine kept as a fallback when Stockfish is unavailable.
 
 ```
 GameManager (autoload)         scripts/game_manager.gd
@@ -44,28 +45,34 @@ GameManager (autoload)         scripts/game_manager.gd
 ChessRules (RefCounted)        scripts/chess/chess_rules.gd
   THE source of truth for legality. Board state, legal move generation,
   check/mate/stalemate/draw detection, FEN, UCI, SAN. perft-validated.
+  Stockfish does NOT replace this — it can't cleanly report draws/SAN, and we
+  don't want a subprocess round-trip on every tap.
 
-ChessBot (RefCounted)          scripts/chess/chess_bot.gd
-  negamax + alpha-beta + material/PST eval. Two jobs:
-   - choose_move()  → the opponent's (weakened) reply
-   - rank_moves() / select_options() / grade_move() → the 3-option mechanic
+StockfishEngine (Node)         scripts/chess/stockfish_engine.gd   ← the brain
+  Launches Stockfish as a child process, speaks UCI on a worker thread so a
+  search never blocks the UI. analyse(fen, multipv, depth) → ranked moves;
+  best_move(fen, {skill, movetime}) → the bot's reply. Desktop only via
+  subprocess; Android needs a native build (see Licensing / HOW_TO).
+
+ChessBot (RefCounted)          scripts/chess/chess_bot.gd   ← fallback + helpers
+  - static select_options() / grade_move() / cp bands → the 3-option mechanic
+    (used by BOTH engines — they operate on a {move, score} ranked list)
+  - negamax + alpha-beta + PST eval → only used if Stockfish is absent
 
 BotRoster (static data)        scripts/chess/bot_roster.gd
-  the cast of opponents (name, avatar, elo, depth, weakness)
+  opponents: name, avatar, elo, sf_skill/movetime (Stockfish) + depth/weakness (fallback)
 
-Quotes (static data)           scripts/quotes.gd
-  Tartakower & friends, for home + game-over
-
-ChessBoard (Control)           scripts/ui/chess_board.gd
-  custom _draw: squares, pieces, highlights, the three option arrows + hit-test
-
-Scenes                         scenes/*.tscn  (+ matching scripts/*.gd)
+Quotes (static data)           scripts/quotes.gd       Tartakower & friends
+ChessBoard (Control)           scripts/ui/chess_board.gd  custom _draw + hit-test
+Scenes                         scenes/*.tscn (+ scripts/*.gd)
   home · bots · premium · about · game · nav_bar (reusable)
 ```
 
 Data flow per human turn lives in [`scripts/game.gd`](scripts/game.gd):
-`rank_moves → select_options → shuffle → board.set_options → (player taps) →
-grade_move → award coins → board.reveal → play → bot replies`.
+`analyse (Stockfish MultiPV, or fallback rank_moves) → select_options → shuffle →
+board.set_options → (player taps) → grade_move → award coins → board.reveal →
+play → bot replies`. Every game: **random player colour**, and **White's first
+move is an auto-chosen random good opening** (so positions stay fresh).
 
 Keep these layers decoupled: **the UI never decides legality, and the rules
 engine never knows about the UI.**
@@ -90,12 +97,14 @@ Moves are packed ints: `from(6) | to<<6 | promo<<12 | flag<<15` — always use t
 
 ## 🤖 Bot difficulty & the 3-option ranking
 
-Per-bot config in `BotRoster`: `depth` (plies) and `weakness` (0 = always best …
-1 = often drifts to weaker moves + occasional outright blunder). The roster skews
-**easy on purpose**.
+Per-bot config in `BotRoster`: `sf_skill` (Stockfish Skill Level 0–20) + `movetime`
+(ms) for the Stockfish path, and `depth`/`weakness` for the fallback. The roster
+skews **easy on purpose**. The bot's move uses the bot's skill; the **options
+analysis pass always runs at full strength** (`analyse()` sets Skill Level 20 +
+MultiPV = legal-move count, depth `ANALYSIS_DEPTH_SF`) so the teaching eval is honest.
 
-The three options come from `ChessBot.rank_moves()` (every legal move scored by
-the same eval, sorted best→worst) then `select_options()`:
+The three options are built from the ranked `{move, score}` list (Stockfish
+centipawns, or fallback eval) via `ChessBot.select_options()`:
 - **best** = top move
 - **"not bad"** = a move losing ~20–90 cp vs best (`DECENT_MIN/MAX`)
 - **blunder** = a move losing ~120–500 cp — a *believable* trap, not the single
@@ -143,29 +152,44 @@ Rules:
 | Local two-player mode | **Pass & Play** (premium) |
 | Engine evaluation unit | **centipawns** (cp) |
 
-Avoid: "Stockfish" (we don't use it), "level" (use **bot** / **tier**),
-"energy/lives" (use **daily games**).
+Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**).
 
 ## 💸 Business model (keep it generous)
 
 - 3 free games per day (`GameManager.FREE_GAMES_PER_DAY`), tracked locally by date.
 - **Premium**: one-time ~$3.99 → unlimited games + Pass & Play. Stored as a local
-  flag. Real billing (Google Play Billing / StoreKit) is a TODO in
+  flag. Real billing (Google Play Billing) is a TODO in
   [`scripts/premium.gd`](scripts/premium.gd) `_on_get_pressed()`.
 - No ads, ever. Don't add them.
+- **GPL is fine for a paid Android game** — GPL lets you sell the binary; you just
+  must also offer the source. (We target Google Play, not the Apple App Store,
+  which is the only place GPL is genuinely blocked.)
 
 ## 📜 Licensing & attribution (IMPORTANT — don't break this)
 
-- **No Stockfish / no GPL code.** Stockfish is GPL-3.0; embedding it (mandatory on
-  iOS) would force the whole app to be GPL — incompatible with a closed-source paid
-  app on the App Store. We use our own permissive engine instead. **Do not add
-  Stockfish or any GPL/AGPL engine or chess-rules library.**
-- **OpenMoji** (all UI icons + bot avatars) is **CC BY-SA 4.0 → attribution is
-  required and ShareAlike applies.** The exact credit lives on the About screen
-  ([`scenes/about.tscn`](scenes/about.tscn)) — keep it. If you *modify* an OpenMoji
-  SVG, the modified asset must stay CC BY-SA 4.0.
-- Chess pieces: JohnPablok improved Cburnett set (CC0). OpenDyslexic font: free.
-  Godot: MIT.
+This project is **free software under GPL-3.0** ([`LICENSE`](LICENSE)) because it
+ships **Stockfish** (GPL-3.0). This was a deliberate reversal of the earlier
+"avoid GPL" plan once iOS was dropped from scope.
+
+- **Stockfish is the engine** and is GPL-3.0. Obligations we MUST keep: ship the
+  GPL-3.0 text, disclose Stockfish in-app + show the licence (the About screen),
+  and make our full source + the exact Stockfish build available. Don't remove
+  the About-screen engine credit.
+- Because we link/bundle Stockfish, **the whole app is GPL-3.0** — keep it that
+  way; don't add proprietary-only code paths that would violate it.
+- **OpenMoji** (UI icons + bot avatars) is **CC BY-SA 4.0 → attribution required,
+  ShareAlike applies.** Credit lives on the About screen — keep it. Modified
+  OpenMoji SVGs must stay CC BY-SA 4.0.
+- Chess pieces: JohnPablok improved Cburnett set (CC0). OpenDyslexic: free. Godot: MIT.
+
+### Shipping Stockfish per platform
+- **Desktop / dev:** [`StockfishEngine`](scripts/chess/stockfish_engine.gd) runs the
+  system or a bundled binary as a subprocess over UCI. Found via `CANDIDATES` /
+  the `LIMPID_STOCKFISH` env var.
+- **Android:** subprocess spawning is unreliable (W^X) — you need a **native build**
+  (a Stockfish arm64 lib via GDExtension/JNI) and a smaller NNUE build than the
+  76 MB SF17 dual-net. Until that exists, Android falls back to the GDScript engine.
+  See HOW_TO.md. This is the main outstanding task.
 
 ## 🛠 Development & validation
 
@@ -181,6 +205,10 @@ godot --headless --path . -s res://scripts/dev/perft_test.gd
 
 # Whole-project smoke (instantiates every scene + drives the game pipeline):
 godot --headless --path . -s res://scripts/dev/validate.gd
+
+# Stockfish integration (UCI pipe, threaded analyse/best_move, and full self-play):
+godot --headless --path . -s res://scripts/dev/test_engine.gd
+godot --headless --path . -s res://scripts/dev/test_selfplay.gd
 
 # Visual check (needs a display; renders each scene to /tmp/limpid_*.png):
 godot --path . -s res://scripts/dev/screenshot.gd
