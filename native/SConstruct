@@ -18,9 +18,19 @@ env.Append(CPPPATH=["src/", "stockfish/src/", "stockfish/src/syzygy/"])
 # Stockfish 11 = classical eval (no NNUE net). arm64-friendly flags.
 env.Append(CPPDEFINES=["IS_64BIT", "USE_PREFETCH", "NDEBUG"])
 
-sources = Glob("src/*.cpp") + sf_sources
+# Stockfish 11 is a C++11 codebase (its Makefile uses -std=c++11) and defines its
+# own clamp(); godot-cpp builds at C++17 where std::clamp exists → ambiguity.
+# Compile the Stockfish sources at their native standard; the binding stays C++17.
+# The two only meet through std::string/std::vector, which are ABI-stable across
+# standards under one libc++, so mixing is safe.
+sf_env = env.Clone()
+sf_env["CXXFLAGS"] = [f for f in sf_env["CXXFLAGS"] if not str(f).startswith("-std=")]
+sf_env.Append(CXXFLAGS=["-std=c++11"])
+
+objects = [env.SharedObject(s) for s in Glob("src/*.cpp")]
+objects += [sf_env.SharedObject(s) for s in sf_sources]
 
 out = "../addons/stockfish/bin/libstockfish_gd{}{}".format(env["suffix"], env["SHLIBSUFFIX"])
-library = env.SharedLibrary(out, source=sources)
+library = env.SharedLibrary(out, source=objects)
 
 Default(library)

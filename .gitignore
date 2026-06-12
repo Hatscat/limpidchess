@@ -20,7 +20,7 @@
 /native/stockfish/
 /native/android-ndk-*/
 /native/.scons/
-/native/*.os
+native/**/*.os
 /native/.sconsign.dblite
 /addons/stockfish/bin/*.so
 /addons/stockfish/bin/*.dll

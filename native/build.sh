@@ -61,14 +61,18 @@ echo "SCons: ${SCONS[*]}"
 	git clone --depth 1 --branch "$GODOT_CPP_BRANCH" https://github.com/godotengine/godot-cpp.git; }
 [ -d stockfish ] || { say "Cloning Stockfish ($STOCKFISH_TAG)…"; \
 	git clone --depth 1 --branch "$STOCKFISH_TAG" https://github.com/official-stockfish/Stockfish.git stockfish; }
+# (Stockfish's C++11-vs-C++17 clamp ambiguity is handled in SConstruct by
+#  compiling the Stockfish sources at -std=c++11 — no source patch needed.)
 
 mkdir -p ../addons/stockfish/bin
 
 # --- 4. Build Android arm64 (debug + release) -------------------------------
 for TARGET in template_debug template_release; do
 	say "Building android arm64 $TARGET…"
+	# ANDROID_HOME= forces godot-cpp to use ANDROID_NDK_ROOT (our downloaded NDK)
+	# instead of looking for $ANDROID_HOME/ndk/<version>.
 	"${SCONS[@]}" platform=android arch=arm64 target="$TARGET" \
-		android_api_level="$ANDROID_API" -j"$JOBS"
+		android_api_level="$ANDROID_API" "ANDROID_HOME=" -j"$JOBS"
 done
 
 # --- 5. Optional desktop build (only if a host C++ compiler is present) ------
@@ -111,9 +115,10 @@ Next:
   • Open the project once so Godot registers the StockfishGD class.
   • Export the Android APK/AAB and run on a device — it now embeds Stockfish.
   • Emulator? re-run with arch=x86_64 to add that slice.
-  • IMPORTANT: every platform you RUN on must have a library entry above. If you
-    built Android only and also run on desktop, either build desktop too, or
-    delete $GDEXT for desktop dev (the game then uses the Stockfish subprocess).
+  • Desktop is unaffected: with only Android entries, Godot skips the extension on
+    desktop (no error) and the game uses the Stockfish subprocess there. Build the
+    desktop lib too (host compiler required) only if you want the embedded engine
+    on desktop as well.
 EOF
 else
 	echo "No libraries were produced — not writing the .gdextension."
