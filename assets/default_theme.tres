@@ -1,0 +1,14 @@
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://limpidchesstheme01"]
+
+[ext_resource type="FontFile" path="res://assets/fonts/OpenDyslexic-Regular.otf" id="1_regular"]
+
+[resource]
+default_font = ExtResource("1_regular")
+default_font_size = 20
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/colors/font_disabled_color = Color(1, 1, 1, 0.4)
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_pressed_color = Color(0.85, 0.85, 0.85, 1)
+Button/font_sizes/font_size = 20
+Label/colors/font_color = Color(1, 1, 1, 1)
+Label/font_sizes/font_size = 20

@@ -1,0 +1,319 @@
+[gd_scene load_steps=11 format=3 uid="uid://limpidgame01"]
+
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/ui/chess_board.gd" id="2_board"]
+[ext_resource type="Texture2D" path="res://assets/icons/coin.png" id="3_coin"]
+[ext_resource type="Texture2D" path="res://assets/icons/restart.png" id="4_restart"]
+[ext_resource type="Texture2D" path="res://assets/icons/flag.png" id="5_flag"]
+
+[sub_resource type="StyleBoxFlat" id="sb_chip"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="sb_btn"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_primary"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.28, 0.58, 0.7, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="sb_card"]
+content_margin_left = 28.0
+content_margin_top = 28.0
+content_margin_right = 28.0
+content_margin_bottom = 28.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 18
+
+[node name="Game" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_game")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09, 0.1, 0.12, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 72.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+
+[node name="OpponentChip" type="PanelContainer" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("sb_chip")
+
+[node name="HBox" type="HBoxContainer" parent="TopBar/OpponentChip"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="OpponentAvatar" type="TextureRect" parent="TopBar/OpponentChip/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OpponentName" type="Label" parent="TopBar/OpponentChip/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+text = "Opponent"
+
+[node name="CoinsChip" type="PanelContainer" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("sb_chip")
+
+[node name="HBox" type="HBoxContainer" parent="TopBar/CoinsChip"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Coin" type="TextureRect" parent="TopBar/CoinsChip/HBox"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("3_coin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinsLabel" type="Label" parent="TopBar/CoinsChip/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+text = "0"
+
+[node name="Status" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 84.0
+offset_right = -24.0
+offset_bottom = 116.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 20
+text = "Your move — find the best!"
+horizontal_alignment = 1
+
+[node name="Board" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 128.0
+offset_right = -12.0
+offset_bottom = -188.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_board")
+
+[node name="Feedback" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -176.0
+offset_right = -24.0
+offset_bottom = -132.0
+grow_horizontal = 2
+grow_vertical = 0
+modulate = Color(1, 1, 1, 0.85)
+theme_override_font_sizes/font_size = 18
+text = "Tap one of the three moves."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Controls" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -112.0
+offset_right = -24.0
+offset_bottom = -48.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 16
+
+[node name="RestartBtn" type="Button" parent="Controls"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+text = "Restart"
+
+[node name="GiveUpBtn" type="Button" parent="Controls"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+text = "Give up"
+
+[node name="ResultOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="ResultOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Card" type="PanelContainer" parent="ResultOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -240.0
+offset_right = 300.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_card")
+
+[node name="VBox" type="VBoxContainer" parent="ResultOverlay/Card"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="ResultTitle" type="Label" parent="ResultOverlay/Card/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Checkmate"
+horizontal_alignment = 1
+
+[node name="ResultText" type="Label" parent="ResultOverlay/Card/VBox"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.7)
+layout_mode = 2
+text = "Well played."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ResultQuote" type="Label" parent="ResultOverlay/Card/VBox"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.55)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="ResultOverlay/Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+text = "Home"
+
+[node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn_primary")
+theme_override_styles/hover = SubResource("sb_btn_primary")
+theme_override_styles/pressed = SubResource("sb_btn_primary")
+text = "Play again"
+
+[connection signal="pressed" from="Controls/RestartBtn" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="Controls/GiveUpBtn" to="." method="_on_give_up_pressed"]
+[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/HomeBtn" to="." method="_on_home_pressed"]
+[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/PlayAgainBtn" to="." method="_on_play_again_pressed"]

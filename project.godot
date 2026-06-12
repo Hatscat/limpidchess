@@ -11,15 +11,34 @@ config_version=5
 [application]
 
 config/name="Limpid Chess"
+config/description="A calm chess game for beginners. Three guided move options each turn — find the best one."
+run/main_scene="res://scenes/home.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
-[physics]
+[autoload]
 
-3d/physics_engine="Jolt Physics"
+GameManager="*res://scripts/game_manager.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[gui]
+
+theme/custom="res://assets/default_theme.tres"
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
 
 [rendering]
 
-rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

@@ -1,0 +1,152 @@
+[gd_scene load_steps=6 format=3 uid="uid://limpidpremium01"]
+
+[ext_resource type="Script" path="res://scripts/premium.gd" id="1_premium"]
+[ext_resource type="PackedScene" path="res://scenes/nav_bar.tscn" id="2_nav"]
+[ext_resource type="Texture2D" path="res://assets/icons/crown.png" id="3_crown"]
+
+[sub_resource type="StyleBoxFlat" id="sb_primary"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+bg_color = Color(0.28, 0.58, 0.7, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="sb_ghost"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="Premium" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_premium")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09, 0.1, 0.12, 1)
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 16.0
+offset_right = -28.0
+offset_bottom = -136.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Crown" type="TextureRect" parent="Content"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("3_crown")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Content"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 40
+text = "Limpid Premium"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Content"]
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+text = "Generous by design. Buy once, keep forever."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Benefits" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 10
+
+[node name="B1" type="Label" parent="Content/Benefits"]
+layout_mode = 2
+text = "✓   Unlimited games every day"
+
+[node name="B2" type="Label" parent="Content/Benefits"]
+layout_mode = 2
+text = "✓   Pass & Play on one device"
+
+[node name="B3" type="Label" parent="Content/Benefits"]
+layout_mode = 2
+text = "✓   No ads. Not now, not ever."
+
+[node name="B4" type="Label" parent="Content/Benefits"]
+layout_mode = 2
+text = "✓   Support a tiny indie dev"
+
+[node name="PriceLabel" type="Label" parent="Content"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 16
+text = "$3.99 · one-time, forever"
+horizontal_alignment = 1
+
+[node name="GetButton" type="Button" parent="Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_primary")
+theme_override_styles/hover = SubResource("sb_primary")
+theme_override_styles/pressed = SubResource("sb_primary")
+theme_override_styles/disabled = SubResource("sb_ghost")
+text = "Unlock Premium  ·  $3.99"
+
+[node name="RestoreButton" type="Button" parent="Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
+theme_override_styles/pressed = SubResource("sb_ghost")
+text = "Restore purchase"
+
+[node name="StatusLabel" type="Label" parent="Content"]
+unique_name_in_owner = true
+modulate = Color(0.4, 0.78, 0.52, 1)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "✓ You're Premium. Thank you!"
+horizontal_alignment = 1
+
+[node name="NavBar" parent="." instance=ExtResource("2_nav")]
+layout_mode = 1
+current_tab = "premium"
+
+[connection signal="pressed" from="Content/GetButton" to="." method="_on_get_pressed"]
+[connection signal="pressed" from="Content/RestoreButton" to="." method="_on_restore_pressed"]

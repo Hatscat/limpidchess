@@ -1,0 +1,201 @@
+[gd_scene load_steps=8 format=3 uid="uid://limpidhome01"]
+
+[ext_resource type="Script" path="res://scripts/home.gd" id="1_home"]
+[ext_resource type="PackedScene" path="res://scenes/nav_bar.tscn" id="2_nav"]
+[ext_resource type="Texture2D" path="res://assets/icons/target.png" id="3_target"]
+[ext_resource type="Texture2D" path="res://assets/icons/handshake.png" id="4_handshake"]
+
+[sub_resource type="StyleBoxFlat" id="sb_pill"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="sb_card"]
+content_margin_left = 28.0
+content_margin_top = 28.0
+content_margin_right = 28.0
+content_margin_bottom = 28.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.07)
+corner_radius_top_left = 36
+corner_radius_top_right = 36
+corner_radius_bottom_right = 36
+corner_radius_bottom_left = 36
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 16
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="sb_ghost"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="Home" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_home")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09, 0.1, 0.12, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 84.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+
+[node name="TitleVBox" type="VBoxContainer" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="TopBar/TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Limpid Chess"
+
+[node name="Eyebrow" type="Label" parent="TopBar/TitleVBox"]
+modulate = Color(1, 1, 1, 0.45)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "FIND · THE · BEST · MOVE"
+
+[node name="GamesPill" type="PanelContainer" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("sb_pill")
+
+[node name="GamesLabel" type="Label" parent="TopBar/GamesPill"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "3 / 3 today"
+vertical_alignment = 1
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 104.0
+offset_bottom = -132.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="PlayCard" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(460, 460)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_card")
+theme_override_styles/hover = SubResource("sb_card")
+theme_override_styles/pressed = SubResource("sb_card")
+
+[node name="Icon" type="TextureRect" parent="Center/VBox/PlayCard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 80.0
+offset_top = 80.0
+offset_right = -80.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_target")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlayTitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "Play"
+horizontal_alignment = 1
+
+[node name="PlaySubtitle" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 16
+text = "vs Biscuit"
+horizontal_alignment = 1
+
+[node name="Quote" type="Label" parent="Center/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(560, 0)
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 16
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PassPlay" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
+theme_override_styles/pressed = SubResource("sb_ghost")
+icon = ExtResource("4_handshake")
+text = "  Pass & Play"
+
+[node name="NavBar" parent="." instance=ExtResource("2_nav")]
+layout_mode = 1
+current_tab = "play"
+
+[connection signal="pressed" from="Center/VBox/PlayCard" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="Center/VBox/PassPlay" to="." method="_on_pass_play_pressed"]
