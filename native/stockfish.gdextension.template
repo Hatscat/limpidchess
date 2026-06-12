@@ -1,0 +1,19 @@
+; TEMPLATE — not loaded from here. build.sh generates the real descriptor at
+; addons/stockfish/stockfish.gdextension AFTER the .so files exist, listing only
+; the platforms it actually built (so Godot never references a missing library).
+;
+; Keep this OUT of addons/ until built: an addons/*.gdextension that points at a
+; non-existent .so makes Godot error on every run (desktop included). During
+; desktop dev without a build, the game just uses the Stockfish subprocess.
+
+[configuration]
+entry_symbol = "stockfish_library_init"
+compatibility_minimum = "4.5"
+
+[libraries]
+android.debug.arm64 = "res://addons/stockfish/bin/libstockfish_gd.android.template_debug.arm64.so"
+android.release.arm64 = "res://addons/stockfish/bin/libstockfish_gd.android.template_release.arm64.so"
+; Build desktop too (host compiler required) for a consistent embedded engine
+; everywhere; otherwise desktop keeps using the subprocess.
+linux.debug.x86_64 = "res://addons/stockfish/bin/libstockfish_gd.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/stockfish/bin/libstockfish_gd.linux.template_release.x86_64.so"

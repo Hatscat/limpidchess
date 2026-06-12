@@ -183,13 +183,18 @@ ships **Stockfish** (GPL-3.0). This was a deliberate reversal of the earlier
 - Chess pieces: JohnPablok improved Cburnett set (CC0). OpenDyslexic: free. Godot: MIT.
 
 ### Shipping Stockfish per platform
-- **Desktop / dev:** [`StockfishEngine`](scripts/chess/stockfish_engine.gd) runs the
-  system or a bundled binary as a subprocess over UCI. Found via `CANDIDATES` /
-  the `LIMPID_STOCKFISH` env var.
-- **Android:** subprocess spawning is unreliable (W^X) — you need a **native build**
-  (a Stockfish arm64 lib via GDExtension/JNI) and a smaller NNUE build than the
-  76 MB SF17 dual-net. Until that exists, Android falls back to the GDScript engine.
-  See HOW_TO.md. This is the main outstanding task.
+[`StockfishEngine`](scripts/chess/stockfish_engine.gd) has two transports, picked
+automatically by `start()`: the native **`StockfishGD` GDExtension** (`ext`, polled
+each frame) and a **subprocess** (`pipe`, worker thread). Neither → GDScript fallback.
+- **Desktop / dev:** uses the system / bundled Stockfish subprocess (resolved via
+  `CANDIDATES` / the `LIMPID_STOCKFISH` env var).
+- **Android:** can't spawn a subprocess (W^X), so Stockfish is compiled in via the
+  GDExtension under [`native/`](native/NATIVE_BUILD.md) — a godot-cpp binding
+  embedding **Stockfish 11** (classical, no NNUE net → tiny). Build with
+  `cd native && ./build.sh`. **Authored but not yet compiled/tested** (no toolchain
+  or device on the dev box). If `StockfishGD` is absent, Android uses the GDScript
+  fallback. Don't put the `.gdextension` in `addons/` until the `.so` exists — it
+  errors on every run; `build.sh` generates it post-build (template in `native/`).
 
 ## 🛠 Development & validation
 

@@ -106,18 +106,25 @@ godot --headless --path . -s res://scripts/dev/test_selfplay.gd   # full game pi
 
 This dev box already has Stockfish 17.1 at `/usr/games/stockfish` (76 MB, dual NNUE).
 
-### Shipping Stockfish — the outstanding work
+### Embedding Stockfish on Android — see [`native/`](native/NATIVE_BUILD.md)
 
-- **Desktop builds:** bundle a Stockfish binary (extract to `user://stockfish`,
-  `chmod +x`) so it doesn't depend on a system install. Prefer a smaller single-net
-  build than the 76 MB SF17 to keep download size down.
-- **Android (the real target):** you can't reliably spawn a subprocess on modern
-  Android (W^X). You need a **native build** — compile Stockfish for `arm64-v8a`
-  and call it in-process via a **GDExtension (godot-cpp + NDK)** or a JNI Android
-  plugin, then back `StockfishEngine` with that transport instead of
-  `OS.execute_with_pipe`. Use a small NNUE build (~a few MB). This needs the NDK
-  (install via `~/Android/Sdk` `sdkmanager`), SCons, and a C++ toolchain (none are
-  installed yet). Until done, Android runs the GDScript fallback engine.
+You can't spawn a subprocess on modern Android (W^X), so Stockfish is compiled
+**into the app** as a GDExtension. The whole thing is scaffolded under
+[`native/`](native/): a godot-cpp binding (`StockfishGD`) that embeds Stockfish 11
+(classical eval → tiny, no NNUE net) and a one-command build:
+
+```bash
+cd native && ./build.sh      # downloads NDK + SCons + godot-cpp + Stockfish, builds the arm64 .so
+```
+
+`StockfishEngine` auto-detects the `StockfishGD` class and uses it on Android,
+polling each frame; on desktop it keeps using the subprocess; with neither it
+falls back to the GDScript engine. **Not yet compiled/tested** (this box has no
+toolchain or device) — read `native/NATIVE_BUILD.md` before building.
+
+- **Desktop builds:** either build the desktop `.so` too (`build.sh` does this if
+  a host compiler is present → consistent embedded engine everywhere), or bundle a
+  Stockfish binary (extract to `user://stockfish`, `chmod +x`) for the subprocess.
 
 ## Android build (APK/AAB)
 

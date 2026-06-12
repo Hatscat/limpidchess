@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+# Builds the Stockfish GDExtension: the godot-cpp binding (src/) + Stockfish 11
+# (stockfish/src, minus main.cpp) compiled into one shared library.
+#
+# Run via native/build.sh, which sets up godot-cpp/ and stockfish/ next to this
+# file and invokes, e.g.:
+#   scons platform=android arch=arm64 target=template_release
+import os
+
+env = SConscript("godot-cpp/SConstruct")
+
+# Stockfish 11 sources: all of src/*.cpp except main.cpp, plus syzygy/.
+sf_sources = [f for f in Glob("stockfish/src/*.cpp")
+              if os.path.basename(str(f)) != "main.cpp"]
+sf_sources += Glob("stockfish/src/syzygy/*.cpp")
+
+env.Append(CPPPATH=["src/", "stockfish/src/", "stockfish/src/syzygy/"])
+# Stockfish 11 = classical eval (no NNUE net). arm64-friendly flags.
+env.Append(CPPDEFINES=["IS_64BIT", "USE_PREFETCH", "NDEBUG"])
+
+sources = Glob("src/*.cpp") + sf_sources
+
+out = "../addons/stockfish/bin/libstockfish_gd{}{}".format(env["suffix"], env["SHLIBSUFFIX"])
+library = env.SharedLibrary(out, source=sources)
+
+Default(library)
