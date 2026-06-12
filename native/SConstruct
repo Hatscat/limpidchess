@@ -18,6 +18,11 @@ env.Append(CPPPATH=["src/", "stockfish/src/", "stockfish/src/syzygy/"])
 # Stockfish 11 = classical eval (no NNUE net). arm64-friendly flags.
 env.Append(CPPDEFINES=["IS_64BIT", "USE_PREFETCH", "NDEBUG"])
 
+# Android 15+ requires native libraries aligned to 16 KB pages (NDK r23c defaults
+# to 4 KB). Align our LOAD segments to 16 KB so Google Play accepts the app.
+if env["platform"] == "android":
+    env.Append(LINKFLAGS=["-Wl,-z,max-page-size=16384", "-Wl,-z,common-page-size=16384"])
+
 # Stockfish 11 is a C++11 codebase (its Makefile uses -std=c++11) and defines its
 # own clamp(); godot-cpp builds at C++17 where std::clamp exists → ambiguity.
 # Compile the Stockfish sources at their native standard; the binding stays C++17.

@@ -115,10 +115,10 @@ Next:
   • Open the project once so Godot registers the StockfishGD class.
   • Export the Android APK/AAB and run on a device — it now embeds Stockfish.
   • Emulator? re-run with arch=x86_64 to add that slice.
-  • Desktop is unaffected: with only Android entries, Godot skips the extension on
-    desktop (no error) and the game uses the Stockfish subprocess there. Build the
-    desktop lib too (host compiler required) only if you want the embedded engine
-    on desktop as well.
+  • Desktop: with only Android entries, the Godot editor logs a harmless
+    "No GDExtension library for linux" — the game still works there via the
+    Stockfish subprocess. Build the desktop lib too (host compiler required) to
+    embed Stockfish on desktop and silence that message.
 EOF
 else
 	echo "No libraries were produced — not writing the .gdextension."
