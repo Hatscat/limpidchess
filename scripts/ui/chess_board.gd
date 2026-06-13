@@ -204,26 +204,28 @@ func _draw_arrow(move: int, col: Color, quality: String) -> void:
 
 	# Geometry: shaft runs all the way to the target so it joins the head/dot
 	# (no gap); a big arrowhead sits over the target dot, hovering it.
-	var shaft_w := _cell * 0.15
-	var dot_r := _cell * 0.18
-	var tip := to + dir * _cell * 0.26
-	var base := to - dir * _cell * 0.20
-	var hw := _cell * 0.25
+	var shaft_w := _cell * 0.11
+	var dot_r := _cell * 0.46
+	var tip := to + dir * _cell * 0.11
+	var base := to - dir * _cell * 0.30
+	var hw := _cell * 0.22
 	var p1 := base + perp * hw
 	var p2 := base - perp * hw
+	
+	var line_from = from + dir * _cell * 0.15 # little gap from the center of the cell
 
 	# Dark outline pass (slightly larger) so the arrow reads on light or dark squares.
-	var outline := Color(0.04, 0.05, 0.08, 0.55)
+	var outline := Color(0.04, 0.05, 0.08, 0.45)
 	var e := _cell * 0.05
-	draw_line(from, to, outline, shaft_w + e * 2.0, true)
-	draw_circle(to, dot_r + e, outline)
+	draw_line(line_from, to, outline, shaft_w + e, true)
+	#draw_circle(to, dot_r + e, outline)
 	draw_colored_polygon(PackedVector2Array([
 		tip + dir * e, p1 + (perp * e) - (dir * e), p2 - (perp * e) - (dir * e),
 	]), outline)
 
 	# Colour pass.
-	draw_line(from, to, Color(col, 0.95), shaft_w, true)
-	draw_circle(to, dot_r, Color(col, 0.95))
+	draw_circle(to, dot_r, Color(col, 0.42))
+	draw_line(line_from, to, Color(col, 0.77), shaft_w, true)
 	draw_colored_polygon(PackedVector2Array([tip, p1, p2]), Color(col, 1.0))
 
 	# On reveal, a shape symbol so the result reads without colour.

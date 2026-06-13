@@ -13,7 +13,7 @@ const StockfishEngineScript := preload("res://scripts/chess/stockfish_engine.gd"
 
 const ANALYSIS_DEPTH_SF := 10
 const OPENING_WINDOW_CP := 55
-const REVEAL_SLIDE_SEC := 1.2   ## slow bullet-time slide of the chosen piece
+const REVEAL_SLIDE_SEC := 1.1   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.55   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
 
