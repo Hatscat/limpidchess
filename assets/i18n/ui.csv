@@ -124,9 +124,9 @@ You win!,You win!,Tu as gagné !,¡Ganaste!
 "Your move, find the best!","Your move, find the best!","À toi de jouer, trouve le meilleur !","Tu turno, ¡encuentra el mejor!"
 ~%d,~%d,~%d,~%d
 ★ Best move!,★ Best move!,★ Meilleur coup !,★ ¡Mejor movimiento!
-"✓   No ads. Not now, not ever.","✓   No ads. Not now, not ever.","✓   Pas de pub. Jamais.","✓   Sin anuncios. Nunca, jamás."
+"✓   No ads. Not now, not ever.","✓   No ads. Not now, not ever.","✓   Jamais de pub","✓   Sin anuncios. Nunca, jamás."
 ✓   Pass & Play on one device,✓   Pass & Play on one device,✓   Passe & Joue sur un appareil,✓   Pasa y Juega en un dispositivo
-✓   Support a tiny indie dev,✓   Support a tiny indie dev,✓   Soutient un développeur indépendant,✓   Apoya a un pequeño desarrollador independiente
+✓   Support a solo indie dev,✓   Support a solo indie dev,✓   Soutient un développeur indépendant,✓   Apoya a un pequeño desarrollador independiente
 ✓   Unlimited games every day,✓   Unlimited games every day,✓   Parties illimitées tous les jours,✓   Juegos ilimitados todos los días
 ✓ You're Premium. Thank you!,✓ You're Premium. Thank you!,✓ Vous êtes Premium. Merci !,✓ Eres Premium. ¡Gracias!
 "[b]Chess pieces[/b]
@@ -218,3 +218,4 @@ Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]
 
 [b]Código fuente y licencias[/b]
 [url=https://github.com/Hatscat/limpidchess]https://github.com/Hatscat/limpidchess[/url]"
+Sound,Sound,Son,Sonido

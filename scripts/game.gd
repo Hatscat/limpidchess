@@ -388,15 +388,19 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		"best":
 			_best_count += 1
 			feedback.text = tr("★ Best move!")
+			Audio.play("best")
 		"decent":
 			_decent_count += 1
 			feedback.text = tr("%s. The best was %s.") % [tr(grade["label"]), best_san]
+			Audio.play("decent")
 		"blunder":
 			_blunder_count += 1
 			feedback.text = tr("The blunder! The best was %s.") % best_san
+			Audio.play("blunder")
 		_:
 			_decent_count += 1
 			feedback.text = tr("%s. Best was %s.") % [tr(grade["label"]), best_san]
+			Audio.play("decent")
 	status_label.text = ""
 
 	# Reveal the qualities, then slow-slide the chosen piece (bullet time).
@@ -458,6 +462,7 @@ func _play_move(move: int) -> void:
 		else:
 			_caps_black.append(captured)
 	_undo_stack.append({"move": move, "undo": undo, "captured": captured, "mover": mover})
+	Audio.play("capture" if captured != 0 else "move")
 	board.set_last_move(move, mover)
 	board.set_rules(rules)
 	board.end_animation()  # commit done → drop the slide overlay (piece is now at dest)
@@ -596,6 +601,13 @@ func _check_game_over() -> bool:
 			title = "Draw"
 			text = "Not enough material to checkmate."
 			if not GameManager.pass_and_play: GameManager.record_result("draw")
+
+	# Celebratory cue for a checkmate win (incl. Pass & Play); a calm one otherwise
+	# (a loss / draw is never scolded, per the design).
+	var sfx := "end"
+	if outcome == ChessRules.Outcome.CHECKMATE and quote_key != "loss":
+		sfx = "win"
+	Audio.play(sfx)
 
 	# Announce the ending explicitly on the board, hold a beat, THEN the review.
 	feedback.text = _outcome_headline(outcome)
@@ -742,6 +754,7 @@ func _do_give_up() -> void:
 	board.clear_options()
 	if not GameManager.pass_and_play:
 		GameManager.record_result("loss")
+	Audio.play("end")
 	_show_result("You gave up", "No shame, every game teaches something.", "resign")
 
 

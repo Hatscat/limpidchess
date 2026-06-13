@@ -32,6 +32,7 @@ const UNLIMITED_GAMES := 999
 # --- Persistent state ---
 var is_premium := false
 var language := ""           ## chosen UI locale code; "" = follow the device language
+var sound_enabled := true    ## sound-effect cues on/off
 var games_today := 0
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
 
@@ -84,6 +85,11 @@ func set_language(code: String) -> void:
 ## The locale code actually in effect right now (resolves "" to the device pick).
 func current_language() -> String:
 	return language if language != "" else _device_language()
+
+
+func set_sound_enabled(on: bool) -> void:
+	sound_enabled = on
+	_save()
 
 
 # --- Navigation ---
@@ -180,6 +186,7 @@ func _save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("player", "is_premium", is_premium)
 	cfg.set_value("player", "language", language)
+	cfg.set_value("player", "sound_enabled", sound_enabled)
 	cfg.set_value("daily", "games_today", games_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
@@ -198,6 +205,7 @@ func _load() -> void:
 	# Coerce types defensively — a hand-edited / corrupt save shouldn't crash later math.
 	is_premium = bool(cfg.get_value("player", "is_premium", false))
 	language = str(cfg.get_value("player", "language", ""))
+	sound_enabled = bool(cfg.get_value("player", "sound_enabled", true))
 	games_today = int(cfg.get_value("daily", "games_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))

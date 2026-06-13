@@ -104,7 +104,7 @@ text = "✓   No ads. Not now, not ever."
 
 [node name="B4" type="Label" parent="Content/Benefits"]
 layout_mode = 2
-text = "✓   Support a tiny indie dev"
+text = "✓   Support a solo indie dev"
 
 [node name="PriceLabel" type="Label" parent="Content"]
 unique_name_in_owner = true

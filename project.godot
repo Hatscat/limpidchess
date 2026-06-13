@@ -21,10 +21,7 @@ config/icon="res://icon.svg"
 
 GameManager="*res://scripts/game_manager.gd"
 ChessEngine="*res://scripts/chess/stockfish_engine.gd"
-
-[internationalization]
-
-locale/translations=PackedStringArray("res://assets/i18n/ui.en.translation", "res://assets/i18n/ui.fr.translation", "res://assets/i18n/ui.es.translation")
+Audio="*res://scripts/audio.gd"
 
 [display]
 
@@ -41,6 +38,10 @@ theme/custom="res://assets/default_theme.tres"
 [input_devices]
 
 pointing/emulate_touch_from_mouse=true
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://assets/i18n/ui.en.translation", "res://assets/i18n/ui.fr.translation", "res://assets/i18n/ui.es.translation")
 
 [rendering]
 

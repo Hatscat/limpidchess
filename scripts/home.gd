@@ -10,6 +10,7 @@ extends Control
 @onready var quote_label: Label = %Quote
 @onready var settings_overlay: Control = %SettingsOverlay
 @onready var lang_list: VBoxContainer = %LangList
+@onready var sound_toggle: CheckButton = %SoundToggle
 
 
 func _ready() -> void:
@@ -61,11 +62,18 @@ func _on_pass_play_pressed() -> void:
 
 func _on_settings_pressed() -> void:
 	_build_lang_list()
+	sound_toggle.set_pressed_no_signal(GameManager.sound_enabled)  # no spurious blip on open
 	settings_overlay.visible = true
 
 
 func _on_settings_close() -> void:
 	settings_overlay.visible = false
+
+
+func _on_sound_toggled(on: bool) -> void:
+	GameManager.set_sound_enabled(on)
+	if on:
+		Audio.play("move")  # a little confirmation blip
 
 
 func _build_lang_list() -> void:
