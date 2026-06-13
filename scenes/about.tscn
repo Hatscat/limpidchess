@@ -86,11 +86,7 @@ text = "Credits"
 layout_mode = 2
 fit_content = true
 bbcode_enabled = true
-text = "[b]Chess engine[/b]
-Stockfish — the strongest open-source chess engine (GPL-3.0). Limpid Chess is itself free software under the GPL-3.0; its full source and the exact Stockfish build are available.
-[url=https://stockfishchess.org]stockfishchess.org[/url]
-
-[b]Chess pieces[/b]
+text = "[b]Chess pieces[/b]
 JohnPablok's improved Cburnett set (CC0), based on a design by Colin M. L. Burnett.
 [url=https://opengameart.org/content/chess-pieces-and-board-squares]opengameart.org[/url]
 
@@ -102,11 +98,17 @@ All emojis designed by OpenMoji – the open-source emoji and icon project. Lice
 OpenDyslexic — a free, dyslexia-friendly font.
 [url=https://opendyslexic.org]opendyslexic.org[/url]
 
+[b]Chess engine[/b]
+Stockfish (GPL-3.0).
+
 [b]Quotes[/b]
 Savielly Tartakower, Emanuel Lasker, Johannes Zukertort, Paul Morphy.
 
 [b]Built with[/b]
-Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]"
+Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]
+
+[b]Source & licenses[/b]
+[url=https://github.com/Hatscat/limpidchess]https://github.com/Hatscat/limpidchess[/url]"
 fit_content = true
 
 [node name="Version" type="Label" parent="Scroll/VBox"]
