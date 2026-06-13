@@ -23,10 +23,10 @@ const ANALYSIS_DEPTH_SF := 10
 ## best" can actually match/beat the opponent (the shallow pass alone often picks
 ## a sub-optimal best the strong bots punish). Think time scales with the bot.
 const BEST_MOVETIME_MARGIN := 250  ## think a little longer than the opponent does
-const BEST_MOVETIME_FLOOR := 450   ## floor so suggestions stay sound vs weak bots (teaching)
-const BEST_MOVETIME_CAP := 1800    ## ceiling so the strongest bots' turns stay tolerable
+const BEST_MOVETIME_FLOOR := 750   ## floor so suggestions stay sound vs weak bots (teaching)
+const BEST_MOVETIME_CAP := 2050    ## ceiling so the strongest bots' turns stay tolerable
 const OPENING_WINDOW_CP := 55
-const REVEAL_SLIDE_SEC := 1.2   ## slow bullet-time slide of the chosen piece
+const REVEAL_SLIDE_SEC := 0.9   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.55   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
 const END_DELAY := 1.3   ## hold the "Checkmate!" / "Stalemate." message before the review dialog

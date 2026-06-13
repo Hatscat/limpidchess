@@ -9,7 +9,7 @@ $3.99,$3.99,"$3,99","$3,99"
 %s is thinking…,%s is thinking…,%s réfléchit…,%s está pensando…
 "%s to move, find the best!","%s to move, find the best!","%s à jouer, trouve le meilleur !","%s para jugar, ¡encuentra el mejor!"
 %s wins!,%s wins!,%s gagnent !,¡%s ganan!
-"%s · one-time, forever","%s · one-time, forever","%s · achat unique, à jamais","%s · compra única, para siempre"
+"%s · one-time, forever","%s · one-time, forever","%s · achat unique, pour toujours","%s · compra única, para siempre"
 %s. Best was %s.,%s. Best was %s.,%s. Le meilleur était %s.,%s. El mejor fue %s.
 %s. The best was %s.,%s. The best was %s.,%s. Le meilleur était %s.,%s. El mejor fue %s.
 3 / 3 today,3 / 3 today,3 / 3 aujourd'hui,3 / 3 hoy
@@ -60,7 +60,7 @@ Victorias %d · Tablas %d · Derrotas %d
 Mejores movimientos encontrados: %d
 Errores graves: %d"
 Games played: 0,Games played: 0,Parties jouées : 0,Juegos jugados: 0
-"Generous by design. Buy once, keep forever.","Generous by design. Buy once, keep forever.","Généreux par conception. Achetez une fois, gardez à jamais.","Generoso por diseño. Compra una vez, guarda para siempre."
+"Generous by design. Buy once, keep forever.","Generous by design. Buy once, keep forever.","Un seul paiement, pas d'abonnement.","Generoso por diseño. Compra una vez, guarda para siempre."
 Give up,Give up,Abandonner,Rendirse
 Give up?,Give up?,Abandonner ?,¿Abandonar?
 Good,Good,Bon,Bueno
@@ -71,7 +71,7 @@ Home,Home,Accueil,Inicio
 Improver,Improver,Perfectionnement,Jugador en desarrollo
 Inaccuracy,Inaccuracy,Imprécision,Imprecisión
 It is always better to sacrifice your opponent's men.,It is always better to sacrifice your opponent's men.,Il vaut toujours mieux sacrifier les pièces de votre adversaire.,Siempre es mejor sacrificar las piezas de tu adversario.
-Just learned how the pieces move.,Just learned how the pieces move.,Vient d'apprendre comment bougent les pièces.,Acaba de aprender cómo se mueven las piezas.
+Just learned how the pieces move.,Just learned how the pieces move.,Sait comment bougent les pièces.,Acaba de aprender cómo se mueven las piezas.
 Language,Language,Langue,Idioma
 Leaps at every capture.,Leaps at every capture.,Saute sur chaque capture.,Salta en cada captura.
 Master,Master,Maître,Maestro
@@ -124,9 +124,9 @@ You win!,You win!,Tu as gagné !,¡Ganaste!
 "Your move, find the best!","Your move, find the best!","À toi de jouer, trouve le meilleur !","Tu turno, ¡encuentra el mejor!"
 ~%d,~%d,~%d,~%d
 ★ Best move!,★ Best move!,★ Meilleur coup !,★ ¡Mejor movimiento!
-"✓   No ads. Not now, not ever.","✓   No ads. Not now, not ever.","✓   Pas de pub. Jamais, au grand jamais.","✓   Sin anuncios. Nunca, jamás."
+"✓   No ads. Not now, not ever.","✓   No ads. Not now, not ever.","✓   Pas de pub. Jamais.","✓   Sin anuncios. Nunca, jamás."
 ✓   Pass & Play on one device,✓   Pass & Play on one device,✓   Passe & Joue sur un appareil,✓   Pasa y Juega en un dispositivo
-✓   Support a tiny indie dev,✓   Support a tiny indie dev,✓   Soutenir un petit développeur indépendant,✓   Apoya a un pequeño desarrollador independiente
+✓   Support a tiny indie dev,✓   Support a tiny indie dev,✓   Soutient un développeur indépendant,✓   Apoya a un pequeño desarrollador independiente
 ✓   Unlimited games every day,✓   Unlimited games every day,✓   Parties illimitées tous les jours,✓   Juegos ilimitados todos los días
 ✓ You're Premium. Thank you!,✓ You're Premium. Thank you!,✓ Vous êtes Premium. Merci !,✓ Eres Premium. ¡Gracias!
 "[b]Chess pieces[/b]

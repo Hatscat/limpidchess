@@ -85,7 +85,7 @@ func _make_row(bot: Dictionary) -> Button:
 	tier.add_theme_font_size_override("font_size", UI.FONT_CAPTION)
 	tier.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	var elo := Label.new()
-	elo.text = "~%d" % bot["elo"]
+	elo.text = "±%d" % bot["elo"]
 	elo.modulate = UI.TEXT_FADED
 	elo.add_theme_font_size_override("font_size", UI.FONT_CAPTION)
 	elo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

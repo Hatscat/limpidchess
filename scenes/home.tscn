@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" uid="uid://c1jx7yw5723wa" path="res://scripts/home.gd" id="1_home"]
 [ext_resource type="PackedScene" uid="uid://dup7j366xg0q3" path="res://scenes/nav_bar.tscn" id="2_nav"]
-[ext_resource type="Texture2D" path="res://assets/icons/board_blank.svg" id="3_board"]
+[ext_resource type="Texture2D" uid="uid://p02tne2x1je1" path="res://assets/icons/board_blank.svg" id="3_board"]
 [ext_resource type="Texture2D" uid="uid://218lqwovgsyp" path="res://assets/icons/handshake.png" id="4_handshake"]
-[ext_resource type="Texture2D" path="res://assets/pieces/w_pawn.png" id="5_wpawn"]
-[ext_resource type="Texture2D" path="res://assets/pieces/b_pawn.png" id="6_bpawn"]
-[ext_resource type="Texture2D" path="res://assets/icons/gear.svg" id="7_gear"]
+[ext_resource type="Texture2D" uid="uid://boxc5a1vecvuj" path="res://assets/pieces/w_pawn.png" id="5_wpawn"]
+[ext_resource type="Texture2D" uid="uid://cw8pcxwr83nff" path="res://assets/pieces/b_pawn.png" id="6_bpawn"]
+[ext_resource type="Texture2D" uid="uid://dr03fdrxbna2q" path="res://assets/icons/gear.svg" id="7_gear"]
 
 [sub_resource type="StyleBoxFlat" id="sb_pill"]
 content_margin_left = 14.0
@@ -118,14 +118,14 @@ theme_override_font_sizes/font_size = 16
 text = "3 / 3 today"
 vertical_alignment = 1
 
-[node name="Settings" type="Button" parent="TopBar"]
+[node name="Settings" type="Button" parent="TopBar" unique_id=1493658575]
 custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 focus_mode = 0
-flat = true
 icon = ExtResource("7_gear")
+flat = true
 expand_icon = true
 
 [node name="Center" type="CenterContainer" parent="." unique_id=1290734560]
@@ -144,7 +144,7 @@ theme_override_constants/separation = 18
 alignment = 1
 
 [node name="PlayCard" type="Button" parent="Center/VBox" unique_id=1507789893]
-custom_minimum_size = Vector2(420, 560)
+custom_minimum_size = Vector2(480, 560)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
@@ -152,7 +152,7 @@ theme_override_styles/normal = SubResource("sb_card")
 theme_override_styles/pressed = SubResource("sb_card")
 theme_override_styles/hover = SubResource("sb_card")
 
-[node name="Content" type="VBoxContainer" parent="Center/VBox/PlayCard"]
+[node name="Content" type="VBoxContainer" parent="Center/VBox/PlayCard" unique_id=1431762357]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -167,13 +167,13 @@ mouse_filter = 2
 theme_override_constants/separation = 26
 alignment = 1
 
-[node name="BoardBox" type="Control" parent="Center/VBox/PlayCard/Content"]
-custom_minimum_size = Vector2(344, 344)
+[node name="BoardBox" type="Control" parent="Center/VBox/PlayCard/Content" unique_id=655032525]
+custom_minimum_size = Vector2(360, 360)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
 
-[node name="Board" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox"]
+[node name="Board" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox" unique_id=2016226130]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -185,8 +185,9 @@ texture = ExtResource("3_board")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="WPawn" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox"]
+[node name="WPawn" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox" unique_id=2005721359]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.0625
 anchor_top = 0.28125
 anchor_right = 0.28125
@@ -198,8 +199,9 @@ texture = ExtResource("5_wpawn")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BPawn" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox"]
+[node name="BPawn" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox" unique_id=546905069]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.71875
@@ -211,20 +213,20 @@ texture = ExtResource("6_bpawn")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="NewGame" type="Label" parent="Center/VBox/PlayCard/Content"]
+[node name="NewGame" type="Label" parent="Center/VBox/PlayCard/Content" unique_id=399648394]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 38
 text = "New game"
 horizontal_alignment = 1
 
-[node name="BotRow" type="HBoxContainer" parent="Center/VBox/PlayCard/Content"]
+[node name="BotRow" type="HBoxContainer" parent="Center/VBox/PlayCard/Content" unique_id=1345801432]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="BotAvatar" type="TextureRect" parent="Center/VBox/PlayCard/Content/BotRow"]
+[node name="BotAvatar" type="TextureRect" parent="Center/VBox/PlayCard/Content/BotRow" unique_id=1437996726]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
@@ -233,11 +235,10 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BotName" type="Label" parent="Center/VBox/PlayCard/Content/BotRow"]
+[node name="BotName" type="Label" parent="Center/VBox/PlayCard/Content/BotRow" unique_id=58262404]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.85)
 layout_mode = 2
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 24
 text = "Biscuit"
 vertical_alignment = 1
@@ -267,7 +268,7 @@ icon = ExtResource("4_handshake")
 [node name="NavBar" parent="." unique_id=1060122150 instance=ExtResource("2_nav")]
 layout_mode = 1
 
-[node name="SettingsOverlay" type="Control" parent="."]
+[node name="SettingsOverlay" type="Control" parent="." unique_id=1447406100]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -277,7 +278,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="SettingsOverlay"]
+[node name="Dim" type="ColorRect" parent="SettingsOverlay" unique_id=1211771672]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -286,7 +287,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Card" type="PanelContainer" parent="SettingsOverlay"]
+[node name="Card" type="PanelContainer" parent="SettingsOverlay" unique_id=322232654]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -301,30 +302,30 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="VBox" type="VBoxContainer" parent="SettingsOverlay/Card"]
+[node name="VBox" type="VBoxContainer" parent="SettingsOverlay/Card" unique_id=159858154]
 layout_mode = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="SettingsTitle" type="Label" parent="SettingsOverlay/Card/VBox"]
+[node name="SettingsTitle" type="Label" parent="SettingsOverlay/Card/VBox" unique_id=1404531831]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Settings"
 horizontal_alignment = 1
 
-[node name="LangLabel" type="Label" parent="SettingsOverlay/Card/VBox"]
+[node name="LangLabel" type="Label" parent="SettingsOverlay/Card/VBox" unique_id=1543917673]
 modulate = Color(1, 1, 1, 0.55)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Language"
 horizontal_alignment = 1
 
-[node name="LangList" type="VBoxContainer" parent="SettingsOverlay/Card/VBox"]
+[node name="LangList" type="VBoxContainer" parent="SettingsOverlay/Card/VBox" unique_id=2034737097]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="CloseBtn" type="Button" parent="SettingsOverlay/Card/VBox"]
+[node name="CloseBtn" type="Button" parent="SettingsOverlay/Card/VBox" unique_id=1146732593]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 focus_mode = 0
@@ -335,6 +336,6 @@ theme_override_styles/hover = SubResource("sb_ghost")
 text = "Close"
 
 [connection signal="pressed" from="TopBar/Settings" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="SettingsOverlay/Card/VBox/CloseBtn" to="." method="_on_settings_close"]
 [connection signal="pressed" from="Center/VBox/PlayCard" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="Center/VBox/PassPlay" to="." method="_on_pass_play_pressed"]
+[connection signal="pressed" from="SettingsOverlay/Card/VBox/CloseBtn" to="." method="_on_settings_close"]
