@@ -147,9 +147,9 @@ func _recompute_layout() -> void:
 	var board_px := minf(size.x, size.y)
 	_cell = floorf(board_px / 8.0)
 	var used := _cell * 8.0
-	# Centre horizontally, but top-align vertically (cap the top pad) so the board
-	# sits right under the status text instead of floating in the middle.
-	_origin = Vector2((size.x - used) * 0.5, minf((size.y - used) * 0.5, _cell * 0.2))
+	# The control is sized to the board square by game.gd, so this just centres
+	# (and absorbs any rounding remainder).
+	_origin = Vector2((size.x - used) * 0.5, (size.y - used) * 0.5)
 
 
 func _draw_squares() -> void:

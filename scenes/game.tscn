@@ -93,7 +93,7 @@ anchor_right = 1.0
 offset_left = 20.0
 offset_top = 16.0
 offset_right = -20.0
-offset_bottom = 84.0
+offset_bottom = 120.0
 grow_horizontal = 2
 theme_override_constants/separation = 12
 
@@ -120,7 +120,7 @@ theme_override_constants/separation = 12
 
 [node name="OpponentAvatar" type="TextureRect" parent="TopBar/OpponentChip/HBox" unique_id=1169140156]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(60, 60)
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -129,7 +129,7 @@ stretch_mode = 5
 [node name="OpponentName" type="Label" parent="TopBar/OpponentChip/HBox" unique_id=884372973]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "Opponent"
 
 [node name="CoinsChip" type="PanelContainer" parent="TopBar" unique_id=280847139]

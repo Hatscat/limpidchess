@@ -10,6 +10,10 @@ extends Control
 
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
 const StockfishEngineScript := preload("res://scripts/chess/stockfish_engine.gd")
+const CapturedStripScript := preload("res://scripts/ui/captured_strip.gd")
+
+## Centipawn-ish piece values for the material lead (king excluded). pawn..queen.
+const PIECE_VALUE := {1: 1, 2: 3, 3: 3, 4: 5, 5: 9}
 
 const ANALYSIS_DEPTH_SF := 10
 const OPENING_WINDOW_CP := 55
@@ -53,6 +57,14 @@ var _best_count := 0
 var _decent_count := 0
 var _blunder_count := 0
 
+# Captured-pieces strips (below the board). Codes accumulated as moves are played:
+# _caps_white = the black pieces White has taken, _caps_black = the white pieces
+# Black has taken (each side shows its own trophies). Created in _ready.
+var cap_top: Control       ## strip for the side at the TOP of the board
+var cap_bottom: Control    ## strip for the side at the BOTTOM (the player, vs a bot)
+var _caps_white: PackedInt32Array = PackedInt32Array()
+var _caps_black: PackedInt32Array = PackedInt32Array()
+
 
 func _ready() -> void:
 	rules = ChessRules.new()
@@ -63,6 +75,16 @@ func _ready() -> void:
 
 	board.set_rules(rules)
 	board.option_chosen.connect(_on_option_chosen)
+
+	# Captured-pieces strips: keep them right after the board so the result /
+	# confirm overlays (later siblings) still draw on top.
+	cap_top = CapturedStripScript.new()
+	cap_bottom = CapturedStripScript.new()
+	add_child(cap_top)
+	add_child(cap_bottom)
+	move_child(cap_top, board.get_index() + 1)
+	move_child(cap_bottom, board.get_index() + 2)
+
 	_setup_opponent_panel()
 	_refresh_coins()
 	result_overlay.visible = false
@@ -75,6 +97,7 @@ func _ready() -> void:
 	popup.id_pressed.connect(_on_menu)
 
 	_layout_for_safe_area()
+	get_viewport().size_changed.connect(_layout_for_safe_area)
 	feedback.text = ""
 	_begin()
 
@@ -84,18 +107,61 @@ func _notification(what: int) -> void:
 		GameManager.go_to_home()
 
 
-## Push the top bar / labels / board down past the device notch.
+## Layout, top → bottom: top bar (with the big portrait) · breathing room ·
+## feedback + status captions · the board (sat in the lower-middle, index-finger
+## reach) · a captured-pieces strip per side. Sized from the live viewport so it
+## adapts to any phone aspect / notch; re-runs on size_changed.
+const _BAR_H := 104.0          ## top bar height (fits the 88px portrait)
+const _FEED_H := 80.0          ## feedback box (room for a 2-line result)
+const _STATUS_H := 36.0
+const _CAP_STRIP_H := 34.0     ## one captured-pieces strip
+const _CAP_GAP := 6.0          ## gap between the two strips
+const _CAP_TOP_GAP := 10.0     ## gap from board bottom to the first strip
+
 func _layout_for_safe_area() -> void:
-	var top: int = max(DisplayServer.get_display_safe_area().position.y, 16)
+	var vp := get_viewport_rect().size
+	if vp.x <= 0.0 or vp.y <= 0.0:
+		return  # size not established yet; size_changed will call us again
+	var top: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
 	$TopBar.offset_top = top
-	$TopBar.offset_bottom = top + 68
-	# Feedback + status sit just above the board (which is top-aligned), so the
-	# text reads as a caption for the board rather than floating near the top bar.
-	feedback.offset_top = top + 104
-	feedback.offset_bottom = top + 154
-	status_label.offset_top = top + 156
-	status_label.offset_bottom = top + 192
-	board.offset_top = top + 198
+	$TopBar.offset_bottom = top + _BAR_H
+
+	var caption_block: float = _FEED_H + 6.0 + _STATUS_H + 12.0  # captions + gap to board
+	var captured_block: float = _CAP_TOP_GAP + _CAP_STRIP_H + _CAP_GAP + _CAP_STRIP_H
+
+	# Full-width square, shrunk if a short screen can't fit the whole stack.
+	var area_top: float = top + _BAR_H
+	var board_size: float = minf(vp.x - 16.0,
+		vp.y - area_top - caption_block - captured_block - 24.0)
+	board_size = maxf(board_size, 0.0)
+	var bx: float = (vp.x - board_size) * 0.5
+
+	# Centre the captioned-board-plus-strips block in the remaining space, biased a
+	# touch downward (half the slack above, the rest below) so the board sits in
+	# the lower-middle within thumb-and-finger reach, not pinned to either edge.
+	var content_h: float = caption_block + board_size + captured_block
+	var extra: float = maxf(0.0, vp.y - area_top - content_h - 16.0)
+	var board_top: float = area_top + extra * 0.5 + caption_block
+
+	board.offset_left = bx
+	board.offset_right = -bx
+	board.offset_top = board_top
+	board.offset_bottom = (board_top + board_size) - vp.y
+
+	# Status hugs the board top; feedback (can wrap to 2 lines) just above it.
+	status_label.offset_bottom = board_top - 12.0
+	status_label.offset_top = status_label.offset_bottom - _STATUS_H
+	feedback.offset_bottom = status_label.offset_top - 6.0
+	feedback.offset_top = feedback.offset_bottom - _FEED_H
+
+	# Captured strips, aligned with the board's width, just below it.
+	var sy: float = board_top + board_size + _CAP_TOP_GAP
+	if cap_top:
+		cap_top.position = Vector2(bx, sy)
+		cap_top.size = Vector2(board_size, _CAP_STRIP_H)
+	if cap_bottom:
+		cap_bottom.position = Vector2(bx, sy + _CAP_STRIP_H + _CAP_GAP)
+		cap_bottom.size = Vector2(board_size, _CAP_STRIP_H)
 
 
 func _setup_opponent_panel() -> void:
@@ -142,7 +208,10 @@ func _new_game() -> void:
 	_best_count = 0
 	_decent_count = 0
 	_blunder_count = 0
+	_caps_white = PackedInt32Array()
+	_caps_black = PackedInt32Array()
 	_refresh_coins()
+	_update_captured()
 	_record_position()
 	_play_random_opening()
 
@@ -315,15 +384,67 @@ func _bot_move() -> void:
 
 func _play_move(move: int) -> void:
 	var mover := rules.side_to_move
-	rules.make_move(move)
+	var undo := rules.make_move(move)
+	var captured: int = undo.get("captured_piece", 0)
+	if captured != 0:
+		if mover == ChessRules.WHITE:
+			_caps_white.append(captured)
+		else:
+			_caps_black.append(captured)
 	board.set_last_move(move, mover)
 	board.set_rules(rules)
 	board.end_animation()  # commit done → drop the slide overlay (piece is now at dest)
+	_update_captured()
 	_record_position()
 
 
 func _record_position() -> void:
 	_history.append(rules.position_key())
+
+
+## Refresh both captured-pieces strips from the current board + accumulated trophies.
+## The material lead is read from on-board material (correct even after a promotion);
+## the trophy icons come from the actual pieces captured.
+func _update_captured() -> void:
+	if cap_top == null or cap_bottom == null:
+		return
+	var wmat := 0
+	var bmat := 0
+	for sq in 64:
+		var p: int = rules.board[sq]
+		if p == 0:
+			continue
+		var t: int = ChessRules.piece_type(p)
+		if t < ChessRules.PAWN or t > ChessRules.QUEEN:
+			continue  # skip kings
+		var v: int = PIECE_VALUE[t]
+		if ChessRules.piece_color(p) == ChessRules.WHITE:
+			wmat += v
+		else:
+			bmat += v
+
+	# The board flips to keep the player at the bottom, so the bottom strip is the
+	# player's (White in pass & play); the top strip is the opponent's.
+	var bottom_color: int = ChessRules.WHITE if GameManager.pass_and_play else player_color
+	var top_color: int = 1 - bottom_color
+	cap_bottom.set_data(_sorted_caps(bottom_color), maxi(0, _material_lead(bottom_color, wmat, bmat)))
+	cap_top.set_data(_sorted_caps(top_color), maxi(0, _material_lead(top_color, wmat, bmat)))
+
+
+## Material lead (in points) for `color`, given total on-board material per side.
+func _material_lead(color: int, wmat: int, bmat: int) -> int:
+	return (wmat - bmat) if color == ChessRules.WHITE else (bmat - wmat)
+
+
+## The pieces `capturer` has taken, ordered pawns → queen for display.
+func _sorted_caps(capturer: int) -> PackedInt32Array:
+	var src: PackedInt32Array = _caps_white if capturer == ChessRules.WHITE else _caps_black
+	var out: PackedInt32Array = PackedInt32Array()
+	for t in [ChessRules.PAWN, ChessRules.KNIGHT, ChessRules.BISHOP, ChessRules.ROOK, ChessRules.QUEEN]:
+		for c in src:
+			if ChessRules.piece_type(c) == t:
+				out.append(c)
+	return out
 
 
 func _update_check_highlight() -> void:
