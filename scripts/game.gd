@@ -15,9 +15,18 @@ const EvalBarScript := preload("res://scripts/ui/eval_bar.gd")
 ## Centipawn-ish piece values for the material lead (king excluded). pawn..queen.
 const PIECE_VALUE := {1: 1, 2: 3, 3: 3, 4: 5, 5: 9}
 
+## Wide MultiPV pass (every legal move) for the option spread + grading. Kept
+## shallow because MultiPV cost explodes with depth; the BEST line is deepened
+## separately below.
 const ANALYSIS_DEPTH_SF := 10
+## The suggested BEST move gets its own deep, single-line search so that "playing
+## best" can actually match/beat the opponent (the shallow pass alone often picks
+## a sub-optimal best the strong bots punish). Think time scales with the bot.
+const BEST_MOVETIME_MARGIN := 250  ## think a little longer than the opponent does
+const BEST_MOVETIME_FLOOR := 450   ## floor so suggestions stay sound vs weak bots (teaching)
+const BEST_MOVETIME_CAP := 1800    ## ceiling so the strongest bots' turns stay tolerable
 const OPENING_WINDOW_CP := 55
-const REVEAL_SLIDE_SEC := 1.25   ## slow bullet-time slide of the chosen piece
+const REVEAL_SLIDE_SEC := 1.2   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.55   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
 const END_DELAY := 1.3   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
@@ -286,6 +295,9 @@ func _present_options() -> void:
 	_ranked = await _rank_position()
 	if g != _gen:
 		return  # a new game / undo / game-end happened during analysis
+	await _promote_deep_best()
+	if g != _gen:
+		return
 	_push_eval_from_ranked()
 
 	var picks := ChessBotScript.select_options(_ranked)
@@ -318,6 +330,36 @@ func _rank_position() -> Array:
 		if not ranked.is_empty():
 			return ranked
 	return bot.rank_moves(rules, ChessBotScript.ANALYSIS_DEPTH)
+
+
+## Deepen ONLY the best line: a single full-strength search (think time scaled to
+## the opponent) replaces the shallow pass's #1, lifted to the front of _ranked as
+## the reference best. So "best" is genuinely strong vs deep-searching bots, while
+## the wide spread (decent / blunder / grading) stays cheap. Fallback path is a
+## no-op (the GDScript ranker has no separate deep search).
+func _promote_deep_best() -> void:
+	if not (_use_sf and stockfish.available) or _ranked.is_empty():
+		return
+	var g := _gen
+	var mt: int = clampi(int(bot_def.get("movetime", 400)) + BEST_MOVETIME_MARGIN,
+		BEST_MOVETIME_FLOOR, BEST_MOVETIME_CAP)
+	var uci: String = await stockfish.best_move(rules.get_fen(), {"skill": 20, "movetime": mt})
+	if g != _gen:
+		return  # undo / restart / game-end happened during the deep search → don't touch _ranked
+	var best_move := rules.move_from_uci(uci)
+	if best_move < 0:
+		return
+	var top_score: int = int(_ranked[0]["score"])
+	for i in _ranked.size():
+		if int(_ranked[i]["move"]) == best_move:
+			var e: Dictionary = _ranked[i]
+			_ranked.remove_at(i)
+			_ranked.insert(0, e)
+			break
+	if int(_ranked[0]["move"]) != best_move:  # wasn't in the spread → prepend it
+		_ranked.insert(0, {"move": best_move, "score": top_score})
+	# It is the true best, so it must carry the top score (keeps cp-loss grading sane).
+	_ranked[0]["score"] = maxi(int(_ranked[0]["score"]), top_score)
 
 
 func _ranked_from_sf(lines: Array) -> Array:
