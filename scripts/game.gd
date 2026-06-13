@@ -1,28 +1,21 @@
 extends Control
 
-## The game screen — ties ChessRules, the engine, and the board together.
+## The game screen. Brain = Stockfish (StockfishEngine, ext or pipe transport),
+## fallback = the built-in ChessBot. ChessRules stays the source of truth.
 ##
-## The BRAIN is Stockfish (via [StockfishEngine]) when available, otherwise the
-## built-in GDScript [ChessBot]. Either way, [ChessRules] stays the source of
-## truth for legality / SAN / draws / highlights.
-##
-## Loop per human turn:
-##   1. analyse the position (full-strength MultiPV)
-##   2. pick three options — best / not-bad / blunder — shuffle, show as arrows
-##   3. player taps one → grade it, award coins, REVEAL the qualities, feedback
-##   4. play it, then the bot replies (or the other human, in pass-and-play)
-##
-## Every game: the player's colour is RANDOM, and White's first move is an
-## auto-chosen random good opening — so you keep meeting fresh positions.
+## Loop per human turn: analyse → show three neutral option arrows → player taps
+## one → grade it, REVEAL qualities (colour + shape symbol), slow-slide the piece
+## (bullet-time), commit, then the bot replies. Every game: random player colour,
+## and White's first move is an auto-chosen random good opening.
 
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
 const StockfishEngineScript := preload("res://scripts/chess/stockfish_engine.gd")
 
-## Depth of the full-strength teaching/analysis pass (the 3 options + grading).
-## Depth 10 keeps the move ranking solid while keeping the per-turn wait short.
 const ANALYSIS_DEPTH_SF := 10
-## Moves within this many centipawns of the best count as "good" openings.
 const OPENING_WINDOW_CP := 55
+const REVEAL_SLIDE_SEC := 1.2   ## slow bullet-time slide of the chosen piece
+const REVEAL_HOLD_SEC := 0.55   ## extra pause so the result can be read
+const BOT_SLIDE_SEC := 0.35
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -34,9 +27,12 @@ const OPENING_WINDOW_CP := 55
 @onready var result_title: Label = %ResultTitle
 @onready var result_text: Label = %ResultText
 @onready var result_quote: Label = %ResultQuote
+@onready var confirm_overlay: Control = %ConfirmOverlay
+@onready var confirm_title: Label = %ConfirmTitle
+@onready var confirm_message: Label = %ConfirmMessage
 
 var rules: ChessRules
-var bot: ChessBot                 ## fallback engine (used only if Stockfish absent)
+var bot: ChessBot
 var stockfish: StockfishEngine
 var _use_sf := false
 var bot_def: Dictionary
@@ -46,6 +42,10 @@ var _ranked: Array = []
 var _history: Array = []
 var _busy := false
 var _game_over := false
+var _pending_action := ""
+## Bumped on every new game; async turn coroutines bail if it changed under them
+## (e.g. the player restarts mid-animation or mid-bot-think).
+var _gen := 0
 
 
 func _ready() -> void:
@@ -61,10 +61,16 @@ func _ready() -> void:
 	_refresh_coins()
 	GameManager.coins_changed.connect(_refresh_coins)
 	result_overlay.visible = false
+	confirm_overlay.visible = false
 
-	var safe := DisplayServer.get_display_safe_area()
-	$TopBar.offset_top = max(safe.position.y, 16)
+	var menu := $TopBar/Menu as MenuButton
+	var popup := menu.get_popup()
+	popup.add_item("Restart", 0)
+	popup.add_item("Give up", 1)
+	popup.id_pressed.connect(_on_menu)
 
+	_layout_for_safe_area()
+	feedback.text = ""
 	_begin()
 
 
@@ -76,7 +82,18 @@ func _notification(what: int) -> void:
 func _exit_tree() -> void:
 	if GameManager.coins_changed.is_connected(_refresh_coins):
 		GameManager.coins_changed.disconnect(_refresh_coins)
-	# stockfish stops itself in its own _exit_tree.
+
+
+## Push the top bar / labels / board down past the device notch.
+func _layout_for_safe_area() -> void:
+	var top: int = max(DisplayServer.get_display_safe_area().position.y, 16)
+	$TopBar.offset_top = top
+	$TopBar.offset_bottom = top + 68
+	feedback.offset_top = top + 80
+	feedback.offset_bottom = top + 134
+	status_label.offset_top = top + 138
+	status_label.offset_bottom = top + 176
+	board.offset_top = top + 184
 
 
 func _setup_opponent_panel() -> void:
@@ -96,14 +113,14 @@ func _refresh_coins() -> void:
 
 func _begin() -> void:
 	status_label.text = "Setting up…"
-	feedback.text = ""
 	_busy = true
 	_use_sf = stockfish.start()
 	_new_game()
 
 
-## Start a fresh board: random colour, random opening for White, then play.
 func _new_game() -> void:
+	_gen += 1  # invalidate any in-flight turn coroutine from the previous game
+	board.end_animation()
 	if not GameManager.pass_and_play:
 		GameManager.player_is_white = randi() % 2 == 0
 	player_color = ChessRules.WHITE if GameManager.player_is_white else ChessRules.BLACK
@@ -112,11 +129,13 @@ func _new_game() -> void:
 	rules.reset_startpos()
 	_history.clear()
 	_game_over = false
-	board.set_last_move(-1)
+	board.clear_last_moves()
 	board.set_check_square(-1)
 	board.clear_options()
 	board.set_rules(rules)
 	result_overlay.visible = false
+	confirm_overlay.visible = false
+	feedback.text = ""
 	_record_position()
 	_play_random_opening()
 
@@ -137,15 +156,18 @@ func _is_human_turn() -> bool:
 	return GameManager.pass_and_play or rules.side_to_move == player_color
 
 
-## Auto-play White's first move (a random good opening) so games never start
-## identically and the White player keeps discovering openings.
 func _play_random_opening() -> void:
+	var g := _gen
 	_busy = true
 	status_label.text = "A fresh opening…"
-	feedback.text = ""
 	var ranked := await _rank_position()
+	if g != _gen:
+		return
 	var move := _pick_random_good(ranked)
 	if move != -1:
+		await board.animate_move(move, 0.4)
+		if g != _gen:
+			return
 		_play_move(move)
 	_advance()
 
@@ -164,7 +186,6 @@ func _pick_random_good(ranked: Array) -> int:
 func _present_options() -> void:
 	_busy = true
 	status_label.text = "Reading the position…"
-	feedback.text = ""
 	_ranked = await _rank_position()
 
 	var picks := ChessBotScript.select_options(_ranked)
@@ -178,18 +199,16 @@ func _present_options() -> void:
 	options.shuffle()
 	board.set_options(options, true)
 
-	var mover := "White" if rules.side_to_move == ChessRules.WHITE else "Black"
-	if GameManager.pass_and_play:
+	if options.size() == 1:
+		status_label.text = "Only one move here."
+	elif GameManager.pass_and_play:
+		var mover := "White" if rules.side_to_move == ChessRules.WHITE else "Black"
 		status_label.text = "%s to move, find the best!" % mover
 	else:
 		status_label.text = "Your move, find the best!"
-	var n := options.size()
-	feedback.text = "Tap one of the %d moves." % n if n != 1 else "Only one move here, tap it."
 	_busy = false
 
 
-## Rank every legal move from the moving side's view (best first). Stockfish when
-## available, else the built-in engine.
 func _rank_position() -> Array:
 	if _use_sf and stockfish.available:
 		var legal := rules.generate_legal_moves()
@@ -201,7 +220,6 @@ func _rank_position() -> Array:
 	return bot.rank_moves(rules, ChessBotScript.ANALYSIS_DEPTH)
 
 
-## Convert Stockfish's UCI/centipawn lines into our {move, score} ranked list.
 func _ranked_from_sf(lines: Array) -> Array:
 	var by_uci := {}
 	for m in rules.generate_legal_moves():
@@ -218,26 +236,33 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	if _busy:
 		return
 	_busy = true
+	var g := _gen
 
 	var move: int = opt["move"]
 	var grade := ChessBotScript.grade_move(_ranked, move)
-	var best_move: int = grade["best_move"]
-	var best_san := rules.to_san(best_move)
+	var best_san := rules.to_san(grade["best_move"])
 
 	match opt.get("quality", ""):
 		"best":
 			GameManager.add_best_coin()
-			feedback.text = "★ Best move!  +1 coin"
+			feedback.text = "★ Best move!   +1 coin"
 		"decent":
-			feedback.text = "%s. Not bad, the best was %s." % [grade["label"], best_san]
+			feedback.text = "%s. The best was %s." % [grade["label"], best_san]
 		"blunder":
 			GameManager.add_blunder_coin()
 			feedback.text = "The blunder! The best was %s." % best_san
 		_:
 			feedback.text = "%s. Best was %s." % [grade["label"], best_san]
+	status_label.text = ""
 
+	# Reveal the qualities, then slow-slide the chosen piece (bullet time).
 	board.reveal()
-	await get_tree().create_timer(1.4).timeout
+	await board.animate_move(move, REVEAL_SLIDE_SEC)
+	if g != _gen:
+		return
+	await get_tree().create_timer(REVEAL_HOLD_SEC).timeout
+	if g != _gen:
+		return
 
 	_play_move(move)
 	board.clear_options()
@@ -245,10 +270,12 @@ func _on_option_chosen(opt: Dictionary) -> void:
 
 
 func _bot_move() -> void:
+	var g := _gen
 	_busy = true
 	status_label.text = "%s is thinking…" % bot_def.get("name", "Bot")
-	feedback.text = ""
 	await get_tree().process_frame
+	if g != _gen:
+		return
 
 	var move := -1
 	if _use_sf and stockfish.available:
@@ -256,24 +283,32 @@ func _bot_move() -> void:
 			"skill": bot_def.get("sf_skill", 10),
 			"movetime": bot_def.get("movetime", 200),
 		})
+		if g != _gen:
+			return
 		move = rules.move_from_uci(uci)
 	if move == -1:
 		await get_tree().create_timer(0.2).timeout
+		if g != _gen:
+			return
 		move = bot.choose_move(rules, bot_def.get("depth", 2), bot_def.get("weakness", 0.3))
 	if move < 0:
 		_advance()
 		return
 
+	await board.animate_move(move, BOT_SLIDE_SEC)
+	if g != _gen:
+		return
 	_play_move(move)
-	await get_tree().create_timer(0.15).timeout
 	_busy = false
 	_advance()
 
 
 func _play_move(move: int) -> void:
+	var mover := rules.side_to_move
 	rules.make_move(move)
-	board.set_last_move(move)
+	board.set_last_move(move, mover)
 	board.set_rules(rules)
+	board.end_animation()  # commit done → drop the slide overlay (piece is now at dest)
 	_record_position()
 
 
@@ -347,15 +382,36 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_overlay.visible = true
 
 
-# --- Buttons ---
+# --- Menu + confirm ---
 
-func _on_restart_pressed() -> void:
-	if _busy and not _game_over:
-		return  # don't restart mid-think
-	_new_game()
+func _on_menu(id: int) -> void:
+	match id:
+		0: _ask_confirm("restart", "Restart game?", "Start over from a fresh position?")
+		1: _ask_confirm("give_up", "Give up?", "Resign and end this game?")
 
 
-func _on_give_up_pressed() -> void:
+func _ask_confirm(action: String, title: String, message: String) -> void:
+	_pending_action = action
+	confirm_title.text = title
+	confirm_message.text = message
+	confirm_overlay.visible = true
+
+
+func _on_confirm_no() -> void:
+	confirm_overlay.visible = false
+	_pending_action = ""
+
+
+func _on_confirm_yes() -> void:
+	confirm_overlay.visible = false
+	var action := _pending_action
+	_pending_action = ""
+	match action:
+		"restart": _new_game()
+		"give_up": _do_give_up()
+
+
+func _do_give_up() -> void:
 	if _game_over:
 		return
 	_game_over = true

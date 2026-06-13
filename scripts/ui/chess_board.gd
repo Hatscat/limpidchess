@@ -1,33 +1,41 @@
 extends Control
 
-## Custom-drawn chess board: squares, pieces, highlights, and the three guided
-## move "arrows". It owns rendering + hit-testing only; game flow lives in
-## [game.gd]. The board never decides legality — it draws what it's given.
+## Custom-drawn chess board: squares, pieces, highlights, the three guided move
+## arrows, and a slow piece-slide animation. Rendering + hit-testing only; game
+## flow lives in [game.gd]. The board never decides legality.
 ##
-## The three options are drawn NEUTRALLY (numbered badges, one accent colour) so
-## the player has to *find* the best move. Quality colours (green/blue/red) only
-## appear after reveal(). Options are passed pre-shuffled so slot order leaks
-## nothing.
+## The three options are drawn NEUTRALLY before a choice (one accent colour, no
+## labels) so the player must FIND the best move. On reveal() each arrow takes
+## its quality colour AND a shape symbol (check / dash / cross) so the result is
+## readable without relying on colour (colour-blind friendly).
 
 signal option_chosen(option: Dictionary)
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
 const BADGE_FONT := preload("res://assets/fonts/OpenDyslexic-Regular.otf")
 
-# Piece textures keyed by ChessRules piece code.
 var _tex := {}
 
 var rules: ChessRules = null
-var flipped := false                 ## true → black at the bottom
-var last_move := -1                  ## highlight both squares of this move
-var check_square := -1               ## highlight king in check
+var flipped := false
+
+# Last move per side, so BOTH the player's and the opponent's last move stay lit.
+var _last_white := -1
+var _last_black := -1
+var check_square := -1
 
 # Options: Array of { move:int, quality:String("best"|"decent"|"blunder") }.
 var _options: Array = []
-var _revealed := false               ## once revealed, arrows show quality colours
-var _interactive := false            ## accept taps on options
+var _revealed := false
+var _interactive := false
 
-# Cached layout (recomputed each _draw).
+# Piece-slide animation (used during the reveal).
+var _anim_active := false
+var _anim_from := -1
+var _anim_to := -1
+var _anim_piece := 0
+var _anim_progress := 0.0
+
 var _cell := 0.0
 var _origin := Vector2.ZERO
 
@@ -54,8 +62,18 @@ func set_rules(r: ChessRules) -> void:
 	queue_redraw()
 
 
-func set_last_move(move: int) -> void:
-	last_move = move
+## Record the last move of `color` (highlights both sides' latest moves).
+func set_last_move(move: int, color: int) -> void:
+	if color == Rules.WHITE:
+		_last_white = move
+	else:
+		_last_black = move
+	queue_redraw()
+
+
+func clear_last_moves() -> void:
+	_last_white = -1
+	_last_black = -1
 	queue_redraw()
 
 
@@ -64,7 +82,6 @@ func set_check_square(sq: int) -> void:
 	queue_redraw()
 
 
-## Present the three options (pre-shuffled). interactive=true lets the player tap.
 func set_options(options: Array, interactive := true) -> void:
 	_options = options
 	_revealed = false
@@ -79,10 +96,38 @@ func clear_options() -> void:
 	queue_redraw()
 
 
-## Recolour the arrows by quality (after the player has chosen).
 func reveal() -> void:
 	_revealed = true
 	_interactive = false
+	queue_redraw()
+
+
+## Slide the piece of `move` from its origin to its target over `duration` secs.
+## Await-able. The board keeps showing the pre-move position underneath.
+func animate_move(move: int, duration: float) -> void:
+	if rules == null:
+		return
+	_anim_from = Rules.move_from(move)
+	_anim_to = Rules.move_to(move)
+	_anim_piece = rules.board[_anim_from]
+	_anim_progress = 0.0
+	_anim_active = true
+	var tw := create_tween()
+	tw.tween_method(_set_anim_progress, 0.0, 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tw.finished
+	# Leave the piece parked at the destination (anim still active, progress = 1)
+	# until the caller commits the move and calls end_animation(). Clearing here
+	# would snap the piece back to its origin (move not committed yet).
+
+
+## Stop the slide overlay; call right after the move is committed to rules.
+func end_animation() -> void:
+	_anim_active = false
+	queue_redraw()
+
+
+func _set_anim_progress(v: float) -> void:
+	_anim_progress = v
 	queue_redraw()
 
 
@@ -113,58 +158,93 @@ func _draw_squares() -> void:
 
 
 func _draw_highlights() -> void:
-	if last_move >= 0:
-		draw_rect(_square_rect(Rules.move_from(last_move)), UI.HL_LAST_MOVE)
-		draw_rect(_square_rect(Rules.move_to(last_move)), UI.HL_LAST_MOVE)
+	for m in [_last_white, _last_black]:
+		if m >= 0:
+			draw_rect(_square_rect(Rules.move_from(m)), UI.HL_LAST_MOVE)
+			draw_rect(_square_rect(Rules.move_to(m)), UI.HL_LAST_MOVE)
 	if check_square >= 0:
 		draw_rect(_square_rect(check_square), UI.HL_CHECK)
 
 
 func _draw_pieces() -> void:
 	for sq in 64:
+		if _anim_active and sq == _anim_from:
+			continue  # the moving piece is drawn separately, mid-slide
 		var p: int = rules.board[sq]
 		if p == 0:
 			continue
 		var tex: Texture2D = _tex.get(p)
 		if tex:
 			draw_texture_rect(tex, _square_rect(sq), false)
+	if _anim_active:
+		var tex: Texture2D = _tex.get(_anim_piece)
+		if tex:
+			var from_r := _square_rect(_anim_from)
+			var to_r := _square_rect(_anim_to)
+			var pos := from_r.position.lerp(to_r.position, _anim_progress)
+			draw_texture_rect(tex, Rect2(pos, Vector2(_cell, _cell)), false)
 
 
 func _draw_options() -> void:
-	for i in _options.size():
-		var opt: Dictionary = _options[i]
+	for opt in _options:
 		var col := UI.ACCENT
 		if _revealed:
 			match opt.get("quality", ""):
 				"best": col = UI.MOVE_BEST
 				"decent": col = UI.MOVE_DECENT
 				"blunder": col = UI.MOVE_BLUNDER
-		_draw_arrow(opt["move"], col, i + 1)
+		_draw_arrow(opt["move"], col, opt.get("quality", "") if _revealed else "")
 
 
-func _draw_arrow(move: int, col: Color, number: int) -> void:
+func _draw_arrow(move: int, col: Color, quality: String) -> void:
 	var from := _square_center(Rules.move_from(move))
 	var to := _square_center(Rules.move_to(move))
 	var dir := (to - from).normalized()
-	var head := _cell * 0.30
-	# Stop the shaft short of the target so the head sits cleanly on the square.
-	var shaft_end := to - dir * head * 0.9
-	var width := _cell * 0.16
-	draw_line(from, shaft_end, Color(col, 0.85), width, true)
-	# Arrowhead.
 	var perp := Vector2(-dir.y, dir.x)
-	var p1 := to - dir * head + perp * head * 0.6
-	var p2 := to - dir * head - perp * head * 0.6
-	draw_colored_polygon(PackedVector2Array([to, p1, p2]), Color(col, 0.9))
-	# Numbered badge at the target so the player can pick by number.
-	var badge_r := _cell * 0.22
-	draw_circle(to, badge_r, Color(0.07, 0.08, 0.10, 0.92))
-	draw_arc(to, badge_r, 0, TAU, 24, Color(col, 1.0), 2.0, true)
-	var label := str(number)
-	var fs := int(_cell * 0.34)
-	var ts := BADGE_FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, fs)
-	draw_string(BADGE_FONT, to - ts * 0.5 + Vector2(0, ts.y * 0.35), label,
-		HORIZONTAL_ALIGNMENT_CENTER, -1, fs, Color(1, 1, 1, 1))
+
+	# Geometry: shaft runs all the way to the target so it joins the head/dot
+	# (no gap); a big arrowhead sits over the target dot, hovering it.
+	var shaft_w := _cell * 0.15
+	var dot_r := _cell * 0.18
+	var tip := to + dir * _cell * 0.26
+	var base := to - dir * _cell * 0.20
+	var hw := _cell * 0.25
+	var p1 := base + perp * hw
+	var p2 := base - perp * hw
+
+	# Dark outline pass (slightly larger) so the arrow reads on light or dark squares.
+	var outline := Color(0.04, 0.05, 0.08, 0.55)
+	var e := _cell * 0.05
+	draw_line(from, to, outline, shaft_w + e * 2.0, true)
+	draw_circle(to, dot_r + e, outline)
+	draw_colored_polygon(PackedVector2Array([
+		tip + dir * e, p1 + (perp * e) - (dir * e), p2 - (perp * e) - (dir * e),
+	]), outline)
+
+	# Colour pass.
+	draw_line(from, to, Color(col, 0.95), shaft_w, true)
+	draw_circle(to, dot_r, Color(col, 0.95))
+	draw_colored_polygon(PackedVector2Array([tip, p1, p2]), Color(col, 1.0))
+
+	# On reveal, a shape symbol so the result reads without colour.
+	if quality != "":
+		_draw_quality_symbol(to, quality)
+
+
+## A small white shape over the dot: check = best, dash = decent, cross = blunder.
+func _draw_quality_symbol(c: Vector2, quality: String) -> void:
+	var s := _cell * 0.16
+	var w := maxf(2.0, _cell * 0.05)
+	var white := Color(1, 1, 1, 0.95)
+	match quality:
+		"best":  # checkmark
+			draw_line(c + Vector2(-s, 0), c + Vector2(-s * 0.2, s * 0.7), white, w, true)
+			draw_line(c + Vector2(-s * 0.2, s * 0.7), c + Vector2(s, -s * 0.7), white, w, true)
+		"decent":  # dash
+			draw_line(c + Vector2(-s, 0), c + Vector2(s, 0), white, w, true)
+		"blunder":  # cross
+			draw_line(c + Vector2(-s, -s), c + Vector2(s, s), white, w, true)
+			draw_line(c + Vector2(-s, s), c + Vector2(s, -s), white, w, true)
 
 
 # --- Geometry ---
@@ -184,7 +264,7 @@ func _square_center(sq: int) -> Vector2:
 
 func _point_to_square(pos: Vector2) -> int:
 	if _cell <= 0:
-		return -1  # board hasn't been laid out yet (no _draw has run)
+		return -1
 	var local := pos - _origin
 	if local.x < 0 or local.y < 0 or local.x >= _cell * 8 or local.y >= _cell * 8:
 		return -1
@@ -214,8 +294,8 @@ func _gui_input(event: InputEvent) -> void:
 	var sq := _point_to_square(pos)
 	if sq < 0:
 		return
-	# A tap on an option's target square (or its badge) plays that option.
-	# Options are guaranteed distinct target squares (see ChessBot.select_options).
+	# Options have distinct target squares (see ChessBot.select_options), so a tap
+	# on a destination unambiguously picks one.
 	for opt in _options:
 		if Rules.move_to(opt["move"]) == sq:
 			option_chosen.emit(opt)
