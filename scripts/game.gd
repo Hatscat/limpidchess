@@ -314,8 +314,8 @@ func _present_options() -> void:
 	if options.size() == 1:
 		status_label.text = "Only one move here."
 	elif GameManager.pass_and_play:
-		var mover := "White" if rules.side_to_move == ChessRules.WHITE else "Black"
-		status_label.text = "%s to move, find the best!" % mover
+		var mover := tr("White") if rules.side_to_move == ChessRules.WHITE else tr("Black")
+		status_label.text = tr("%s to move, find the best!") % mover
 	else:
 		status_label.text = "Your move, find the best!"
 	_busy = false
@@ -387,16 +387,16 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	match opt.get("quality", ""):
 		"best":
 			_best_count += 1
-			feedback.text = "★ Best move!"
+			feedback.text = tr("★ Best move!")
 		"decent":
 			_decent_count += 1
-			feedback.text = "%s. The best was %s." % [grade["label"], best_san]
+			feedback.text = tr("%s. The best was %s.") % [tr(grade["label"]), best_san]
 		"blunder":
 			_blunder_count += 1
-			feedback.text = "The blunder! The best was %s." % best_san
+			feedback.text = tr("The blunder! The best was %s.") % best_san
 		_:
 			_decent_count += 1
-			feedback.text = "%s. Best was %s." % [grade["label"], best_san]
+			feedback.text = tr("%s. Best was %s.") % [tr(grade["label"]), best_san]
 	status_label.text = ""
 
 	# Reveal the qualities, then slow-slide the chosen piece (bullet time).
@@ -417,7 +417,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 func _bot_move() -> void:
 	var g := _gen
 	_busy = true
-	status_label.text = "%s is thinking…" % bot_def.get("name", "Bot")
+	status_label.text = tr("%s is thinking…") % bot_def.get("name", "Bot")
 	await get_tree().process_frame
 	if g != _gen:
 		return
@@ -569,7 +569,7 @@ func _check_game_over() -> bool:
 			var human_won := (not GameManager.pass_and_play) and winner == player_color
 			if GameManager.pass_and_play:
 				title = "Checkmate"
-				text = "%s wins!" % ("White" if winner == ChessRules.WHITE else "Black")
+				text = tr("%s wins!") % (tr("White") if winner == ChessRules.WHITE else tr("Black"))
 			elif human_won:
 				title = "You win!"
 				text = "Checkmate. Well played."
@@ -577,7 +577,7 @@ func _check_game_over() -> bool:
 				GameManager.record_result("win")
 			else:
 				title = "Checkmate"
-				text = "%s got you this time." % bot_def.get("name", "The bot")
+				text = tr("%s got you this time.") % bot_def.get("name", "The bot")
 				quote_key = "loss"
 				GameManager.record_result("loss")
 		ChessRules.Outcome.STALEMATE:
@@ -623,12 +623,12 @@ func _finish_game_after_delay(title: String, text: String, quote_key: String) ->
 func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
-	review_best.text = "%d best" % _best_count
-	review_avg.text = "%d average" % _decent_count
-	review_blunder.text = "%d blunder" % _blunder_count
+	review_best.text = tr("%d best") % _best_count
+	review_avg.text = tr("%d average") % _decent_count
+	review_blunder.text = tr("%d blunder") % _blunder_count
 	GameManager.record_game_review(_best_count, _blunder_count)
 	var q := Quotes.for_outcome(quote_key)
-	result_quote.text = "“%s”\n%s" % [q["text"], q["author"]]
+	result_quote.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
 	result_overlay.visible = true
 
 

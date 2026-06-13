@@ -17,7 +17,7 @@ const PRICE := "$3.99"
 func _ready() -> void:
 	var safe := DisplayServer.get_display_safe_area()
 	$Content.offset_top = max(safe.position.y, 16)
-	%PriceLabel.text = "%s · one-time, forever" % PRICE
+	%PriceLabel.text = tr("%s · one-time, forever") % tr(PRICE)
 	_refresh()
 
 
@@ -35,7 +35,7 @@ func _refresh() -> void:
 	else:
 		status_label.visible = false
 		get_button.disabled = false
-		get_button.text = "Unlock Premium  ·  %s" % PRICE
+		get_button.text = tr("Unlock Premium  ·  %s") % tr(PRICE)
 
 
 func _on_get_pressed() -> void:

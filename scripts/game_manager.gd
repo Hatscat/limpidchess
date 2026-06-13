@@ -14,8 +14,16 @@ extends Node
 ## totals below persist.
 
 signal premium_changed
+signal language_changed
 
 const SAVE_PATH := "user://limpid_chess.cfg"
+
+## Shipped UI languages. `name` is shown in its OWN language (never translated).
+const LANGUAGES := [
+	{"code": "en", "name": "English"},
+	{"code": "fr", "name": "Français"},
+	{"code": "es", "name": "Español"},
+]
 
 const FREE_GAMES_PER_DAY := 3
 ## Sentinel "remaining games" for premium players (any value > 0 unlocks play).
@@ -23,6 +31,7 @@ const UNLIMITED_GAMES := 999
 
 # --- Persistent state ---
 var is_premium := false
+var language := ""           ## chosen UI locale code; "" = follow the device language
 var games_today := 0
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
 
@@ -42,7 +51,39 @@ var pass_and_play := false
 
 func _ready() -> void:
 	_load()
+	_apply_locale()
 	_roll_day()
+
+
+# --- Language ---
+
+## Apply the saved locale, or fall back to the device language (then English).
+func _apply_locale() -> void:
+	var code := language if language != "" else _device_language()
+	TranslationServer.set_locale(code)
+
+
+## The device's language IF we ship it, else "en".
+func _device_language() -> String:
+	var os_lang := OS.get_locale_language()
+	for l in LANGUAGES:
+		if l["code"] == os_lang:
+			return os_lang
+	return "en"
+
+
+## Set + persist the UI language ("" follows the device). Reload the current scene
+## (caller's job) so code-built strings re-render in the new language.
+func set_language(code: String) -> void:
+	language = code
+	_apply_locale()
+	_save()
+	language_changed.emit()
+
+
+## The locale code actually in effect right now (resolves "" to the device pick).
+func current_language() -> String:
+	return language if language != "" else _device_language()
 
 
 # --- Navigation ---
@@ -138,6 +179,7 @@ func set_premium(value: bool) -> void:
 func _save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("player", "is_premium", is_premium)
+	cfg.set_value("player", "language", language)
 	cfg.set_value("daily", "games_today", games_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
@@ -155,6 +197,7 @@ func _load() -> void:
 		return
 	# Coerce types defensively — a hand-edited / corrupt save shouldn't crash later math.
 	is_premium = bool(cfg.get_value("player", "is_premium", false))
+	language = str(cfg.get_value("player", "language", ""))
 	games_today = int(cfg.get_value("daily", "games_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))

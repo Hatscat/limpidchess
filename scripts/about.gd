@@ -22,7 +22,7 @@ func _notification(what: int) -> void:
 
 
 func _fill_stats() -> void:
-	stats.text = "Games played: %d\nWins %d · Draws %d · Losses %d\nBest moves found: %d\nBlunders: %d" % [
+	stats.text = tr("Games played: %d\nWins %d · Draws %d · Losses %d\nBest moves found: %d\nBlunders: %d") % [
 		GameManager.games_played, GameManager.wins, GameManager.draws, GameManager.losses,
 		GameManager.best_moves_found, GameManager.blunders_made,
 	]

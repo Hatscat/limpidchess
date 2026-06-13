@@ -8,6 +8,8 @@ extends Control
 @onready var bot_avatar: TextureRect = %BotAvatar
 @onready var bot_name: Label = %BotName
 @onready var quote_label: Label = %Quote
+@onready var settings_overlay: Control = %SettingsOverlay
+@onready var lang_list: VBoxContainer = %LangList
 
 
 func _ready() -> void:
@@ -15,7 +17,8 @@ func _ready() -> void:
 	$TopBar.offset_top = max(safe.position.y, 16)
 
 	var q := Quotes.random()
-	quote_label.text = "“%s”\n%s" % [q["text"], q["author"]]
+	quote_label.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
+	settings_overlay.visible = false
 
 	var bot := _selected_bot()
 	bot_avatar.texture = load(BotRoster.avatar_path(bot))
@@ -28,7 +31,7 @@ func _refresh_games() -> void:
 	if GameManager.is_premium:
 		games_label.text = "Premium · ∞"
 	else:
-		games_label.text = "%d / %d today" % [GameManager.games_remaining_today(), GameManager.FREE_GAMES_PER_DAY]
+		games_label.text = tr("%d / %d today") % [GameManager.games_remaining_today(), GameManager.FREE_GAMES_PER_DAY]
 
 
 func _selected_bot() -> Dictionary:
@@ -52,3 +55,46 @@ func _on_pass_play_pressed() -> void:
 		GameManager.start_pass_and_play()
 	else:
 		GameManager.go_to_premium()
+
+
+# --- Settings (language; sound toggle later) ---
+
+func _on_settings_pressed() -> void:
+	_build_lang_list()
+	settings_overlay.visible = true
+
+
+func _on_settings_close() -> void:
+	settings_overlay.visible = false
+
+
+func _build_lang_list() -> void:
+	for c in lang_list.get_children():
+		c.queue_free()
+	var current := GameManager.current_language()
+	for lang in GameManager.LANGUAGES:
+		var b := Button.new()
+		b.text = lang["name"]  # shown in its OWN language, never translated
+		b.auto_translate_mode = Control.AUTO_TRANSLATE_MODE_DISABLED
+		b.custom_minimum_size = Vector2(0, 60)
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_font_size_override("font_size", 22)
+		var selected: bool = lang["code"] == current
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = UI.SURFACE
+		sb.set_corner_radius_all(16)
+		sb.set_border_width_all(2 if selected else 1)
+		sb.border_color = UI.ACCENT if selected else UI.BORDER_SUBTLE
+		b.add_theme_stylebox_override("normal", sb)
+		b.add_theme_stylebox_override("hover", sb)
+		b.add_theme_stylebox_override("pressed", sb)
+		b.pressed.connect(_on_language_chosen.bind(lang["code"]))
+		lang_list.add_child(b)
+
+
+func _on_language_chosen(code: String) -> void:
+	if code == GameManager.current_language():
+		settings_overlay.visible = false
+		return
+	GameManager.set_language(code)
+	GameManager.go_to_home()  # reload so every string (incl. code-built) re-renders
