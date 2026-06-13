@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" uid="uid://c1jx7yw5723wa" path="res://scripts/home.gd" id="1_home"]
 [ext_resource type="PackedScene" uid="uid://dup7j366xg0q3" path="res://scenes/nav_bar.tscn" id="2_nav"]
-[ext_resource type="Texture2D" path="res://assets/icons/board.svg" id="3_target"]
+[ext_resource type="Texture2D" path="res://assets/icons/board_blank.svg" id="3_board"]
 [ext_resource type="Texture2D" uid="uid://218lqwovgsyp" path="res://assets/icons/handshake.png" id="4_handshake"]
+[ext_resource type="Texture2D" path="res://assets/pieces/w_pawn.png" id="5_wpawn"]
+[ext_resource type="Texture2D" path="res://assets/pieces/b_pawn.png" id="6_bpawn"]
 
 [sub_resource type="StyleBoxFlat" id="sb_pill"]
 content_margin_left = 14.0
@@ -131,7 +133,7 @@ theme_override_constants/separation = 18
 alignment = 1
 
 [node name="PlayCard" type="Button" parent="Center/VBox" unique_id=1507789893]
-custom_minimum_size = Vector2(460, 460)
+custom_minimum_size = Vector2(348, 444)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
@@ -139,37 +141,91 @@ theme_override_styles/normal = SubResource("sb_card")
 theme_override_styles/pressed = SubResource("sb_card")
 theme_override_styles/hover = SubResource("sb_card")
 
-[node name="Icon" type="TextureRect" parent="Center/VBox/PlayCard" unique_id=1953590016]
+[node name="Content" type="VBoxContainer" parent="Center/VBox/PlayCard"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 80.0
-offset_top = 80.0
-offset_right = -80.0
-offset_bottom = -80.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("3_target")
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="BoardBox" type="Control" parent="Center/VBox/PlayCard/Content"]
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="Board" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_board")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PlayTitle" type="Label" parent="Center/VBox" unique_id=1733001195]
+[node name="WPawn" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 72.0
+offset_right = 72.0
+offset_bottom = 128.0
+mouse_filter = 2
+texture = ExtResource("5_wpawn")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BPawn" type="TextureRect" parent="Center/VBox/PlayCard/Content/BoardBox"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 128.0
+offset_right = 184.0
+offset_bottom = 184.0
+mouse_filter = 2
+texture = ExtResource("6_bpawn")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NewGame" type="Label" parent="Center/VBox/PlayCard/Content"]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 28
-text = "Play"
+theme_override_font_sizes/font_size = 32
+text = "New game"
 horizontal_alignment = 1
 
-[node name="PlaySubtitle" type="Label" parent="Center/VBox" unique_id=1326238565]
-unique_name_in_owner = true
-modulate = Color(1, 1, 1, 0.6)
+[node name="BotRow" type="HBoxContainer" parent="Center/VBox/PlayCard/Content"]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 16
-text = "vs Biscuit"
-horizontal_alignment = 1
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BotAvatar" type="TextureRect" parent="Center/VBox/PlayCard/Content/BotRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BotName" type="Label" parent="Center/VBox/PlayCard/Content/BotRow"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.85)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 22
+text = "Biscuit"
+vertical_alignment = 1
 
 [node name="Quote" type="Label" parent="Center/VBox" unique_id=1795714338]
 unique_name_in_owner = true

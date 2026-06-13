@@ -40,8 +40,9 @@ const TEXT_FADED := Color(1, 1, 1, 0.45)
 const BOARD_LIGHT := Color(0.90, 0.91, 0.89, 1)
 ## Dark squares — calm slate blue (the "limpid water" feel).
 const BOARD_DARK := Color(0.46, 0.57, 0.66, 1)
-## Translucent overlay marking both squares of the last move played.
-const HL_LAST_MOVE := Color(0.96, 0.84, 0.36, 0.42)
+## Last move played, tinted per side so it's clear who moved last.
+const HL_LAST_WHITE := Color(0.96, 0.84, 0.36, 0.45)  ## warm amber = White's last move
+const HL_LAST_BLACK := Color(0.66, 0.56, 0.96, 0.48)  ## cool violet = Black's last move
 ## Square the player has tapped / is moving from.
 const HL_SELECTED := Color(0.40, 0.74, 0.85, 0.55)
 ## King-in-check square.

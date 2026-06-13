@@ -581,9 +581,9 @@ func _finish_game_after_delay(title: String, text: String, quote_key: String) ->
 func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
-	review_best.text = "★   %d best" % _best_count
-	review_avg.text = "~   %d average" % _decent_count
-	review_blunder.text = "✗   %d blunder" % _blunder_count
+	review_best.text = "%d best" % _best_count
+	review_avg.text = "%d average" % _decent_count
+	review_blunder.text = "%d blunder" % _blunder_count
 	GameManager.record_game_review(_best_count, _blunder_count)
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [q["text"], q["author"]]

@@ -239,17 +239,32 @@ theme_override_font_sizes/font_size = 16
 text = "THIS GAME"
 horizontal_alignment = 1
 
-[node name="ReviewBox" type="VBoxContainer" parent="ResultOverlay/Card/VBox"]
+[node name="ReviewBox" type="GridContainer" parent="ResultOverlay/Card/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 14
-alignment = 1
+size_flags_horizontal = 4
+columns = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 16
+
+[node name="SymBest" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+modulate = Color(0.36, 0.78, 0.52, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "!!"
+horizontal_alignment = 1
 
 [node name="ReviewBest" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
 unique_name_in_owner = true
 modulate = Color(0.36, 0.78, 0.52, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "★   0 best"
+text = "0 best"
+
+[node name="SymAvg" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+modulate = Color(0.46, 0.66, 0.95, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "="
 horizontal_alignment = 1
 
 [node name="ReviewAvg" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
@@ -257,7 +272,13 @@ unique_name_in_owner = true
 modulate = Color(0.46, 0.66, 0.95, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "~   0 average"
+text = "0 average"
+
+[node name="SymBlunder" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+modulate = Color(0.91, 0.49, 0.44, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "??"
 horizontal_alignment = 1
 
 [node name="ReviewBlunder" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
@@ -265,8 +286,7 @@ unique_name_in_owner = true
 modulate = Color(0.91, 0.49, 0.44, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "✗   0 blunder"
-horizontal_alignment = 1
+text = "0 blunder"
 
 [node name="ResultQuote" type="Label" parent="ResultOverlay/Card/VBox" unique_id=414004909]
 unique_name_in_owner = true

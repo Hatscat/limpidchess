@@ -179,12 +179,17 @@ func _draw_squares() -> void:
 
 
 func _draw_highlights() -> void:
-	for m in [_last_white, _last_black]:
-		if m >= 0:
-			draw_rect(_square_rect(Rules.move_from(m)), UI.HL_LAST_MOVE)
-			draw_rect(_square_rect(Rules.move_to(m)), UI.HL_LAST_MOVE)
+	# Each side's last move gets its own tint (amber = White, violet = Black).
+	_draw_last_move(_last_white, UI.HL_LAST_WHITE)
+	_draw_last_move(_last_black, UI.HL_LAST_BLACK)
 	if check_square >= 0:
 		draw_rect(_square_rect(check_square), UI.HL_CHECK)
+
+
+func _draw_last_move(m: int, col: Color) -> void:
+	if m >= 0:
+		draw_rect(_square_rect(Rules.move_from(m)), col)
+		draw_rect(_square_rect(Rules.move_to(m)), col)
 
 
 func _draw_pieces() -> void:

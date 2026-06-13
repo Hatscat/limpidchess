@@ -5,7 +5,8 @@ extends Control
 ## specific opponent happens on the Bots tab.
 
 @onready var games_label: Label = %GamesLabel
-@onready var play_subtitle: Label = %PlaySubtitle
+@onready var bot_avatar: TextureRect = %BotAvatar
+@onready var bot_name: Label = %BotName
 @onready var quote_label: Label = %Quote
 
 
@@ -17,7 +18,8 @@ func _ready() -> void:
 	quote_label.text = "“%s”\n%s" % [q["text"], q["author"]]
 
 	var bot := _selected_bot()
-	play_subtitle.text = "vs %s" % bot.get("name", "a bot")
+	bot_avatar.texture = load(BotRoster.avatar_path(bot))
+	bot_name.text = bot.get("name", "a bot")
 
 	_refresh_games()
 
