@@ -187,6 +187,7 @@ static func select_options(ranked: Array) -> Dictionary:
 static func _pick_in_band(ranked: Array, best_score: int, lo: int, hi: int, used: Array) -> int:
 	var pick := -1
 	var dist := 1 << 30
+	@warning_ignore("integer_division")
 	var mid: int = (lo + hi) / 2
 	for i in range(1, ranked.size()):
 		var m: int = ranked[i]["move"]

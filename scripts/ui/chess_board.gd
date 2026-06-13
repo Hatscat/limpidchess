@@ -35,6 +35,10 @@ var _anim_from := -1
 var _anim_to := -1
 var _anim_piece := 0
 var _anim_progress := 0.0
+# Second slider: the rook during a castle, so it moves WITH the king (same progress).
+var _anim2_from := -1
+var _anim2_to := -1
+var _anim2_piece := 0
 
 var _cell := 0.0
 var _origin := Vector2.ZERO
@@ -112,6 +116,20 @@ func animate_move(move: int, duration: float) -> void:
 	_anim_piece = rules.board[_anim_from]
 	_anim_progress = 0.0
 	_anim_active = true
+
+	# Castle: also slide the rook from its corner to beside the king, in sync.
+	_anim2_from = -1
+	var flag := Rules.move_flag(move)
+	if flag == Rules.F_CASTLE_K or flag == Rules.F_CASTLE_Q:
+		var white := Rules.piece_color(_anim_piece) == Rules.WHITE
+		if flag == Rules.F_CASTLE_K:
+			_anim2_from = 7 if white else 63
+			_anim2_to = 5 if white else 61
+		else:
+			_anim2_from = 0 if white else 56
+			_anim2_to = 3 if white else 59
+		_anim2_piece = rules.board[_anim2_from]
+
 	var tw := create_tween()
 	tw.tween_method(_set_anim_progress, 0.0, 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await tw.finished
@@ -123,6 +141,7 @@ func animate_move(move: int, duration: float) -> void:
 ## Stop the slide overlay; call right after the move is committed to rules.
 func end_animation() -> void:
 	_anim_active = false
+	_anim2_from = -1
 	queue_redraw()
 
 
@@ -170,8 +189,8 @@ func _draw_highlights() -> void:
 
 func _draw_pieces() -> void:
 	for sq in 64:
-		if _anim_active and sq == _anim_from:
-			continue  # the moving piece is drawn separately, mid-slide
+		if _anim_active and (sq == _anim_from or sq == _anim2_from):
+			continue  # the moving piece(s) are drawn separately, mid-slide
 		var p: int = rules.board[sq]
 		if p == 0:
 			continue
@@ -179,12 +198,18 @@ func _draw_pieces() -> void:
 		if tex:
 			draw_texture_rect(tex, _square_rect(sq), false)
 	if _anim_active:
-		var tex: Texture2D = _tex.get(_anim_piece)
-		if tex:
-			var from_r := _square_rect(_anim_from)
-			var to_r := _square_rect(_anim_to)
-			var pos := from_r.position.lerp(to_r.position, _anim_progress)
-			draw_texture_rect(tex, Rect2(pos, Vector2(_cell, _cell)), false)
+		_draw_slider(_anim_piece, _anim_from, _anim_to)
+		if _anim2_from >= 0:
+			_draw_slider(_anim2_piece, _anim2_from, _anim2_to)
+
+
+## Draw a piece partway from `from_sq` to `to_sq` at the shared slide progress.
+func _draw_slider(piece: int, from_sq: int, to_sq: int) -> void:
+	var tex: Texture2D = _tex.get(piece)
+	if tex == null:
+		return
+	var pos := _square_rect(from_sq).position.lerp(_square_rect(to_sq).position, _anim_progress)
+	draw_texture_rect(tex, Rect2(pos, Vector2(_cell, _cell)), false)
 
 
 func _draw_options() -> void:

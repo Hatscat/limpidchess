@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameManager="*res://scripts/game_manager.gd"
+ChessEngine="*res://scripts/chess/stockfish_engine.gd"
 
 [display]
 

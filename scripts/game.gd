@@ -9,15 +9,15 @@ extends Control
 ## and White's first move is an auto-chosen random good opening.
 
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
-const StockfishEngineScript := preload("res://scripts/chess/stockfish_engine.gd")
 const CapturedStripScript := preload("res://scripts/ui/captured_strip.gd")
+const EvalBarScript := preload("res://scripts/ui/eval_bar.gd")
 
 ## Centipawn-ish piece values for the material lead (king excluded). pawn..queen.
 const PIECE_VALUE := {1: 1, 2: 3, 3: 3, 4: 5, 5: 9}
 
 const ANALYSIS_DEPTH_SF := 10
 const OPENING_WINDOW_CP := 55
-const REVEAL_SLIDE_SEC := 1.1   ## slow bullet-time slide of the chosen piece
+const REVEAL_SLIDE_SEC := 1.25   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.55   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
 
@@ -26,7 +26,6 @@ const BOT_SLIDE_SEC := 0.35
 @onready var status_label: Label = %Status
 @onready var opponent_name: Label = %OpponentName
 @onready var opponent_avatar: TextureRect = %OpponentAvatar
-@onready var coins_label: Label = %CoinsLabel
 @onready var result_overlay: Control = %ResultOverlay
 @onready var result_title: Label = %ResultTitle
 @onready var result_text: Label = %ResultText
@@ -65,12 +64,17 @@ var cap_bottom: Control    ## strip for the side at the BOTTOM (the player, vs a
 var _caps_white: PackedInt32Array = PackedInt32Array()
 var _caps_black: PackedInt32Array = PackedInt32Array()
 
+# Stockfish evaluation bar (bot games only; hidden in Pass & Play). Created in _ready.
+var eval_bar: Control
+
 
 func _ready() -> void:
 	rules = ChessRules.new()
 	bot = ChessBotScript.new()
-	stockfish = StockfishEngineScript.new()
-	add_child(stockfish)
+	# Shared, persistent engine (autoload): the embedded native Stockfish is a
+	# process-singleton, so every game reuses the one instance instead of spawning
+	# a fresh one (a second native engine produces no output).
+	stockfish = ChessEngine
 	bot_def = GameManager.current_bot if not GameManager.current_bot.is_empty() else BotRoster.default()
 
 	board.set_rules(rules)
@@ -80,13 +84,15 @@ func _ready() -> void:
 	# confirm overlays (later siblings) still draw on top.
 	cap_top = CapturedStripScript.new()
 	cap_bottom = CapturedStripScript.new()
+	eval_bar = EvalBarScript.new()
 	add_child(cap_top)
 	add_child(cap_bottom)
+	add_child(eval_bar)
 	move_child(cap_top, board.get_index() + 1)
 	move_child(cap_bottom, board.get_index() + 2)
+	move_child(eval_bar, board.get_index() + 3)
 
 	_setup_opponent_panel()
-	_refresh_coins()
 	result_overlay.visible = false
 	confirm_overlay.visible = false
 
@@ -112,8 +118,11 @@ func _notification(what: int) -> void:
 ## reach) · a captured-pieces strip per side. Sized from the live viewport so it
 ## adapts to any phone aspect / notch; re-runs on size_changed.
 const _BAR_H := 104.0          ## top bar height (fits the 88px portrait)
-const _FEED_H := 80.0          ## feedback box (room for a 2-line result)
-const _STATUS_H := 36.0
+const _EVAL_H := 26.0          ## evaluation bar height
+const _EVAL_TOP_GAP := 14.0    ## gap from the top bar to the eval bar
+const _FEED_H := 96.0          ## feedback box (room for a 2-line OpenDyslexic result)
+const _FEED_GAP := 10.0        ## gap between feedback and status
+const _STATUS_H := 38.0
 const _CAP_STRIP_H := 34.0     ## one captured-pieces strip
 const _CAP_GAP := 6.0          ## gap between the two strips
 const _CAP_TOP_GAP := 10.0     ## gap from board bottom to the first strip
@@ -126,13 +135,17 @@ func _layout_for_safe_area() -> void:
 	$TopBar.offset_top = top
 	$TopBar.offset_bottom = top + _BAR_H
 
-	var caption_block: float = _FEED_H + 6.0 + _STATUS_H + 12.0  # captions + gap to board
+	var caption_block: float = _FEED_H + _FEED_GAP + _STATUS_H + 12.0  # captions + gap to board
 	var captured_block: float = _CAP_TOP_GAP + _CAP_STRIP_H + _CAP_GAP + _CAP_STRIP_H
 
 	# Full-width square, shrunk if a short screen can't fit the whole stack.
 	var area_top: float = top + _BAR_H
+	# Reserve the eval-bar zone at the very top so the vertically-centred caption
+	# stack can never rise into it on short screens.
+	var stack_top: float = area_top + _EVAL_TOP_GAP + _EVAL_H
+
 	var board_size: float = minf(vp.x - 16.0,
-		vp.y - area_top - caption_block - captured_block - 24.0)
+		vp.y - stack_top - caption_block - captured_block - 24.0)
 	board_size = maxf(board_size, 0.0)
 	var bx: float = (vp.x - board_size) * 0.5
 
@@ -140,8 +153,8 @@ func _layout_for_safe_area() -> void:
 	# touch downward (half the slack above, the rest below) so the board sits in
 	# the lower-middle within thumb-and-finger reach, not pinned to either edge.
 	var content_h: float = caption_block + board_size + captured_block
-	var extra: float = maxf(0.0, vp.y - area_top - content_h - 16.0)
-	var board_top: float = area_top + extra * 0.5 + caption_block
+	var extra: float = maxf(0.0, vp.y - stack_top - content_h - 16.0)
+	var board_top: float = stack_top + extra * 0.5 + caption_block
 
 	board.offset_left = bx
 	board.offset_right = -bx
@@ -151,8 +164,13 @@ func _layout_for_safe_area() -> void:
 	# Status hugs the board top; feedback (can wrap to 2 lines) just above it.
 	status_label.offset_bottom = board_top - 12.0
 	status_label.offset_top = status_label.offset_bottom - _STATUS_H
-	feedback.offset_bottom = status_label.offset_top - 6.0
+	feedback.offset_bottom = status_label.offset_top - _FEED_GAP
 	feedback.offset_top = feedback.offset_bottom - _FEED_H
+
+	# Eval bar: just under the top bar, aligned with the board's width.
+	if eval_bar:
+		eval_bar.position = Vector2(bx, area_top + _EVAL_TOP_GAP)
+		eval_bar.size = Vector2(board_size, _EVAL_H)
 
 	# Captured strips, aligned with the board's width, just below it.
 	var sy: float = board_top + board_size + _CAP_TOP_GAP
@@ -171,11 +189,6 @@ func _setup_opponent_panel() -> void:
 	else:
 		opponent_name.text = "%s  ·  %d" % [bot_def.get("name", "Bot"), bot_def.get("elo", 0)]
 		opponent_avatar.texture = load(BotRoster.avatar_path(bot_def))
-
-
-## The top-bar tally shows THIS game's best moves so far (not a persistent score).
-func _refresh_coins() -> void:
-	coins_label.text = str(_best_count)
 
 
 # --- Game lifecycle ---
@@ -210,8 +223,9 @@ func _new_game() -> void:
 	_blunder_count = 0
 	_caps_white = PackedInt32Array()
 	_caps_black = PackedInt32Array()
-	_refresh_coins()
 	_update_captured()
+	eval_bar.visible = not GameManager.pass_and_play
+	eval_bar.set_eval(0)
 	_record_position()
 	_play_random_opening()
 
@@ -263,6 +277,7 @@ func _present_options() -> void:
 	_busy = true
 	status_label.text = "Reading the position…"
 	_ranked = await _rank_position()
+	_push_eval_from_ranked()
 
 	var picks := ChessBotScript.select_options(_ranked)
 	var options: Array = []
@@ -331,7 +346,6 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		_:
 			_decent_count += 1
 			feedback.text = "%s. Best was %s." % [grade["label"], best_san]
-	_refresh_coins()
 	status_label.text = ""
 
 	# Reveal the qualities, then slow-slide the chosen piece (bullet time).
@@ -344,6 +358,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		return
 
 	_play_move(move)
+	_push_eval_after_move(move)
 	board.clear_options()
 	_advance()
 
@@ -400,6 +415,31 @@ func _play_move(move: int) -> void:
 
 func _record_position() -> void:
 	_history.append(rules.position_key())
+
+
+## Feed the eval bar the current position's score, converted to White's point of
+## view (+ = White better). _ranked[0] is the best line from the side-to-move's
+## view; flip its sign for Black. No-op in Pass & Play (the bar stays hidden).
+func _push_eval_from_ranked() -> void:
+	if GameManager.pass_and_play or _ranked.is_empty():
+		return
+	var score: int = int(_ranked[0]["score"])
+	eval_bar.set_eval(score if rules.side_to_move == ChessRules.WHITE else -score)
+
+
+## Right after the human commits their pick, show that move's evaluation so the bar
+## reacts immediately (a blunder visibly drops it) instead of looking stale through
+## the bot's reply. The chosen move's score comes from the analysis just shown, in
+## the human's (the mover's) point of view → flip for Black.
+func _push_eval_after_move(move: int) -> void:
+	if GameManager.pass_and_play:
+		return
+	var score := 0
+	for e in _ranked:
+		if int(e["move"]) == move:
+			score = int(e["score"])
+			break
+	eval_bar.set_eval(score if player_color == ChessRules.WHITE else -score)
 
 
 ## Refresh both captured-pieces strips from the current board + accumulated trophies.

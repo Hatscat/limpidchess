@@ -47,7 +47,15 @@ var _alive := false
 
 
 ## Launch an engine. Prefers the embedded native one; falls back to a subprocess.
+## Idempotent: this is an autoload reused across games, and the embedded native
+## engine is a process-singleton that can't be re-created, so we start ONCE and
+## keep it alive for the whole app (never stop() on a scene change).
 func start() -> bool:
+	if available:
+		if _engine_alive():
+			return true
+		stop()  # the engine died under us (rare) → tear it down, then re-init below
+
 	# 1. Embedded native engine (Android / wherever the extension is loaded).
 	if ClassDB.class_exists("StockfishGD"):
 		_sf = ClassDB.instantiate("StockfishGD")
@@ -102,6 +110,16 @@ func stop() -> void:
 	_mode = ""
 
 
+## Is the currently-selected transport actually still usable? Guards start() from
+## reusing a dead engine (e.g. a crashed subprocess) across games.
+func _engine_alive() -> bool:
+	if _mode == "ext":
+		return _sf != null
+	if _mode == "pipe":
+		return _pid > 0 and OS.is_process_running(_pid) and _io != null and _io.is_open()
+	return false
+
+
 # --- Public async API (await the result on the main thread) ---
 
 func analyse(fen: String, multipv: int, depth: int) -> Array:
@@ -145,11 +163,15 @@ func _run(cmds: Array) -> Dictionary:
 # --- ext transport: poll the native engine each frame (no GDScript thread) ---
 
 func _run_ext(cmds: Array) -> Dictionary:
+	if _sf == null:
+		return {}
 	for c in cmds:
 		_sf.call("send", c)
 	var by_index := {}
 	var deadline := Time.get_ticks_msec() + EXT_TIMEOUT_MS
 	while Time.get_ticks_msec() < deadline:
+		if _sf == null:
+			break  # stopped under us (e.g. app quit mid-analyse)
 		var lines: PackedStringArray = _sf.call("poll_lines")
 		for line in lines:
 			if line.begins_with("bestmove"):
@@ -189,11 +211,15 @@ func _worker() -> void:
 
 
 func _execute(cmds: Array) -> Dictionary:
+	if _io == null or not _io.is_open():
+		return _build_result({}, "")  # pipe closed under us → caller falls back
 	for cmd in cmds:
 		_io.store_line(cmd)
 	var by_index := {}
 	var best := ""
-	while _io.is_open() and not _io.eof_reached():
+	# _alive lets a shutdown (stop()) break the read loop instead of waiting on
+	# the engine's final "bestmove" (searches are bounded, so this just trims it).
+	while _alive and _io.is_open() and not _io.eof_reached():
 		var line := _io.get_line()
 		if line.begins_with("bestmove"):
 			var bp := line.split(" ")

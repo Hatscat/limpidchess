@@ -1,6 +1,5 @@
 extends Node
-## Render the game at TRUE phone size (720x1280) in a live tree (engine + tweens
-## work), regardless of the desktop display. -> /tmp/limpid_game.png
+## Render the game at TRUE phone size (720x1280) in a live tree. -> /tmp/limpid_game.png
 ##   godot --path . res://scripts/dev/shot_live.tscn
 var vpc: SubViewport
 var frames := 0
