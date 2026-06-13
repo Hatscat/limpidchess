@@ -58,6 +58,34 @@ const ALL := [
 		"sf_skill": 15, "movetime": 450,
 		"depth": 4, "weakness": 0.04,
 	},
+	{
+		"id": "bruno", "name": "Bruno", "avatar": "bear.png",
+		"tagline": "Solid. Punishes loose play.",
+		"elo": 1900, "tier": "Strong",
+		"sf_skill": 17, "movetime": 600,
+		"depth": 4, "weakness": 0.0,
+	},
+	{
+		"id": "iceberg", "name": "Iceberg", "avatar": "penguin.png",
+		"tagline": "Cool, precise, patient.",
+		"elo": 2150, "tier": "Expert",
+		"sf_skill": 18, "movetime": 800,
+		"depth": 4, "weakness": 0.0,
+	},
+	{
+		"id": "aria", "name": "Aria", "avatar": "lion.png",
+		"tagline": "Bold, sharp attacks.",
+		"elo": 2450, "tier": "Master",
+		"sf_skill": 19, "movetime": 1100,
+		"depth": 4, "weakness": 0.0,
+	},
+	{
+		"id": "maximus", "name": "Maximus", "avatar": "robot.png",
+		"tagline": "Calculates without mercy.",
+		"elo": 2800, "tier": "Grandmaster",
+		"sf_skill": 20, "movetime": 1500,
+		"depth": 4, "weakness": 0.0,
+	},
 ]
 
 

@@ -3,13 +3,16 @@ extends Node
 ## Autoload singleton: scene navigation + all persistent player state.
 ##
 ## Registered in project.godot as "GameManager". Other scripts read/write it via
-## GameManager.go_to_bots(), GameManager.coins_best, GameManager.can_play_game(), …
+## GameManager.go_to_bots(), GameManager.can_play_game(), …
 ##
 ## Persistence is a single ConfigFile at user://. We deliberately keep the
 ## "3 free games a day" gate and premium flag LOCAL and low-security — per the
 ## design, beating it by changing the device clock isn't worth fighting.
+##
+## Move quality is NOT a currency: each game tracks its own best/average/blunder
+## counts (in game.gd) for the end-of-game review. Only the lifetime career
+## totals below persist.
 
-signal coins_changed
 signal premium_changed
 
 const SAVE_PATH := "user://limpid_chess.cfg"
@@ -20,18 +23,16 @@ const UNLIMITED_GAMES := 999
 
 # --- Persistent state ---
 var is_premium := false
-var coins_best := 0          ## "best move" coins (gold)
-var coins_blunder := 0       ## "blunder" coins collected
 var games_today := 0
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
 
-# Lifetime stats (for the About / stats surface).
+# Lifetime career stats (for the About surface). NOT spendable currency.
 var games_played := 0
 var wins := 0
 var draws := 0
 var losses := 0
-var best_moves_found := 0
-var blunders_made := 0
+var best_moves_found := 0     ## total best moves found across all games
+var blunders_made := 0        ## total blunders chosen across all games
 
 # --- Current game context (set before entering the Game scene; not persisted) ---
 var current_bot: Dictionary = {}     ## a BotRoster entry, or {} for pass-and-play
@@ -108,19 +109,12 @@ func _roll_day() -> void:
 		games_today = 0
 
 
-# --- Rewards & stats ---
+# --- Stats ---
 
-func add_best_coin(amount := 1) -> void:
-	coins_best += amount
-	best_moves_found += amount
-	coins_changed.emit()
-	_save()
-
-
-func add_blunder_coin(amount := 1) -> void:
-	coins_blunder += amount
-	blunders_made += amount
-	coins_changed.emit()
+## Fold a finished game's per-game review into the lifetime career totals.
+func record_game_review(best_moves: int, blunders: int) -> void:
+	best_moves_found += best_moves
+	blunders_made += blunders
 	_save()
 
 
@@ -144,8 +138,6 @@ func set_premium(value: bool) -> void:
 func _save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("player", "is_premium", is_premium)
-	cfg.set_value("player", "coins_best", coins_best)
-	cfg.set_value("player", "coins_blunder", coins_blunder)
 	cfg.set_value("daily", "games_today", games_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
@@ -163,8 +155,6 @@ func _load() -> void:
 		return
 	# Coerce types defensively — a hand-edited / corrupt save shouldn't crash later math.
 	is_premium = bool(cfg.get_value("player", "is_premium", false))
-	coins_best = int(cfg.get_value("player", "coins_best", 0))
-	coins_blunder = int(cfg.get_value("player", "coins_blunder", 0))
 	games_today = int(cfg.get_value("daily", "games_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))

@@ -27,6 +27,7 @@ const BOT_SLIDE_SEC := 0.35
 @onready var result_title: Label = %ResultTitle
 @onready var result_text: Label = %ResultText
 @onready var result_quote: Label = %ResultQuote
+@onready var result_review: Label = %ResultReview
 @onready var confirm_overlay: Control = %ConfirmOverlay
 @onready var confirm_title: Label = %ConfirmTitle
 @onready var confirm_message: Label = %ConfirmMessage
@@ -47,6 +48,11 @@ var _pending_action := ""
 ## (e.g. the player restarts mid-animation or mid-bot-think).
 var _gen := 0
 
+# Per-game move-quality tally (reset each game) → the end-of-game review.
+var _best_count := 0
+var _decent_count := 0
+var _blunder_count := 0
+
 
 func _ready() -> void:
 	rules = ChessRules.new()
@@ -59,7 +65,6 @@ func _ready() -> void:
 	board.option_chosen.connect(_on_option_chosen)
 	_setup_opponent_panel()
 	_refresh_coins()
-	GameManager.coins_changed.connect(_refresh_coins)
 	result_overlay.visible = false
 	confirm_overlay.visible = false
 
@@ -79,21 +84,18 @@ func _notification(what: int) -> void:
 		GameManager.go_to_home()
 
 
-func _exit_tree() -> void:
-	if GameManager.coins_changed.is_connected(_refresh_coins):
-		GameManager.coins_changed.disconnect(_refresh_coins)
-
-
 ## Push the top bar / labels / board down past the device notch.
 func _layout_for_safe_area() -> void:
 	var top: int = max(DisplayServer.get_display_safe_area().position.y, 16)
 	$TopBar.offset_top = top
 	$TopBar.offset_bottom = top + 68
-	feedback.offset_top = top + 80
-	feedback.offset_bottom = top + 134
-	status_label.offset_top = top + 138
-	status_label.offset_bottom = top + 176
-	board.offset_top = top + 184
+	# Feedback + status sit just above the board (which is top-aligned), so the
+	# text reads as a caption for the board rather than floating near the top bar.
+	feedback.offset_top = top + 104
+	feedback.offset_bottom = top + 154
+	status_label.offset_top = top + 156
+	status_label.offset_bottom = top + 192
+	board.offset_top = top + 198
 
 
 func _setup_opponent_panel() -> void:
@@ -105,8 +107,9 @@ func _setup_opponent_panel() -> void:
 		opponent_avatar.texture = load(BotRoster.avatar_path(bot_def))
 
 
+## The top-bar tally shows THIS game's best moves so far (not a persistent score).
 func _refresh_coins() -> void:
-	coins_label.text = str(GameManager.coins_best)
+	coins_label.text = str(_best_count)
 
 
 # --- Game lifecycle ---
@@ -136,6 +139,10 @@ func _new_game() -> void:
 	result_overlay.visible = false
 	confirm_overlay.visible = false
 	feedback.text = ""
+	_best_count = 0
+	_decent_count = 0
+	_blunder_count = 0
+	_refresh_coins()
 	_record_position()
 	_play_random_opening()
 
@@ -244,15 +251,18 @@ func _on_option_chosen(opt: Dictionary) -> void:
 
 	match opt.get("quality", ""):
 		"best":
-			GameManager.add_best_coin()
-			feedback.text = "★ Best move!   +1 coin"
+			_best_count += 1
+			feedback.text = "★ Best move!"
 		"decent":
+			_decent_count += 1
 			feedback.text = "%s. The best was %s." % [grade["label"], best_san]
 		"blunder":
-			GameManager.add_blunder_coin()
+			_blunder_count += 1
 			feedback.text = "The blunder! The best was %s." % best_san
 		_:
+			_decent_count += 1
 			feedback.text = "%s. Best was %s." % [grade["label"], best_san]
+	_refresh_coins()
 	status_label.text = ""
 
 	# Reveal the qualities, then slow-slide the chosen piece (bullet time).
@@ -377,6 +387,9 @@ func _check_game_over() -> bool:
 func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
+	result_review.text = "This game:  ★ %d best  ·  ~ %d average  ·  ✗ %d blunder" % [
+		_best_count, _decent_count, _blunder_count]
+	GameManager.record_game_review(_best_count, _blunder_count)
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [q["text"], q["author"]]
 	result_overlay.visible = true

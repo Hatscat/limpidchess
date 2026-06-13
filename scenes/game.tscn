@@ -1,9 +1,11 @@
-[gd_scene load_steps=10 format=3 uid="uid://limpidgame01"]
+[gd_scene format=3 uid="uid://limpidgame01"]
 
-[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
-[ext_resource type="Script" path="res://scripts/ui/chess_board.gd" id="2_board"]
-[ext_resource type="Texture2D" path="res://assets/icons/coin.png" id="3_coin"]
-[ext_resource type="Texture2D" path="res://assets/icons/menu.png" id="4_menu"]
+[ext_resource type="Script" uid="uid://c07dq5tuavjqi" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://dsbi4m5efbwas" path="res://scripts/ui/chess_board.gd" id="2_board"]
+[ext_resource type="Texture2D" uid="uid://dkvoj4rgp0kxq" path="res://assets/icons/coin.png" id="3_coin"]
+[ext_resource type="Texture2D" uid="uid://c74dn5k38h8ux" path="res://assets/icons/menu.png" id="4_menu"]
+
+[sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
 [sub_resource type="StyleBoxFlat" id="sb_chip"]
 content_margin_left = 14.0
@@ -21,7 +23,23 @@ corner_radius_top_right = 24
 corner_radius_bottom_right = 24
 corner_radius_bottom_left = 24
 
-[sub_resource type="StyleBoxEmpty" id="sb_empty"]
+[sub_resource type="StyleBoxFlat" id="sb_card"]
+content_margin_left = 30.0
+content_margin_top = 30.0
+content_margin_right = 30.0
+content_margin_bottom = 30.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 18
 
 [sub_resource type="StyleBoxFlat" id="sb_btn"]
 content_margin_left = 20.0
@@ -50,25 +68,7 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
-[sub_resource type="StyleBoxFlat" id="sb_card"]
-content_margin_left = 30.0
-content_margin_top = 30.0
-content_margin_right = 30.0
-content_margin_bottom = 30.0
-bg_color = Color(0.13, 0.14, 0.17, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.08)
-corner_radius_top_left = 28
-corner_radius_top_right = 28
-corner_radius_bottom_right = 28
-corner_radius_bottom_left = 28
-shadow_color = Color(0, 0, 0, 0.5)
-shadow_size = 18
-
-[node name="Game" type="Control"]
+[node name="Game" type="Control" unique_id=480518770]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -77,7 +77,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_game")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1119199416]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -86,7 +86,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.1, 0.12, 1)
 
-[node name="TopBar" type="HBoxContainer" parent="."]
+[node name="TopBar" type="HBoxContainer" parent="." unique_id=1613478971]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -97,29 +97,28 @@ offset_bottom = 84.0
 grow_horizontal = 2
 theme_override_constants/separation = 12
 
-[node name="Menu" type="MenuButton" parent="TopBar"]
+[node name="Menu" type="MenuButton" parent="TopBar" unique_id=160811357]
 custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
 theme_override_styles/normal = SubResource("sb_empty")
-theme_override_styles/hover = SubResource("sb_empty")
 theme_override_styles/pressed = SubResource("sb_empty")
+theme_override_styles/hover = SubResource("sb_empty")
 icon = ExtResource("4_menu")
-flat = true
 expand_icon = true
 
-[node name="OpponentChip" type="PanelContainer" parent="TopBar"]
+[node name="OpponentChip" type="PanelContainer" parent="TopBar" unique_id=344389045]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("sb_chip")
 
-[node name="HBox" type="HBoxContainer" parent="TopBar/OpponentChip"]
+[node name="HBox" type="HBoxContainer" parent="TopBar/OpponentChip" unique_id=211754631]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="OpponentAvatar" type="TextureRect" parent="TopBar/OpponentChip/HBox"]
+[node name="OpponentAvatar" type="TextureRect" parent="TopBar/OpponentChip/HBox" unique_id=1169140156]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
@@ -127,24 +126,23 @@ size_flags_vertical = 4
 expand_mode = 1
 stretch_mode = 5
 
-[node name="OpponentName" type="Label" parent="TopBar/OpponentChip/HBox"]
+[node name="OpponentName" type="Label" parent="TopBar/OpponentChip/HBox" unique_id=884372973]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 24
 text = "Opponent"
 
-[node name="CoinsChip" type="PanelContainer" parent="TopBar"]
+[node name="CoinsChip" type="PanelContainer" parent="TopBar" unique_id=280847139]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("sb_chip")
 
-[node name="HBox" type="HBoxContainer" parent="TopBar/CoinsChip"]
+[node name="HBox" type="HBoxContainer" parent="TopBar/CoinsChip" unique_id=747450934]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Coin" type="TextureRect" parent="TopBar/CoinsChip/HBox"]
+[node name="Coin" type="TextureRect" parent="TopBar/CoinsChip/HBox" unique_id=39840122]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -152,14 +150,13 @@ texture = ExtResource("3_coin")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CoinsLabel" type="Label" parent="TopBar/CoinsChip/HBox"]
+[node name="CoinsLabel" type="Label" parent="TopBar/CoinsChip/HBox" unique_id=195735366]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 26
 text = "0"
 
-[node name="Feedback" type="Label" parent="."]
+[node name="Feedback" type="Label" parent="." unique_id=201343437]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 10
@@ -170,12 +167,11 @@ offset_right = -20.0
 offset_bottom = 150.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 30
-text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="Status" type="Label" parent="."]
+[node name="Status" type="Label" parent="." unique_id=1700283256]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.65)
 layout_mode = 1
@@ -191,7 +187,7 @@ text = "Your move, find the best!"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Board" type="Control" parent="."]
+[node name="Board" type="Control" parent="." unique_id=1394628439]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -205,7 +201,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_board")
 
-[node name="ResultOverlay" type="Control" parent="."]
+[node name="ResultOverlay" type="Control" parent="." unique_id=1023610501]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -215,7 +211,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="ResultOverlay"]
+[node name="Dim" type="ColorRect" parent="ResultOverlay" unique_id=1005501304]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -224,7 +220,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Card" type="PanelContainer" parent="ResultOverlay"]
+[node name="Card" type="PanelContainer" parent="ResultOverlay" unique_id=1524032082]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -239,19 +235,19 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="VBox" type="VBoxContainer" parent="ResultOverlay/Card"]
+[node name="VBox" type="VBoxContainer" parent="ResultOverlay/Card" unique_id=1532779083]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="ResultTitle" type="Label" parent="ResultOverlay/Card/VBox"]
+[node name="ResultTitle" type="Label" parent="ResultOverlay/Card/VBox" unique_id=972187407]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 44
 text = "Checkmate"
 horizontal_alignment = 1
 
-[node name="ResultText" type="Label" parent="ResultOverlay/Card/VBox"]
+[node name="ResultText" type="Label" parent="ResultOverlay/Card/VBox" unique_id=974867035]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.7)
 layout_mode = 2
@@ -260,43 +256,50 @@ text = "Well played."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="ResultQuote" type="Label" parent="ResultOverlay/Card/VBox"]
+[node name="ResultReview" type="Label" parent="ResultOverlay/Card/VBox" unique_id=177538191]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.9)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ResultQuote" type="Label" parent="ResultOverlay/Card/VBox" unique_id=414004909]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.55)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = ""
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="ResultOverlay/Card/VBox"]
+[node name="Buttons" type="HBoxContainer" parent="ResultOverlay/Card/VBox" unique_id=983117511]
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+[node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231103]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
-theme_override_styles/hover = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
 text = "Home"
 
-[node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+[node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=596289663]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn_primary")
-theme_override_styles/hover = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")
+theme_override_styles/hover = SubResource("sb_btn_primary")
 text = "Play again"
 
-[node name="ConfirmOverlay" type="Control" parent="."]
+[node name="ConfirmOverlay" type="Control" parent="." unique_id=1669456548]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -306,7 +309,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="ConfirmOverlay"]
+[node name="Dim" type="ColorRect" parent="ConfirmOverlay" unique_id=145717323]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -315,7 +318,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Card" type="PanelContainer" parent="ConfirmOverlay"]
+[node name="Card" type="PanelContainer" parent="ConfirmOverlay" unique_id=2121349770]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -330,52 +333,51 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="VBox" type="VBoxContainer" parent="ConfirmOverlay/Card"]
+[node name="VBox" type="VBoxContainer" parent="ConfirmOverlay/Card" unique_id=244986296]
 layout_mode = 2
 theme_override_constants/separation = 22
 alignment = 1
 
-[node name="ConfirmTitle" type="Label" parent="ConfirmOverlay/Card/VBox"]
+[node name="ConfirmTitle" type="Label" parent="ConfirmOverlay/Card/VBox" unique_id=1813953370]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Restart game?"
 horizontal_alignment = 1
 
-[node name="ConfirmMessage" type="Label" parent="ConfirmOverlay/Card/VBox"]
+[node name="ConfirmMessage" type="Label" parent="ConfirmOverlay/Card/VBox" unique_id=942530576]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.7)
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = ""
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="ConfirmOverlay/Card/VBox"]
+[node name="Buttons" type="HBoxContainer" parent="ConfirmOverlay/Card/VBox" unique_id=611092182]
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="ConfirmCancel" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons"]
+[node name="ConfirmCancel" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons" unique_id=209270788]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
-theme_override_styles/hover = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
 text = "Cancel"
 
-[node name="ConfirmYes" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons"]
+[node name="ConfirmYes" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons" unique_id=966610142]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn_primary")
-theme_override_styles/hover = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")
+theme_override_styles/hover = SubResource("sb_btn_primary")
 text = "Confirm"
 
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/HomeBtn" to="." method="_on_home_pressed"]
