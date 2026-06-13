@@ -14,7 +14,7 @@ func _ready() -> void:
 	$TopBar.offset_top = max(safe.position.y, 16)
 
 	var q := Quotes.random()
-	quote_label.text = "“%s”\n— %s" % [q["text"], q["author"]]
+	quote_label.text = "“%s”\n%s" % [q["text"], q["author"]]
 
 	var bot := _selected_bot()
 	play_subtitle.text = "vs %s" % bot.get("name", "a bot")

@@ -64,7 +64,7 @@ text = "About"
 [node name="Tagline" type="Label" parent="Scroll/VBox"]
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
-text = "A calm chess game for beginners. The best move is always there — you just have to see it."
+text = "A calm chess game for beginners. The best move is always there, you just have to see it."
 autowrap_mode = 2
 
 [node name="StatsCard" type="PanelContainer" parent="Scroll/VBox"]
@@ -91,11 +91,11 @@ JohnPablok's improved Cburnett set (CC0), based on a design by Colin M. L. Burne
 [url=https://opengameart.org/content/chess-pieces-and-board-squares]opengameart.org[/url]
 
 [b]Emoji & icons[/b]
-All emojis designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0.
+All emojis designed by OpenMoji, the open-source emoji and icon project. License: CC BY-SA 4.0.
 [url=https://openmoji.org]openmoji.org[/url]
 
 [b]Typeface[/b]
-OpenDyslexic — a free, dyslexia-friendly font.
+OpenDyslexic: a free, dyslexia-friendly font.
 [url=https://opendyslexic.org]opendyslexic.org[/url]
 
 [b]Chess engine[/b]

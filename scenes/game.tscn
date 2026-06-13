@@ -155,7 +155,7 @@ offset_right = -24.0
 offset_bottom = 116.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 20
-text = "Your move — find the best!"
+text = "Your move, find the best!"
 horizontal_alignment = 1
 
 [node name="Board" type="Control" parent="."]

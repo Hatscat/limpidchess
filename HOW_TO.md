@@ -130,7 +130,7 @@ toolchain or device) — read `native/NATIVE_BUILD.md` before building.
 
 Android SDK (`~/Android/Sdk`) + JDK (`~/android-studio/jbr`) are present.
 Export config: [`export_presets.cfg`](export_presets.cfg) — arm64-v8a, AAB,
-min SDK 24, package `ai.groovin.limpidchess`.
+min SDK 24, package `game.limpidchess`.
 
 1. In the editor: Project → Export → install the Android build template; set a
    keystore for release signing.

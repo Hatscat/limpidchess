@@ -180,11 +180,11 @@ func _present_options() -> void:
 
 	var mover := "White" if rules.side_to_move == ChessRules.WHITE else "Black"
 	if GameManager.pass_and_play:
-		status_label.text = "%s to move — find the best!" % mover
+		status_label.text = "%s to move, find the best!" % mover
 	else:
-		status_label.text = "Your move — find the best!"
+		status_label.text = "Your move, find the best!"
 	var n := options.size()
-	feedback.text = "Tap one of the %d moves." % n if n != 1 else "Only one move here — tap it."
+	feedback.text = "Tap one of the %d moves." % n if n != 1 else "Only one move here, tap it."
 	_busy = false
 
 
@@ -229,7 +229,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 			GameManager.add_best_coin()
 			feedback.text = "★ Best move!  +1 coin"
 		"decent":
-			feedback.text = "%s. Not bad — the best was %s." % [grade["label"], best_san]
+			feedback.text = "%s. Not bad, the best was %s." % [grade["label"], best_san]
 		"blunder":
 			GameManager.add_blunder_coin()
 			feedback.text = "The blunder! The best was %s." % best_san
@@ -321,7 +321,7 @@ func _check_game_over() -> bool:
 				GameManager.record_result("loss")
 		ChessRules.Outcome.STALEMATE:
 			title = "Stalemate"
-			text = "A draw — no legal moves, but no check."
+			text = "A draw: no legal moves, but no check."
 			if not GameManager.pass_and_play: GameManager.record_result("draw")
 		ChessRules.Outcome.DRAW_FIFTY:
 			title = "Draw"
@@ -343,7 +343,7 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
 	var q := Quotes.for_outcome(quote_key)
-	result_quote.text = "“%s”\n— %s" % [q["text"], q["author"]]
+	result_quote.text = "“%s”\n%s" % [q["text"], q["author"]]
 	result_overlay.visible = true
 
 
@@ -362,7 +362,7 @@ func _on_give_up_pressed() -> void:
 	board.clear_options()
 	if not GameManager.pass_and_play:
 		GameManager.record_result("loss")
-	_show_result("You gave up", "No shame — every game teaches something.", "resign")
+	_show_result("You gave up", "No shame, every game teaches something.", "resign")
 
 
 func _on_play_again_pressed() -> void:

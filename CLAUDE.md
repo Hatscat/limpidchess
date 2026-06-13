@@ -176,10 +176,9 @@ ships **Stockfish** (GPL-3.0). This was a deliberate reversal of the earlier
   (1) publish the full corresponding source (the whole game + the exact Stockfish
   build) at a public repo; (2) point users to it + the GPL-3.0 licence. The
   About screen carries a low-key "Source & licenses" link and a "Stockfish
-  (GPL-3.0)" credit — keep them — and the Play listing must repeat the source
+  (GPL-3.0)" credit (keep them), and the Play listing must repeat the source
   link (GPLv3 §6(d): clear directions next to the download). No open-source
-  *marketing* is required. **TODO: the repo URL in [scenes/about.tscn] is a
-  placeholder (`github.com/groovin/limpid-chess`) — set it to the real repo.**
+  *marketing* is required. Public source repo: `github.com/Hatscat/limpidchess`.
 - Because we link/bundle Stockfish, **the whole app is GPL-3.0** — keep it that
   way; don't add proprietary-only code paths that would violate it.
 - **OpenMoji** (UI icons + bot avatars) is **CC BY-SA 4.0 → attribution required,
