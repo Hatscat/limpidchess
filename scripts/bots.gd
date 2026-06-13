@@ -25,6 +25,7 @@ func _notification(what: int) -> void:
 
 func _make_row(bot: Dictionary) -> Button:
 	var selected: bool = GameManager.current_bot.get("id", "") == bot["id"]
+	var locked: bool = BotRoster.is_premium_bot(bot) and not GameManager.is_premium
 
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 96)
@@ -92,12 +93,30 @@ func _make_row(bot: Dictionary) -> Button:
 	meta.add_child(elo)
 	hb.add_child(meta)
 
+	# Premium bots are dimmed and carry a lock until the player unlocks Premium.
+	if locked:
+		avatar.modulate = UI.TEXT_FADED
+		text_box.modulate = UI.TEXT_FADED
+		meta.modulate = UI.TEXT_FADED
+		var lock := TextureRect.new()
+		lock.custom_minimum_size = Vector2(36, 36)
+		lock.texture = load("res://assets/icons/lock.png")
+		lock.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		lock.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		lock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hb.add_child(lock)
+
 	btn.add_child(hb)
 	btn.pressed.connect(_on_bot_pressed.bind(bot))
 	return btn
 
 
 func _on_bot_pressed(bot: Dictionary) -> void:
+	# Strongest bots are premium-only: route to the Premium page instead of playing.
+	if BotRoster.is_premium_bot(bot) and not GameManager.is_premium:
+		GameManager.go_to_premium()
+		return
 	GameManager.current_bot = bot
 	if GameManager.can_play_game():
 		GameManager.start_bot_game(bot, true)

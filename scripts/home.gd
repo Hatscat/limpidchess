@@ -34,8 +34,13 @@ func _selected_bot() -> Dictionary:
 
 
 func _on_play_pressed() -> void:
+	var bot := _selected_bot()
+	# A premium-only opponent (e.g. selected while premium, now lapsed) routes to Premium.
+	if BotRoster.is_premium_bot(bot) and not GameManager.is_premium:
+		GameManager.go_to_premium()
+		return
 	if GameManager.can_play_game():
-		GameManager.start_bot_game(_selected_bot(), true)
+		GameManager.start_bot_game(bot, true)
 	else:
 		GameManager.go_to_premium()
 

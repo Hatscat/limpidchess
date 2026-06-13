@@ -20,6 +20,7 @@ const OPENING_WINDOW_CP := 55
 const REVEAL_SLIDE_SEC := 1.25   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.55   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
+const END_DELAY := 1.3   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -30,10 +31,14 @@ const BOT_SLIDE_SEC := 0.35
 @onready var result_title: Label = %ResultTitle
 @onready var result_text: Label = %ResultText
 @onready var result_quote: Label = %ResultQuote
-@onready var result_review: Label = %ResultReview
+@onready var review_best: Label = %ReviewBest
+@onready var review_avg: Label = %ReviewAvg
+@onready var review_blunder: Label = %ReviewBlunder
 @onready var confirm_overlay: Control = %ConfirmOverlay
 @onready var confirm_title: Label = %ConfirmTitle
 @onready var confirm_message: Label = %ConfirmMessage
+@onready var menu_overlay: Control = %MenuOverlay
+@onready var undo_btn: Button = %UndoBtn
 
 var rules: ChessRules
 var bot: ChessBot
@@ -63,6 +68,11 @@ var cap_top: Control       ## strip for the side at the TOP of the board
 var cap_bottom: Control    ## strip for the side at the BOTTOM (the player, vs a bot)
 var _caps_white: PackedInt32Array = PackedInt32Array()
 var _caps_black: PackedInt32Array = PackedInt32Array()
+
+# Undo stack: one entry per committed move {move, undo, captured, mover}. "Undo
+# move" rewinds the player's last move AND the opponent's reply (two plies),
+# never past White's auto-opening (kept as the first entry).
+var _undo_stack: Array = []
 
 # Stockfish evaluation bar (bot games only; hidden in Pass & Play). Created in _ready.
 var eval_bar: Control
@@ -95,12 +105,7 @@ func _ready() -> void:
 	_setup_opponent_panel()
 	result_overlay.visible = false
 	confirm_overlay.visible = false
-
-	var menu := $TopBar/Menu as MenuButton
-	var popup := menu.get_popup()
-	popup.add_item("Restart", 0)
-	popup.add_item("Give up", 1)
-	popup.id_pressed.connect(_on_menu)
+	menu_overlay.visible = false
 
 	_layout_for_safe_area()
 	get_viewport().size_changed.connect(_layout_for_safe_area)
@@ -187,7 +192,7 @@ func _setup_opponent_panel() -> void:
 		opponent_name.text = "Pass & Play"
 		opponent_avatar.texture = load("res://assets/icons/handshake.png")
 	else:
-		opponent_name.text = "%s  ·  %d" % [bot_def.get("name", "Bot"), bot_def.get("elo", 0)]
+		opponent_name.text = bot_def.get("name", "Bot")
 		opponent_avatar.texture = load(BotRoster.avatar_path(bot_def))
 
 
@@ -223,6 +228,7 @@ func _new_game() -> void:
 	_blunder_count = 0
 	_caps_white = PackedInt32Array()
 	_caps_black = PackedInt32Array()
+	_undo_stack.clear()
 	_update_captured()
 	eval_bar.visible = not GameManager.pass_and_play
 	eval_bar.set_eval(0)
@@ -275,8 +281,11 @@ func _pick_random_good(ranked: Array) -> int:
 
 func _present_options() -> void:
 	_busy = true
+	var g := _gen
 	status_label.text = "Reading the position…"
 	_ranked = await _rank_position()
+	if g != _gen:
+		return  # a new game / undo / game-end happened during analysis
 	_push_eval_from_ranked()
 
 	var picks := ChessBotScript.select_options(_ranked)
@@ -406,6 +415,7 @@ func _play_move(move: int) -> void:
 			_caps_white.append(captured)
 		else:
 			_caps_black.append(captured)
+	_undo_stack.append({"move": move, "undo": undo, "captured": captured, "mover": mover})
 	board.set_last_move(move, mover)
 	board.set_rules(rules)
 	board.end_animation()  # commit done → drop the slide overlay (piece is now at dest)
@@ -503,7 +513,10 @@ func _check_game_over() -> bool:
 		return false
 	_game_over = true
 	_busy = false
+	_gen += 1  # invalidate any in-flight turn coroutine
 	board.clear_options()
+	menu_overlay.visible = false
+	confirm_overlay.visible = false
 
 	var title := ""
 	var text := ""
@@ -541,15 +554,36 @@ func _check_game_over() -> bool:
 			title = "Draw"
 			text = "Not enough material to checkmate."
 			if not GameManager.pass_and_play: GameManager.record_result("draw")
-	_show_result(title, text, quote_key)
+
+	# Announce the ending explicitly on the board, hold a beat, THEN the review.
+	feedback.text = _outcome_headline(outcome)
+	status_label.text = ""
+	_finish_game_after_delay(title, text, quote_key)
 	return true
+
+
+## Short, explicit board headline shown before the review dialog.
+func _outcome_headline(outcome: int) -> String:
+	match outcome:
+		ChessRules.Outcome.CHECKMATE: return "Checkmate!"
+		ChessRules.Outcome.STALEMATE: return "Stalemate."
+		_: return "Draw."
+
+
+func _finish_game_after_delay(title: String, text: String, quote_key: String) -> void:
+	var g := _gen
+	await get_tree().create_timer(END_DELAY).timeout
+	if g != _gen:
+		return  # a restart / undo happened during the hold
+	_show_result(title, text, quote_key)
 
 
 func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
-	result_review.text = "This game:  ★ %d best  ·  ~ %d average  ·  ✗ %d blunder" % [
-		_best_count, _decent_count, _blunder_count]
+	review_best.text = "★   %d best" % _best_count
+	review_avg.text = "~   %d average" % _decent_count
+	review_blunder.text = "✗   %d blunder" % _blunder_count
 	GameManager.record_game_review(_best_count, _blunder_count)
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [q["text"], q["author"]]
@@ -558,10 +592,83 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 
 # --- Menu + confirm ---
 
-func _on_menu(id: int) -> void:
-	match id:
-		0: _ask_confirm("restart", "Restart game?", "Start over from a fresh position?")
-		1: _ask_confirm("give_up", "Give up?", "Resign and end this game?")
+func _open_menu() -> void:
+	if _game_over:
+		return  # the result dialog owns the screen once the game has ended
+	undo_btn.disabled = not _can_undo()
+	menu_overlay.visible = true
+
+
+func _on_menu_close() -> void:
+	menu_overlay.visible = false
+
+
+func _on_menu_restart() -> void:
+	menu_overlay.visible = false
+	_ask_confirm("restart", "Restart game?", "Start over from a fresh position?")
+
+
+func _on_menu_giveup() -> void:
+	menu_overlay.visible = false
+	_ask_confirm("give_up", "Give up?", "Resign and end this game?")
+
+
+func _on_menu_undo() -> void:
+	menu_overlay.visible = false
+	_undo_last()
+
+
+# --- Undo ---
+
+## Can we rewind the player's last move + the reply? Only while it's the player's
+## turn (not mid-think / not over) and there are 2 plies above the auto-opening.
+func _can_undo() -> bool:
+	return not _busy and not _game_over and _undo_stack.size() >= 3
+
+
+## Rewind two plies (the player's move and the opponent's reply), keeping the
+## opening, then re-offer options for the restored position.
+func _undo_last() -> void:
+	if not _can_undo():
+		return
+	_gen += 1  # invalidate any stray coroutine
+	board.end_animation()
+	var plies := 0
+	while plies < 2 and _undo_stack.size() > 1:  # never pop the opening
+		var e: Dictionary = _undo_stack.pop_back()
+		rules.undo_move(int(e["move"]), e["undo"])
+		var cap: int = e["captured"]
+		if cap != 0:
+			if int(e["mover"]) == ChessRules.WHITE:
+				_caps_white = _remove_last(_caps_white, cap)
+			else:
+				_caps_black = _remove_last(_caps_black, cap)
+		if not _history.is_empty():
+			_history.pop_back()
+		plies += 1
+
+	_game_over = false
+	_busy = false
+	feedback.text = ""
+	board.set_rules(rules)
+	board.clear_options()
+	board.clear_last_moves()
+	if not _undo_stack.is_empty():
+		var top: Dictionary = _undo_stack.back()
+		board.set_last_move(int(top["move"]), int(top["mover"]))
+	_update_check_highlight()
+	_update_captured()
+	_advance()
+
+
+## Drop the last occurrence of `code` from a captured list (it was appended on the
+## capture being undone). Returns the new array (PackedInt32Array is copy-on-write).
+func _remove_last(arr: PackedInt32Array, code: int) -> PackedInt32Array:
+	for i in range(arr.size() - 1, -1, -1):
+		if arr[i] == code:
+			arr.remove_at(i)
+			break
+	return arr
 
 
 func _ask_confirm(action: String, title: String, message: String) -> void:
@@ -589,6 +696,7 @@ func _do_give_up() -> void:
 	if _game_over:
 		return
 	_game_over = true
+	_gen += 1  # invalidate any in-flight bot-think / analysis coroutine
 	board.clear_options()
 	if not GameManager.pass_and_play:
 		GameManager.record_result("loss")

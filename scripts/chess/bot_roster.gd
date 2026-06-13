@@ -63,34 +63,39 @@ const ALL := [
 		"tagline": "Solid. Punishes loose play.",
 		"elo": 1900, "tier": "Strong",
 		"sf_skill": 17, "movetime": 600,
-		"depth": 4, "weakness": 0.0,
+		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 	{
 		"id": "iceberg", "name": "Iceberg", "avatar": "penguin.png",
 		"tagline": "Cool, precise, patient.",
 		"elo": 2150, "tier": "Expert",
 		"sf_skill": 18, "movetime": 800,
-		"depth": 4, "weakness": 0.0,
+		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 	{
 		"id": "aria", "name": "Aria", "avatar": "lion.png",
 		"tagline": "Bold, sharp attacks.",
 		"elo": 2450, "tier": "Master",
 		"sf_skill": 19, "movetime": 1100,
-		"depth": 4, "weakness": 0.0,
+		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 	{
 		"id": "maximus", "name": "Maximus", "avatar": "robot.png",
 		"tagline": "Calculates without mercy.",
 		"elo": 2800, "tier": "Grandmaster",
 		"sf_skill": 20, "movetime": 1500,
-		"depth": 4, "weakness": 0.0,
+		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 ]
 
 
 static func avatar_path(bot: Dictionary) -> String:
 	return AVATAR_DIR + str(bot.get("avatar", "robot.png"))
+
+
+## The strongest bots are a premium perk.
+static func is_premium_bot(bot: Dictionary) -> bool:
+	return bool(bot.get("premium", false))
 
 
 static func get_by_id(id: String) -> Dictionary:
