@@ -11,6 +11,7 @@ extends Control
 @onready var settings_overlay: Control = %SettingsOverlay
 @onready var lang_list: VBoxContainer = %LangList
 @onready var sound_toggle: Button = %SoundToggle
+@onready var reset_btn: Button = %ResetBtn
 
 
 func _ready() -> void:
@@ -63,6 +64,7 @@ func _on_pass_play_pressed() -> void:
 func _on_settings_pressed() -> void:
 	_build_lang_list()
 	_refresh_sound_btn()
+	reset_btn.visible = OS.is_debug_build()  # dev-only convenience
 	settings_overlay.visible = true
 
 
@@ -90,6 +92,11 @@ func _on_sound_pressed() -> void:
 	_refresh_sound_btn()
 	if GameManager.sound_enabled:
 		Audio.play("move")  # a little confirmation blip
+
+
+func _on_reset_pressed() -> void:
+	GameManager.reset_save()
+	GameManager.go_to_home()  # reload fresh (non-premium, zeroed stats)
 
 
 func _build_lang_list() -> void:

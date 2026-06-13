@@ -144,6 +144,31 @@ The first export installs the gradle build template into `android/` (git-ignored
 Note: a release AAB will run the **fallback** engine until the native Stockfish
 build above is wired in.
 
+## Save data (and resetting it)
+
+All persistent state lives in ONE plain-text ConfigFile: `user://limpid_chess.cfg`
+(written by [`scripts/game_manager.gd`](scripts/game_manager.gd)). It holds the
+premium flag, chosen language (`""` = follow the device), sound on/off, the daily
+free-games counter, and lifetime stats. There is no backend, no accounts: this file
+is the entire save.
+
+Where `user://` resolves (project name is "Limpid Chess"):
+- Linux:   `~/.local/share/godot/app_userdata/Limpid Chess/limpid_chess.cfg`
+- Windows: `%APPDATA%\Godot\app_userdata\Limpid Chess\limpid_chess.cfg`
+- macOS:   `~/Library/Application Support/Godot/app_userdata/Limpid Chess/limpid_chess.cfg`
+- Android: the app's private storage (wiped by uninstalling the app)
+
+To reset to a fresh, non-premium first launch:
+- **Debug build:** Settings (gear on Home) → "Reset save (dev)" (only shown when
+  `OS.is_debug_build()` is true, so it never appears in a release export).
+- **Delete the file:** `rm "$HOME/.local/share/godot/app_userdata/Limpid Chess/limpid_chess.cfg"`
+- **Edit it** (plain text): set `is_premium=false` under `[player]` to drop premium
+  but keep your stats.
+- **From the editor:** Project menu → "Open User Data Folder".
+
+The UI language defaults to the **device language** (`OS.get_locale_language()`) if
+it's one we ship (en / fr / es), else English; the in-game picker overrides + saves it.
+
 ## License (GPL-3.0)
 
 The project is GPL-3.0 (it ships Stockfish). [`LICENSE`](LICENSE) holds the full
@@ -156,5 +181,4 @@ make the source and the exact Stockfish build you ship available.
 - **In-app purchase**: [`scripts/premium.gd`](scripts/premium.gd) `_on_get_pressed()`
   sets the premium flag locally. Wire Google Play Billing there; call
   `GameManager.set_premium(true)` on a successful purchase.
-- **App icon**: still the default Godot `icon.svg`.
-- **Sound**: none yet (move/capture/reward cues would add a lot of game feel).
+  (Reset for testing via the dev "Reset save" button, see "Save data" above.)

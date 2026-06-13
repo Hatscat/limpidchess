@@ -92,6 +92,27 @@ func set_sound_enabled(on: bool) -> void:
 	_save()
 
 
+## DEV ONLY: wipe the local save and reset in-memory state to a fresh first launch
+## (non-premium, full daily games, zeroed stats). Caller should reload the scene.
+func reset_save() -> void:
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(SAVE_PATH)
+	is_premium = false
+	language = ""
+	sound_enabled = true
+	games_today = 0
+	last_play_date = ""
+	games_played = 0
+	wins = 0
+	draws = 0
+	losses = 0
+	best_moves_found = 0
+	blunders_made = 0
+	current_bot = {}
+	_apply_locale()
+	_roll_day()
+
+
 # --- Navigation ---
 
 func go_to_home() -> void:
