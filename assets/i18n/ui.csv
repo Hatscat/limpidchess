@@ -81,6 +81,8 @@ New game,New game,Nouvelle partie,Nuevo juego
 No one ever won a game by resigning.,No one ever won a game by resigning.,Personne n'a jamais gagné une partie en abandonnant.,Nadie ha ganado nunca una partida abandonando.
 "No shame, every game teaches something.","No shame, every game teaches something.","Pas de honte, chaque partie enseigne quelque chose.","Sin vergüenza, cada partida enseña algo."
 Not enough material to checkmate.,Not enough material to checkmate.,Pas assez de matériel pour faire échec et mat.,Sin material suficiente para dar jaque mate.
+Off,Off,Désactivé,Desactivado
+On,On,Activé,Activado
 Only one move here.,Only one move here.,Un seul coup possible.,Solo un movimiento posible.
 Pass & Play,Pass & Play,Passer & Jouer,Pasar y Jugar
 Pick your opponent.,Pick your opponent.,Choisis ton adversaire.,Elige tu oponente.
@@ -100,6 +102,8 @@ Setting up…,Setting up…,Préparation…,Preparando…
 Settings,Settings,Paramètres,Ajustes
 Sly. Sets little traps.,Sly. Sets little traps.,Rusé. Pose de petits pièges.,Astuto. Tiende pequeñas trampas.
 Solid. Punishes loose play.,Solid. Punishes loose play.,Solide. Punit le jeu approximatif.,Sólido. Castiga el juego descuidado.
+Sound,Sound,Son,Sonido
+Sound: %s,Sound: %s,Son : %s,Sonido: %s
 Source & licenses,Source & licenses,Source & licences,Código fuente y licencias
 Stalemate,Stalemate,Pat,Ahogado
 Stalemate.,Stalemate.,Pat.,Ahogado.
@@ -122,13 +126,6 @@ White,White,Blancs,Blancas
 You gave up,You gave up,Tu as abandonné,Abandonaste
 You win!,You win!,Tu as gagné !,¡Ganaste!
 "Your move, find the best!","Your move, find the best!","À toi de jouer, trouve le meilleur !","Tu turno, ¡encuentra el mejor!"
-~%d,~%d,~%d,~%d
-★ Best move!,★ Best move!,★ Meilleur coup !,★ ¡Mejor movimiento!
-"✓   No ads. Not now, not ever.","✓   No ads. Not now, not ever.","✓   Jamais de pub","✓   Sin anuncios. Nunca, jamás."
-✓   Pass & Play on one device,✓   Pass & Play on one device,✓   Passe & Joue sur un appareil,✓   Pasa y Juega en un dispositivo
-✓   Support a solo indie dev,✓   Support a solo indie dev,✓   Soutient un développeur indépendant,✓   Apoya a un pequeño desarrollador independiente
-✓   Unlimited games every day,✓   Unlimited games every day,✓   Parties illimitées tous les jours,✓   Juegos ilimitados todos los días
-✓ You're Premium. Thank you!,✓ You're Premium. Thank you!,✓ Vous êtes Premium. Merci !,✓ Eres Premium. ¡Gracias!
 "[b]Chess pieces[/b]
 JohnPablok's improved Cburnett set (CC0), based on a design by Colin M. L. Burnett.
 [url=https://opengameart.org/content/chess-pieces-and-board-squares]opengameart.org[/url]
@@ -218,4 +215,11 @@ Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]
 
 [b]Código fuente y licencias[/b]
 [url=https://github.com/Hatscat/limpidchess]https://github.com/Hatscat/limpidchess[/url]"
-Sound,Sound,Son,Sonido
+~%d,~%d,~%d,~%d
+★ Best move!,★ Best move!,★ Meilleur coup !,★ ¡Mejor movimiento!
+"✓   No ads. Not now, not ever.","✓   No ads. Not now, not ever.",✓   Jamais de pub,"✓   Sin anuncios. Nunca, jamás."
+✓   Pass & Play on one device,✓   Pass & Play on one device,✓   Passe & Joue sur un appareil,✓   Pasa y Juega en un dispositivo
+✓   Support a solo indie dev,✓   Support a solo indie dev,✓   Soutenir un développeur indépendant,✓   Apoya a un desarrollador indie en solitario
+✓   Unlimited games every day,✓   Unlimited games every day,✓   Parties illimitées tous les jours,✓   Juegos ilimitados todos los días
+✓   Unlock all bots,✓   Unlock all bots,✓   Débloque tous les bots,✓   Desbloquea todos los bots
+✓ You're Premium. Thank you!,✓ You're Premium. Thank you!,✓ Vous êtes Premium. Merci !,✓ Eres Premium. ¡Gracias!

@@ -10,7 +10,7 @@ extends Control
 @onready var quote_label: Label = %Quote
 @onready var settings_overlay: Control = %SettingsOverlay
 @onready var lang_list: VBoxContainer = %LangList
-@onready var sound_toggle: CheckButton = %SoundToggle
+@onready var sound_toggle: Button = %SoundToggle
 
 
 func _ready() -> void:
@@ -62,7 +62,7 @@ func _on_pass_play_pressed() -> void:
 
 func _on_settings_pressed() -> void:
 	_build_lang_list()
-	sound_toggle.set_pressed_no_signal(GameManager.sound_enabled)  # no spurious blip on open
+	_refresh_sound_btn()
 	settings_overlay.visible = true
 
 
@@ -70,9 +70,25 @@ func _on_settings_close() -> void:
 	settings_overlay.visible = false
 
 
-func _on_sound_toggled(on: bool) -> void:
-	GameManager.set_sound_enabled(on)
-	if on:
+## The sound toggle is a full-width button (big tap target, matches the language
+## rows): accent border + "On" when enabled, subtle border + "Off" when muted.
+func _refresh_sound_btn() -> void:
+	var on := GameManager.sound_enabled
+	sound_toggle.text = tr("Sound: %s") % (tr("On") if on else tr("Off"))
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = UI.SURFACE
+	sb.set_corner_radius_all(16)
+	sb.set_border_width_all(2 if on else 1)
+	sb.border_color = UI.ACCENT if on else UI.BORDER_SUBTLE
+	sound_toggle.add_theme_stylebox_override("normal", sb)
+	sound_toggle.add_theme_stylebox_override("hover", sb)
+	sound_toggle.add_theme_stylebox_override("pressed", sb)
+
+
+func _on_sound_pressed() -> void:
+	GameManager.set_sound_enabled(not GameManager.sound_enabled)
+	_refresh_sound_btn()
+	if GameManager.sound_enabled:
 		Audio.play("move")  # a little confirmation blip
 
 

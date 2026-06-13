@@ -94,6 +94,10 @@ theme_override_constants/separation = 10
 layout_mode = 2
 text = "✓   Unlimited games every day"
 
+[node name="BBots" type="Label" parent="Content/Benefits"]
+layout_mode = 2
+text = "✓   Unlock all bots"
+
 [node name="B2" type="Label" parent="Content/Benefits"]
 layout_mode = 2
 text = "✓   Pass & Play on one device"
