@@ -33,6 +33,7 @@ const UNLIMITED_GAMES := 999
 var is_premium := false
 var language := ""           ## chosen UI locale code; "" = follow the device language
 var sound_enabled := true    ## sound-effect cues on/off
+var last_bot_id := ""        ## id of the last bot played, so Home offers it again
 var games_today := 0
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
 
@@ -109,6 +110,7 @@ func reset_save() -> void:
 	best_moves_found = 0
 	blunders_made = 0
 	current_bot = {}
+	last_bot_id = ""
 	_apply_locale()
 	_roll_day()
 
@@ -131,9 +133,10 @@ func go_to_about() -> void:
 ## Begin a game versus a bot. Consumes one of the day's free games for non-premium.
 func start_bot_game(bot: Dictionary, player_white := true) -> void:
 	current_bot = bot
+	last_bot_id = str(bot.get("id", ""))  # remembered so Home offers it again
 	player_is_white = player_white
 	pass_and_play = false
-	_count_game()
+	_count_game()  # persists (incl. last_bot_id)
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
 
 
@@ -208,6 +211,7 @@ func _save() -> void:
 	cfg.set_value("player", "is_premium", is_premium)
 	cfg.set_value("player", "language", language)
 	cfg.set_value("player", "sound_enabled", sound_enabled)
+	cfg.set_value("player", "last_bot_id", last_bot_id)
 	cfg.set_value("daily", "games_today", games_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
@@ -227,6 +231,9 @@ func _load() -> void:
 	is_premium = bool(cfg.get_value("player", "is_premium", false))
 	language = str(cfg.get_value("player", "language", ""))
 	sound_enabled = bool(cfg.get_value("player", "sound_enabled", true))
+	last_bot_id = str(cfg.get_value("player", "last_bot_id", ""))
+	if last_bot_id != "":
+		current_bot = BotRoster.get_by_id(last_bot_id)  # Home offers the last opponent
 	games_today = int(cfg.get_value("daily", "games_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))

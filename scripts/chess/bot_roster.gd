@@ -17,72 +17,86 @@ const AVATAR_DIR := "res://assets/avatars/"
 
 const ALL := [
 	{
+		"id": "coco", "name": "Coco", "avatar": "monkey.png",
+		"tagline": "Gives lots of gifts.",
+		"difficulty": 1, "tier": "First moves",
+		"sf_skill": 0, "movetime": 40, "random_chance": 0.85,
+		"depth": 1, "weakness": 0.95,
+	},
+	{
+		"id": "pebble", "name": "Pebble", "avatar": "koala.png",
+		"tagline": "Still learning the ropes.",
+		"difficulty": 1, "tier": "Newcomer",
+		"sf_skill": 0, "movetime": 80, "random_chance": 0.5,
+		"depth": 1, "weakness": 0.9,
+	},
+	{
 		"id": "pip", "name": "Pip", "avatar": "chick.png",
 		"tagline": "Just learned how the pieces move.",
-		"elo": 250, "tier": "Beginner",
+		"difficulty": 2, "tier": "Beginner",
 		"sf_skill": 0, "movetime": 60,
 		"depth": 1, "weakness": 0.85,
 	},
 	{
 		"id": "biscuit", "name": "Biscuit", "avatar": "dog.png",
 		"tagline": "Plays for the fun of it.",
-		"elo": 500, "tier": "Beginner",
+		"difficulty": 2, "tier": "Beginner",
 		"sf_skill": 2, "movetime": 100,
 		"depth": 2, "weakness": 0.65,
 	},
 	{
 		"id": "whiskers", "name": "Whiskers", "avatar": "cat.png",
 		"tagline": "Curious, cautious, occasionally pounces.",
-		"elo": 750, "tier": "Casual",
+		"difficulty": 3, "tier": "Casual",
 		"sf_skill": 4, "movetime": 150,
 		"depth": 2, "weakness": 0.40,
 	},
 	{
 		"id": "hops", "name": "Hops", "avatar": "frog.png",
 		"tagline": "Leaps at every capture.",
-		"elo": 1000, "tier": "Casual",
+		"difficulty": 3, "tier": "Casual",
 		"sf_skill": 7, "movetime": 200,
 		"depth": 3, "weakness": 0.25,
 	},
 	{
 		"id": "reynard", "name": "Reynard", "avatar": "fox.png",
 		"tagline": "Sly. Sets little traps.",
-		"elo": 1300, "tier": "Improver",
+		"difficulty": 4, "tier": "Improver",
 		"sf_skill": 11, "movetime": 300,
-		"depth": 3, "weakness": 0.12,
+		"depth": 3, "weakness": 0.12, "premium": true
 	},
 	{
 		"id": "professor", "name": "Professor", "avatar": "owl.png",
 		"tagline": "Sees a few moves ahead. Patient.",
-		"elo": 1600, "tier": "Club",
+		"difficulty": 4, "tier": "Club",
 		"sf_skill": 15, "movetime": 450,
-		"depth": 4, "weakness": 0.04,
+		"depth": 4, "weakness": 0.04, "premium": true,
 	},
 	{
 		"id": "bruno", "name": "Bruno", "avatar": "bear.png",
 		"tagline": "Solid. Punishes loose play.",
-		"elo": 1900, "tier": "Strong",
+		"difficulty": 5, "tier": "Strong",
 		"sf_skill": 17, "movetime": 600,
 		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 	{
 		"id": "iceberg", "name": "Iceberg", "avatar": "penguin.png",
 		"tagline": "Cool, precise, patient.",
-		"elo": 2150, "tier": "Expert",
+		"difficulty": 5, "tier": "Expert",
 		"sf_skill": 18, "movetime": 800,
 		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 	{
 		"id": "aria", "name": "Aria", "avatar": "lion.png",
 		"tagline": "Bold, sharp attacks.",
-		"elo": 2450, "tier": "Master",
+		"difficulty": 6, "tier": "Master",
 		"sf_skill": 19, "movetime": 1100,
 		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 	{
 		"id": "maximus", "name": "Maximus", "avatar": "robot.png",
 		"tagline": "Calculates without mercy.",
-		"elo": 2800, "tier": "Grandmaster",
+		"difficulty": 6, "tier": "Grandmaster",
 		"sf_skill": 20, "movetime": 1500,
 		"depth": 4, "weakness": 0.0, "premium": true,
 	},
@@ -106,4 +120,4 @@ static func get_by_id(id: String) -> Dictionary:
 
 
 static func default() -> Dictionary:
-	return ALL[1]  # Biscuit — a gentle starting opponent
+	return get_by_id("pip")  # a gentle starting opponent (id-based, order-independent)

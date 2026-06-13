@@ -22,14 +22,14 @@ const ANALYSIS_DEPTH_SF := 10
 ## The suggested BEST move gets its own deep, single-line search so that "playing
 ## best" can actually match/beat the opponent (the shallow pass alone often picks
 ## a sub-optimal best the strong bots punish). Think time scales with the bot.
-const BEST_MOVETIME_MARGIN := 250  ## think a little longer than the opponent does
+const BEST_MOVETIME_MARGIN := 350  ## think a little longer than the opponent does
 const BEST_MOVETIME_FLOOR := 750   ## floor so suggestions stay sound vs weak bots (teaching)
-const BEST_MOVETIME_CAP := 2050    ## ceiling so the strongest bots' turns stay tolerable
+const BEST_MOVETIME_CAP := 2100    ## ceiling so the strongest bots' turns stay tolerable
 const OPENING_WINDOW_CP := 55
-const REVEAL_SLIDE_SEC := 0.9   ## slow bullet-time slide of the chosen piece
-const REVEAL_HOLD_SEC := 0.55   ## extra pause so the result can be read
+const REVEAL_SLIDE_SEC := 0.8   ## slow bullet-time slide of the chosen piece
+const REVEAL_HOLD_SEC := 0.75   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
-const END_DELAY := 1.3   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
+const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -427,7 +427,18 @@ func _bot_move() -> void:
 		return
 
 	var move := -1
-	if _use_sf and stockfish.available:
+	# Weakest bots play a random legal move part of the time. Stockfish even at
+	# Skill 0 is far too strong for a true beginner / child, so genuine ease needs
+	# weakening beyond Skill Level. A short beat keeps the move from feeling instant.
+	var rc: float = float(bot_def.get("random_chance", 0.0))
+	if rc > 0.0 and randf() < rc:
+		await get_tree().create_timer(0.35).timeout
+		if g != _gen:
+			return
+		var legal := rules.generate_legal_moves()
+		if not legal.is_empty():
+			move = int(legal[randi() % legal.size()])
+	if move == -1 and _use_sf and stockfish.available:
 		var uci: String = await stockfish.best_move(rules.get_fen(), {
 			"skill": bot_def.get("sf_skill", 10),
 			"movetime": bot_def.get("movetime", 200),

@@ -79,18 +79,20 @@ func _make_row(bot: Dictionary) -> Button:
 	var meta := VBoxContainer.new()
 	meta.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	meta.alignment = BoxContainer.ALIGNMENT_CENTER
+	meta.add_theme_constant_override("separation", 8)
 	meta.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tier := Label.new()
 	tier.text = bot["tier"]
 	tier.add_theme_font_size_override("font_size", UI.FONT_CAPTION)
 	tier.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	var elo := Label.new()
-	elo.text = "±%d" % bot["elo"]
-	elo.modulate = UI.TEXT_FADED
-	elo.add_theme_font_size_override("font_size", UI.FONT_CAPTION)
-	elo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# Relative difficulty pips (not an Elo: the strengths aren't calibrated).
+	var pips := preload("res://scripts/ui/difficulty_pips.gd").new()
+	pips.set_level(int(bot.get("difficulty", 1)))
+	pips.size_flags_horizontal = Control.SIZE_SHRINK_END
+	pips.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pips.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	meta.add_child(tier)
-	meta.add_child(elo)
+	meta.add_child(pips)
 	hb.add_child(meta)
 
 	# Premium bots are dimmed and carry a lock until the player unlocks Premium.

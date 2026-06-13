@@ -7,7 +7,7 @@ $3.99,$3.99,"$3,99","$3,99"
 %d blunder,%d blunder,%d gaffe,%d error grave
 %s got you this time.,%s got you this time.,%s t'a eu cette fois.,%s te ganó esta vez.
 %s is thinking…,%s is thinking…,%s réfléchit…,%s está pensando…
-"%s to move, find the best!","%s to move, find the best!","%s à jouer, trouve le meilleur !","%s para jugar, ¡encuentra el mejor!"
+"%s to move, find the best!","%s to move, find the best!","%s à jouer, trouve le meilleur coup !","%s para jugar, ¡encuentra el mejor!"
 %s wins!,%s wins!,%s gagnent !,¡%s ganan!
 "%s · one-time, forever","%s · one-time, forever","%s · achat unique, pour toujours","%s · compra única, para siempre"
 %s. Best was %s.,%s. Best was %s.,%s. Le meilleur était %s.,%s. El mejor fue %s.
@@ -46,6 +46,7 @@ Emoji & icons,Emoji & icons,Émoticônes & icônes,Emojis e iconos
 Expert,Expert,Expert,Experto
 FIND · THE · BEST · MOVE,FIND · THE · BEST · MOVE,TROUVE · LE · MEILLEUR · COUP,ENCUENTRA · EL · MEJOR · MOVIMIENTO
 Fifty moves without a pawn move or capture.,Fifty moves without a pawn move or capture.,Cinquante coups sans mouvement de pion ou capture.,Cincuenta movimientos sin movimiento de peón o captura.
+First moves,First moves,Premiers pas,Primeros pasos
 "Games played: %d
 Wins %d · Draws %d · Losses %d
 Best moves found: %d
@@ -74,10 +75,12 @@ It is always better to sacrifice your opponent's men.,It is always better to sac
 Just learned how the pieces move.,Just learned how the pieces move.,Sait comment bougent les pièces.,Acaba de aprender cómo se mueven las piezas.
 Language,Language,Langue,Idioma
 Leaps at every capture.,Leaps at every capture.,Saute sur chaque capture.,Salta en cada captura.
+Gives lots of gifts.,Gives lots of gifts.,Offre plein de cadeaux.,Regala muchas piezas.
 Master,Master,Maître,Maestro
 Menu,Menu,Menu,Menú
 Mistake,Mistake,Erreur,Error
 New game,New game,Nouvelle partie,Nuevo juego
+Newcomer,Newcomer,Novice,Novato
 No one ever won a game by resigning.,No one ever won a game by resigning.,Personne n'a jamais gagné une partie en abandonnant.,Nadie ha ganado nunca una partida abandonando.
 "No shame, every game teaches something.","No shame, every game teaches something.","Pas de honte, chaque partie enseigne quelque chose.","Sin vergüenza, cada partida enseña algo."
 Not enough material to checkmate.,Not enough material to checkmate.,Pas assez de matériel pour faire échec et mat.,Sin material suficiente para dar jaque mate.
@@ -108,6 +111,7 @@ Source & licenses,Source & licenses,Source & licences,Código fuente y licencias
 Stalemate,Stalemate,Pat,Ahogado
 Stalemate.,Stalemate.,Pat.,Ahogado.
 Start over from a fresh position?,Start over from a fresh position?,Recommencer depuis une nouvelle position ?,¿Empezar desde una nueva posición?
+Still learning the ropes.,Still learning the ropes.,Apprend encore les bases.,Todavía aprende lo básico.
 Strong,Strong,Fort,Fuerte
 THIS GAME,THIS GAME,CETTE PARTIE,ESTA PARTIDA
 The blunder! The best was %s.,The blunder! The best was %s.,Quelle gaffe ! Le meilleur était %s.,¡Un error grave! El mejor fue %s.
@@ -125,7 +129,7 @@ Unlocked,Unlocked,Déverrouillé,Desbloqueado
 White,White,Blancs,Blancas
 You gave up,You gave up,Tu as abandonné,Abandonaste
 You win!,You win!,Tu as gagné !,¡Ganaste!
-"Your move, find the best!","Your move, find the best!","À toi de jouer, trouve le meilleur !","Tu turno, ¡encuentra el mejor!"
+"Your move, find the best!","Your move, find the best!","À toi de jouer, trouve le meilleur coup !","Tu turno, ¡encuentra el mejor!"
 "[b]Chess pieces[/b]
 JohnPablok's improved Cburnett set (CC0), based on a design by Colin M. L. Burnett.
 [url=https://opengameart.org/content/chess-pieces-and-board-squares]opengameart.org[/url]
