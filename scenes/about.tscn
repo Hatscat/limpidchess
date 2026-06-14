@@ -50,10 +50,12 @@ offset_bottom = -136.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
+scroll_deadzone = 24
 
 [node name="VBox" type="VBoxContainer" parent="Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 1
 theme_override_constants/separation = 16
 
 [node name="Title" type="Label" parent="Scroll/VBox"]
@@ -84,6 +86,7 @@ text = "Credits"
 
 [node name="Credits" type="RichTextLabel" parent="Scroll/VBox"]
 layout_mode = 2
+mouse_filter = 1
 fit_content = true
 bbcode_enabled = true
 text = "[b]Chess pieces[/b]

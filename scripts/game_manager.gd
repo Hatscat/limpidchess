@@ -198,6 +198,16 @@ func record_result(result: String) -> void:
 	_save()
 
 
+## Undo the start-time count for a game abandoned before it really began (player
+## started by mistake / cancelled in the opening). Refunds the daily free game and
+## the played tally; does NOT touch wins/losses (a cancel is not a defeat).
+func cancel_game() -> void:
+	games_played = max(0, games_played - 1)
+	if not is_premium:
+		games_today = max(0, games_today - 1)
+	_save()
+
+
 func set_premium(value: bool) -> void:
 	is_premium = value
 	premium_changed.emit()

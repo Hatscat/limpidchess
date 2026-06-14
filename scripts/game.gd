@@ -30,6 +30,7 @@ const REVEAL_SLIDE_SEC := 0.8   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.75   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
 const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
+const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "cancel", not a loss
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -49,6 +50,7 @@ const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before
 @onready var confirm_message: Label = %ConfirmMessage
 @onready var menu_overlay: Control = %MenuOverlay
 @onready var undo_btn: Button = %UndoBtn
+@onready var giveup_btn: Button = %GiveUpBtn
 
 var rules: ChessRules
 var bot: ChessBot
@@ -90,6 +92,7 @@ var _caps_black: PackedInt32Array = PackedInt32Array()
 # move" rewinds the player's last move AND the opponent's reply (two plies),
 # never past White's auto-opening (kept as the first entry).
 var _undo_stack: Array = []
+var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
 
 # Stockfish evaluation bar (bot games only; hidden in Pass & Play). Created in _ready.
 var eval_bar: Control
@@ -131,8 +134,20 @@ func _ready() -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		GameManager.go_to_home()
+	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
+		return
+	# The Android back gesture is often involuntary, so it must never drop out of a
+	# game by accident. Instead it peels off one layer at a time: close an open
+	# confirm, then the menu, and from the bare board it opens the menu so the player
+	# decides explicitly (Cancel game / Give up / …). Only leave once the game is over.
+	if confirm_overlay.visible:
+		_on_confirm_no()      # dismiss the confirm (takes no action)
+	elif menu_overlay.visible:
+		_on_menu_close()      # close the menu, back to the game
+	elif _game_over:
+		GameManager.go_to_home()  # result is shown / game ended → leaving is fine
+	else:
+		_open_menu()          # pause the game so a stray gesture can't lose it
 
 
 ## Layout, top → bottom: top bar (with the big portrait) · breathing room ·
@@ -246,6 +261,7 @@ func _new_game() -> void:
 	_caps_white = PackedInt32Array()
 	_caps_black = PackedInt32Array()
 	_undo_stack.clear()
+	_player_moves = 0
 	_update_captured()
 	eval_bar.visible = not GameManager.pass_and_play
 	eval_bar.set_eval(0)
@@ -421,6 +437,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		return
 
 	_play_move(move)
+	_player_moves += 1  # a move the human actually chose (not the auto-opening / bot)
 	_push_eval_after_move(move)
 	board.clear_options()
 	_advance()
@@ -678,7 +695,25 @@ func _open_menu() -> void:
 	if _game_over:
 		return  # the result dialog owns the screen once the game has ended
 	undo_btn.disabled = not _can_undo()
+	_refresh_leave_btn()
 	menu_overlay.visible = true
+
+
+## True while the game is young enough that leaving counts as a no-penalty cancel
+## (the player likely started by mistake) rather than a resignation.
+func _is_early_game() -> bool:
+	return _player_moves < EARLY_MOVES
+
+
+## The resign button is a gentle "Cancel game" (no loss, no game spent) early on,
+## and the real "Give up" (a recorded loss) once the player is invested.
+func _refresh_leave_btn() -> void:
+	if _is_early_game():
+		giveup_btn.text = tr("Cancel game")
+		giveup_btn.icon = load("res://assets/icons/exit.png")
+	else:
+		giveup_btn.text = tr("Give up")
+		giveup_btn.icon = load("res://assets/icons/flag.png")
 
 
 func _on_menu_close() -> void:
@@ -692,7 +727,10 @@ func _on_menu_restart() -> void:
 
 func _on_menu_giveup() -> void:
 	menu_overlay.visible = false
-	_ask_confirm("give_up", "Give up?", "Resign and end this game?")
+	if _is_early_game():
+		_ask_confirm("cancel", "Cancel game?", "This game won't count. Leave it?")
+	else:
+		_ask_confirm("give_up", "Give up?", "Resign and end this game?")
 
 
 func _on_menu_undo() -> void:
@@ -729,6 +767,7 @@ func _undo_last() -> void:
 			_history.pop_back()
 		plies += 1
 
+	_player_moves = max(0, _player_moves - 1)  # one player move was rewound (keeps the early "cancel" honest)
 	_game_over = false
 	_busy = false
 	feedback.text = ""
@@ -772,6 +811,7 @@ func _on_confirm_yes() -> void:
 	match action:
 		"restart": _new_game()
 		"give_up": _do_give_up()
+		"cancel": _do_cancel_game()
 
 
 func _do_give_up() -> void:
@@ -784,6 +824,19 @@ func _do_give_up() -> void:
 		GameManager.record_result("loss")
 	Audio.play("end")
 	_show_result("You gave up", "No shame, every game teaches something.", "resign")
+
+
+## Leave a game the player barely started (likely by mistake): no loss, no review
+## stats, and refund the daily free game + played count that starting consumed.
+func _do_cancel_game() -> void:
+	if _game_over:
+		return
+	_game_over = true
+	_gen += 1  # invalidate any in-flight bot-think / analysis coroutine
+	board.clear_options()
+	if not GameManager.pass_and_play:
+		GameManager.cancel_game()
+	GameManager.go_to_home()
 
 
 func _on_play_again_pressed() -> void:

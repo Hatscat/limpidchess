@@ -515,6 +515,7 @@ icon = ExtResource("6_restart")
 alignment = 0
 
 [node name="GiveUpBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=890296422]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 focus_mode = 0
