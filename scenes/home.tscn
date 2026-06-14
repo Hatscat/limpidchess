@@ -43,22 +43,6 @@ shadow_color = Color(0, 0, 0, 0.45)
 shadow_size = 16
 shadow_offset = Vector2(0, 6)
 
-[sub_resource type="StyleBoxFlat" id="sb_ghost"]
-content_margin_left = 18.0
-content_margin_top = 14.0
-content_margin_right = 18.0
-content_margin_bottom = 14.0
-bg_color = Color(0.13, 0.14, 0.17, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.08)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-
 [sub_resource type="StyleBoxFlat" id="sb_ghost_shadow"]
 content_margin_left = 18.0
 content_margin_top = 14.0
@@ -77,6 +61,22 @@ corner_radius_bottom_left = 18
 shadow_color = Color(0, 0, 0, 0.45)
 shadow_size = 16
 shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="sb_ghost"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [node name="Home" type="Control" unique_id=865249465]
 layout_mode = 3
@@ -183,7 +183,7 @@ offset_bottom = -28.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 26
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="BoardBox" type="Control" parent="Center/VBox/PlayCard/Content" unique_id=655032525]
@@ -248,7 +248,6 @@ alignment = 1
 [node name="WithLabel" type="Label" parent="Center/VBox/PlayCard/Content/BotRow" unique_id=1845722901]
 modulate = Color(1, 1, 1, 0.85)
 layout_mode = 2
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 22
 text = "with"
 vertical_alignment = 1
@@ -271,16 +270,52 @@ text = "Biscuit"
 vertical_alignment = 1
 
 [node name="PassPlay" type="Button" parent="Center/VBox" unique_id=769550615]
-custom_minimum_size = Vector2(480, 56)
+custom_minimum_size = Vector2(480, 144)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_override_constants/h_separation = 16
 theme_override_styles/normal = SubResource("sb_ghost_shadow")
 theme_override_styles/pressed = SubResource("sb_ghost_shadow")
 theme_override_styles/hover = SubResource("sb_ghost_shadow")
+
+[node name="Row" type="HBoxContainer" parent="Center/VBox/PassPlay" unique_id=505824311]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="Hand" type="TextureRect" parent="Center/VBox/PassPlay/Row" unique_id=1917458741]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("4_handshake")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Text" type="VBoxContainer" parent="Center/VBox/PassPlay/Row" unique_id=2063519690]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Center/VBox/PassPlay/Row/Text" unique_id=1561182496]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
 text = "Pass & Play"
-icon = ExtResource("4_handshake")
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="Center/VBox/PassPlay/Row/Text" unique_id=1803461016]
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "with a friend"
+horizontal_alignment = 1
 
 [node name="NavBar" parent="." unique_id=1060122150 instance=ExtResource("2_nav")]
 layout_mode = 1

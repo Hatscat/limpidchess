@@ -1,8 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://limpidpremium01"]
+[gd_scene format=3 uid="uid://cwkkvw7g6s8lc"]
 
-[ext_resource type="Script" path="res://scripts/premium.gd" id="1_premium"]
-[ext_resource type="PackedScene" path="res://scenes/nav_bar.tscn" id="2_nav"]
-[ext_resource type="Texture2D" path="res://assets/icons/crown.png" id="3_crown"]
+[ext_resource type="Script" uid="uid://ctrl7ehxmhjtu" path="res://scripts/premium.gd" id="1_premium"]
+[ext_resource type="PackedScene" uid="uid://dup7j366xg0q3" path="res://scenes/nav_bar.tscn" id="2_nav"]
+[ext_resource type="Texture2D" uid="uid://cn4xvwxwrw4l2" path="res://assets/icons/crown.png" id="3_crown"]
 
 [sub_resource type="StyleBoxFlat" id="sb_primary"]
 content_margin_left = 18.0
@@ -31,7 +31,7 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
-[node name="Premium" type="Control"]
+[node name="Premium" type="Control" unique_id=904482982]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -40,7 +40,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_premium")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1846774837]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -49,7 +49,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.1, 0.12, 1)
 
-[node name="Content" type="VBoxContainer" parent="."]
+[node name="Content" type="VBoxContainer" parent="." unique_id=1900782586]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -60,10 +60,10 @@ offset_right = -28.0
 offset_bottom = -136.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 32
 alignment = 1
 
-[node name="Crown" type="TextureRect" parent="Content"]
+[node name="Crown" type="TextureRect" parent="Content" unique_id=568339273]
 custom_minimum_size = Vector2(96, 96)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -71,46 +71,46 @@ texture = ExtResource("3_crown")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Title" type="Label" parent="Content"]
+[node name="Title" type="Label" parent="Content" unique_id=520114760]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
-text = "Limpid Premium"
+text = "Limpid Chess Premium"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Content"]
+[node name="Subtitle" type="Label" parent="Content" unique_id=635213645]
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
-text = "Generous by design. Buy once, keep forever."
+text = "Buy once, keep forever"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Benefits" type="VBoxContainer" parent="Content"]
+[node name="Benefits" type="VBoxContainer" parent="Content" unique_id=671990968]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/separation = 10
 
-[node name="B1" type="Label" parent="Content/Benefits"]
+[node name="B1" type="Label" parent="Content/Benefits" unique_id=796322871]
 layout_mode = 2
 text = "✓   Unlimited games every day"
 
-[node name="BBots" type="Label" parent="Content/Benefits"]
+[node name="BBots" type="Label" parent="Content/Benefits" unique_id=1434491657]
 layout_mode = 2
 text = "✓   Unlock all bots"
 
-[node name="B2" type="Label" parent="Content/Benefits"]
+[node name="B2" type="Label" parent="Content/Benefits" unique_id=191500369]
 layout_mode = 2
 text = "✓   Pass & Play on one device"
 
-[node name="B3" type="Label" parent="Content/Benefits"]
+[node name="B3" type="Label" parent="Content/Benefits" unique_id=920840148]
 layout_mode = 2
-text = "✓   No ads. Not now, not ever."
+text = "✓   No ads. Not now, not ever"
 
-[node name="B4" type="Label" parent="Content/Benefits"]
+[node name="B4" type="Label" parent="Content/Benefits" unique_id=1165011767]
 layout_mode = 2
 text = "✓   Support a solo indie dev"
 
-[node name="PriceLabel" type="Label" parent="Content"]
+[node name="PriceLabel" type="Label" parent="Content" unique_id=16852018]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
@@ -119,32 +119,32 @@ theme_override_font_sizes/font_size = 16
 text = "$3.99 · one-time, forever"
 horizontal_alignment = 1
 
-[node name="GetButton" type="Button" parent="Content"]
+[node name="GetButton" type="Button" parent="Content" unique_id=1763221410]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 focus_mode = 0
 theme_override_constants/h_separation = 12
 theme_override_constants/icon_max_width = 32
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("sb_primary")
-theme_override_styles/hover = SubResource("sb_primary")
 theme_override_styles/pressed = SubResource("sb_primary")
+theme_override_styles/hover = SubResource("sb_primary")
 theme_override_styles/disabled = SubResource("sb_ghost")
 text = "Unlock Premium  ·  $3.99"
 icon = ExtResource("3_crown")
-alignment = 1
 
-[node name="RestoreButton" type="Button" parent="Content"]
+[node name="RestoreButton" type="Button" parent="Content" unique_id=2059540680]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = SubResource("sb_ghost")
-theme_override_styles/hover = SubResource("sb_ghost")
 theme_override_styles/pressed = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
 text = "Restore purchase"
 
-[node name="StatusLabel" type="Label" parent="Content"]
+[node name="StatusLabel" type="Label" parent="Content" unique_id=1037929836]
 unique_name_in_owner = true
 modulate = Color(0.4, 0.78, 0.52, 1)
 layout_mode = 2
@@ -152,7 +152,7 @@ size_flags_horizontal = 4
 text = "✓ You're Premium. Thank you!"
 horizontal_alignment = 1
 
-[node name="NavBar" parent="." instance=ExtResource("2_nav")]
+[node name="NavBar" parent="." unique_id=1370521294 instance=ExtResource("2_nav")]
 layout_mode = 1
 current_tab = "premium"
 

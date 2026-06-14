@@ -1,5 +1,6 @@
 keys,en,fr,es
 with,with,avec,con
+with a friend,with a friend,avec un ami,con un amigo
 Change opponent,Change opponent,Autre adversaire,Otro rival
 Back to game,Back to game,Retour au jeu,Volver al juego
 $3.99,$3.99,"$3,99","$3,99"
@@ -29,7 +30,7 @@ Bots,Bots,Bots,Bots
 Built with,Built with,Construit avec,Construido con
 Calculates without mercy.,Calculates without mercy.,Calcule sans merci.,Calcula sin piedad.
 Cancel,Cancel,Annuler,Cancelar
-Casual,Casual,Loisir,Casual
+Casual,Casual,Amateur,Casual
 Checkmate,Checkmate,Échec et mat,Jaque mate
 Checkmate!,Checkmate!,Échec et mat !,¡Jaque mate!
 Checkmate. Well played.,Checkmate. Well played.,Échec et mat. Bien joué.,Jaque mate. Bien jugado.
@@ -38,7 +39,7 @@ Chess is a fairy tale of 1001 blunders.,Chess is a fairy tale of 1001 blunders.,
 Chess is a struggle against one's own errors.,Chess is a struggle against one's own errors.,Les échecs sont une lutte contre ses propres erreurs.,El ajedrez es una lucha contra los propios errores.
 Chess pieces,Chess pieces,Pièces d'échecs,Piezas de ajedrez
 Close,Close,Fermer,Cerrar
-Club,Club,Club,Club
+Club,Club,Confirmé,Club
 Confirm,Confirm,Confirmer,Confirmar
 "Cool, precise, patient.","Cool, precise, patient.","Froid, précis, patient.","Frío, preciso, paciente."
 Credits,Credits,Crédits,Créditos
@@ -64,15 +65,15 @@ Victorias %d · Tablas %d · Derrotas %d
 Mejores movimientos encontrados: %d
 Errores graves: %d"
 Games played: 0,Games played: 0,Parties jouées : 0,Juegos jugados: 0
-"Generous by design. Buy once, keep forever.","Generous by design. Buy once, keep forever.","Un seul paiement, pas d'abonnement.","Generoso por diseño. Compra una vez, guarda para siempre."
+"Buy once, keep forever","Buy once, keep forever","Un seul paiement, pas d'abonnement","Compra una vez, guarda para siempre"
 Give up,Give up,Abandonner,Rendirse
 Give up?,Give up?,Abandonner ?,¿Abandonar?
-Good,Good,Bon,Bueno
+Good,Good,Pas mal,Bueno
 Grandmaster,Grandmaster,Grand Maître,Gran Maestro
 Great,Great,Excellent,Excelente
 Help your pieces so they can help you.,Help your pieces so they can help you.,Aidez vos pièces pour qu'elles vous aident.,Ayuda a tus piezas para que te ayuden.
 Home,Home,Accueil,Inicio
-Improver,Improver,Perfectionnement,Jugador en desarrollo
+Improver,Improver,Initié,Jugador en desarrollo
 Inaccuracy,Inaccuracy,Imprécision,Imprecisión
 It is always better to sacrifice your opponent's men.,It is always better to sacrifice your opponent's men.,Il vaut toujours mieux sacrifier les pièces de votre adversaire.,Siempre es mejor sacrificar las piezas de tu adversario.
 Just learned how the pieces move.,Just learned how the pieces move.,Sait comment bougent les pièces.,Acaba de aprender cómo se mueven las piezas.
@@ -90,7 +91,7 @@ Not enough material to checkmate.,Not enough material to checkmate.,Pas assez de
 Off,Off,Désactivé,Desactivado
 On,On,Activé,Activado
 Only one move here.,Only one move here.,Un seul coup possible.,Solo un movimiento posible.
-Pass & Play,Pass & Play,Passer & Jouer,Pasar y Jugar
+Pass & Play,Pass & Play,Passer et Jouer,Pasar y Jugar
 Pick your opponent.,Pick your opponent.,Choisis ton adversaire.,Elige tu oponente.
 Play,Play,Jouer,Jugar
 Play again,Play again,Rejouer,Volver a jugar
@@ -132,7 +133,7 @@ Unlocked,Unlocked,Déverrouillé,Desbloqueado
 White,White,Blancs,Blancas
 You gave up,You gave up,Tu as abandonné,Abandonaste
 You win!,You win!,Tu as gagné !,¡Ganaste!
-"Your move, find the best!","Your move, find the best!","À toi de jouer, trouve le meilleur coup !","Tu turno, ¡encuentra el mejor!"
+"Your move, find the best!","Your move, find the best!","À toi, trouve le meilleur coup !","Tu turno, ¡encuentra el mejor!"
 "[b]Chess pieces[/b]
 JohnPablok's improved Cburnett set (CC0), based on a design by Colin M. L. Burnett.
 [url=https://opengameart.org/content/chess-pieces-and-board-squares]opengameart.org[/url]
@@ -224,9 +225,9 @@ Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]
 [url=https://github.com/Hatscat/limpidchess]https://github.com/Hatscat/limpidchess[/url]"
 ~%d,~%d,~%d,~%d
 ★ Best move!,★ Best move!,★ Meilleur coup !,★ ¡Mejor movimiento!
-"✓   No ads. Not now, not ever.","✓   No ads. Not now, not ever.",✓   Jamais de pub,"✓   Sin anuncios. Nunca, jamás."
-✓   Pass & Play on one device,✓   Pass & Play on one device,✓   Passe & Joue sur un appareil,✓   Pasa y Juega en un dispositivo
-✓   Support a solo indie dev,✓   Support a solo indie dev,✓   Soutenir un développeur indépendant,✓   Apoya a un desarrollador indie en solitario
+"✓   No ads. Not now, not ever","✓   No ads. Not now, not ever",✓   Jamais de pub","✓   Sin anuncios. Nunca, jamás"
+✓   Pass & Play on one device,✓   Pass & Play on one device,✓   Passe et Joue sur un appareil,✓   Pasa y Juega en un dispositivo
+✓   Support a solo indie dev,✓   Support a solo indie dev,✓   Soutient un développeur indépendant,✓   Apoya a un desarrollador indie
 ✓   Unlimited games every day,✓   Unlimited games every day,✓   Parties illimitées tous les jours,✓   Juegos ilimitados todos los días
 ✓   Unlock all bots,✓   Unlock all bots,✓   Débloque tous les bots,✓   Desbloquea todos los bots
 ✓ You're Premium. Thank you!,✓ You're Premium. Thank you!,✓ Vous êtes Premium. Merci !,✓ Eres Premium. ¡Gracias!

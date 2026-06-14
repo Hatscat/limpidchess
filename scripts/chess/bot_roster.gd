@@ -24,7 +24,7 @@ const ALL := [
 		"depth": 1, "weakness": 0.95,
 	},
 	{
-		"id": "pebble", "name": "Pebble", "avatar": "koala.png",
+		"id": "pebble", "name": "Pebble", "avatar": "pig.png",
 		"tagline": "Still learning the ropes.",
 		"difficulty": 1, "tier": "Newcomer",
 		"sf_skill": 0, "movetime": 80, "random_chance": 0.5,
@@ -87,7 +87,7 @@ const ALL := [
 		"depth": 4, "weakness": 0.0, "premium": true,
 	},
 	{
-		"id": "aria", "name": "Aria", "avatar": "lion.png",
+		"id": "aria", "name": "Aria", "avatar": "tiger.png",
 		"tagline": "Bold, sharp attacks.",
 		"difficulty": 6, "tier": "Master",
 		"sf_skill": 19, "movetime": 1100,

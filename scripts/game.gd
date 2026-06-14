@@ -59,7 +59,14 @@ var player_color: int
 
 var _ranked: Array = []
 var _history: Array = []
-var _busy := false
+# _busy gates input during searches/animations. As a property it also keeps an
+# OPEN menu's Undo button live: when the bot finishes its reply (_busy -> false),
+# undo becomes available without having to close and reopen the menu.
+var _busy := false:
+	set(value):
+		_busy = value
+		if menu_overlay != null and menu_overlay.visible:
+			undo_btn.disabled = not _can_undo()
 var _game_over := false
 var _pending_action := ""
 ## Bumped on every new game; async turn coroutines bail if it changed under them
