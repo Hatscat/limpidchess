@@ -1,13 +1,12 @@
 extends Control
 
-## Home screen: the quote, today's remaining games, and the big Play button.
-## Play starts a quick game vs the last-picked bot (default: Biscuit). Choosing a
+## Home screen: today's remaining games and the big Play button.
+## Play starts a quick game vs the last-picked bot (default: Pip). Choosing a
 ## specific opponent happens on the Bots tab.
 
 @onready var games_label: Label = %GamesLabel
 @onready var bot_avatar: TextureRect = %BotAvatar
 @onready var bot_name: Label = %BotName
-@onready var quote_label: Label = %Quote
 @onready var settings_overlay: Control = %SettingsOverlay
 @onready var lang_list: VBoxContainer = %LangList
 @onready var sound_toggle: Button = %SoundToggle
@@ -18,8 +17,6 @@ func _ready() -> void:
 	var safe := DisplayServer.get_display_safe_area()
 	$TopBar.offset_top = max(safe.position.y, 16)
 
-	var q := Quotes.random()
-	quote_label.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
 	settings_overlay.visible = false
 
 	var bot := _selected_bot()

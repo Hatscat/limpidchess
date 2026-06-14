@@ -16,6 +16,22 @@ func _ready() -> void:
 	scroll.offset_top = top + 108
 	for bot in BotRoster.ALL:
 		list.add_child(_make_row(bot))
+	# Rows are a fixed-min Button, so a tagline that wraps (longer in fr/es) would
+	# overflow the card. Grow each row to fit its content once it has a real width.
+	_fit_rows.call_deferred()
+	list.resized.connect(_fit_rows)
+
+
+## Set each row's height to fit its (possibly wrapped) content; 96px floor. Runs on
+## first layout + any width change; same-value sets are no-ops so it can't loop.
+func _fit_rows() -> void:
+	if list.size.x < 50.0:
+		return  # width not established yet; resized will call us again
+	for row in list.get_children():
+		if row.get_child_count() == 0:
+			continue
+		var hb := row.get_child(0) as Control
+		row.custom_minimum_size.y = maxf(96.0, hb.get_combined_minimum_size().y + 28.0)
 
 
 func _notification(what: int) -> void:

@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432">
-  <!-- Adaptive-icon foreground: the smiley pawn, centred in the safe zone. -->
-  <g transform="translate(-30,-45) scale(0.48)">
+  <!-- Adaptive-icon foreground: the smiley pawn, scaled to sit inside the
+       central safe circle (Android 12+ masks this layer to a circle for the
+       launcher AND the system splash; anything outside the safe zone is cut). -->
+  <g transform="translate(47.04,36.32) scale(0.33)">
     <g fill="#eef1f4" stroke="#0c0f15" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">
       <rect x="334" y="792" width="356" height="62" rx="31"/>
       <path d="M448 575 C 432 680 392 745 358 800 L 666 800 C 632 745 592 680 576 575 Z"/>

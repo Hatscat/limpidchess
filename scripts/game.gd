@@ -22,8 +22,8 @@ const ANALYSIS_DEPTH_SF := 10
 ## The suggested BEST move gets its own deep, single-line search so that "playing
 ## best" can actually match/beat the opponent (the shallow pass alone often picks
 ## a sub-optimal best the strong bots punish). Think time scales with the bot.
-const BEST_MOVETIME_MARGIN := 350  ## think a little longer than the opponent does
-const BEST_MOVETIME_FLOOR := 750   ## floor so suggestions stay sound vs weak bots (teaching)
+const BEST_MOVETIME_MARGIN := 400  ## think a little longer than the opponent does
+const BEST_MOVETIME_FLOOR := 800   ## floor so suggestions stay sound vs weak bots (teaching)
 const BEST_MOVETIME_CAP := 2100    ## ceiling so the strongest bots' turns stay tolerable
 const OPENING_WINDOW_CP := 55
 const REVEAL_SLIDE_SEC := 0.8   ## slow bullet-time slide of the chosen piece
