@@ -1,7 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://limpidabout01"]
+[gd_scene format=3 uid="uid://drsyb8fskg3ii"]
 
-[ext_resource type="Script" path="res://scripts/about.gd" id="1_about"]
-[ext_resource type="PackedScene" path="res://scenes/nav_bar.tscn" id="2_nav"]
+[ext_resource type="Script" uid="uid://vu7lc47l4l3o" path="res://scripts/about.gd" id="1_about"]
+[ext_resource type="PackedScene" uid="uid://dup7j366xg0q3" path="res://scenes/nav_bar.tscn" id="2_nav"]
 
 [sub_resource type="StyleBoxFlat" id="sb_card"]
 content_margin_left = 18.0
@@ -19,7 +19,7 @@ corner_radius_top_right = 20
 corner_radius_bottom_right = 20
 corner_radius_bottom_left = 20
 
-[node name="About" type="Control"]
+[node name="About" type="Control" unique_id=920700632]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,7 +28,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_about")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=374545405]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -37,7 +37,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.1, 0.12, 1)
 
-[node name="Scroll" type="ScrollContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=365819371]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -52,42 +52,40 @@ grow_vertical = 2
 horizontal_scroll_mode = 0
 scroll_deadzone = 24
 
-[node name="VBox" type="VBoxContainer" parent="Scroll"]
+[node name="VBox" type="VBoxContainer" parent="Scroll" unique_id=1317883711]
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 1
-theme_override_constants/separation = 16
+theme_override_constants/separation = 40
 
-[node name="Title" type="Label" parent="Scroll/VBox"]
+[node name="Title" type="Label" parent="Scroll/VBox" unique_id=1694807561]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "About"
 
-[node name="Tagline" type="Label" parent="Scroll/VBox"]
+[node name="Tagline" type="Label" parent="Scroll/VBox" unique_id=1403867006]
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
 text = "A calm chess game for beginners. The best move is always there, you just have to see it."
 autowrap_mode = 2
 
-[node name="StatsCard" type="PanelContainer" parent="Scroll/VBox"]
+[node name="StatsCard" type="PanelContainer" parent="Scroll/VBox" unique_id=1000289398]
 layout_mode = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="Stats" type="Label" parent="Scroll/VBox/StatsCard"]
+[node name="Stats" type="Label" parent="Scroll/VBox/StatsCard" unique_id=934108293]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Games played: 0"
 
-[node name="CreditsHeading" type="Label" parent="Scroll/VBox"]
+[node name="CreditsHeading" type="Label" parent="Scroll/VBox" unique_id=1822457618]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Credits"
 
-[node name="Credits" type="RichTextLabel" parent="Scroll/VBox"]
+[node name="Credits" type="RichTextLabel" parent="Scroll/VBox" unique_id=353688611]
 layout_mode = 2
 mouse_filter = 1
-fit_content = true
 bbcode_enabled = true
 text = "[b]Chess pieces[/b]
 JohnPablok's improved Cburnett set (CC0), based on a design by Colin M. L. Burnett.
@@ -114,12 +112,12 @@ Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]
 [url=https://github.com/Hatscat/limpidchess]https://github.com/Hatscat/limpidchess[/url]"
 fit_content = true
 
-[node name="Version" type="Label" parent="Scroll/VBox"]
+[node name="Version" type="Label" parent="Scroll/VBox" unique_id=926315340]
 modulate = Color(1, 1, 1, 0.4)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Limpid Chess · v0.1.0"
 
-[node name="NavBar" parent="." instance=ExtResource("2_nav")]
+[node name="NavBar" parent="." unique_id=1018217294 instance=ExtResource("2_nav")]
 layout_mode = 1
 current_tab = "about"
