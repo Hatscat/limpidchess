@@ -138,7 +138,10 @@ func _build_lang_list() -> void:
 
 func _on_language_chosen(code: String) -> void:
 	if code == GameManager.current_language():
-		settings_overlay.visible = false
-		return
+		return  # already active; keep the dialog open (they may want sound too)
 	GameManager.set_language(code)
-	GameManager.go_to_home()  # reload so every string (incl. code-built) re-renders
+	# The locale switches live: auto-translated labels update themselves, but the
+	# strings we build in code must be refreshed. We deliberately keep Settings open.
+	_refresh_games()
+	_refresh_sound_btn()
+	_build_lang_list()  # rebuild so the selected-language highlight moves
