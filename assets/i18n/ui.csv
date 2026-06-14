@@ -4,7 +4,7 @@ with a friend,with a friend,avec un ami,con un amigo
 Change opponent,Change opponent,Autre adversaire,Otro rival
 Back to game,Back to game,Retour au jeu,Volver al juego
 $3.99,$3.99,"$3,99","$3,99"
-"$3.99 · one-time, forever","$3.99 · one-time, forever","$3,99 · une fois, pour toujours","$3.99 · una vez, para siempre"
+"$3.99 · one-time, forever","$3.99 · one-time, forever","$3,99 · une fois, pour toujours","$3,99 · una vez, para siempre"
 %d / %d today,%d / %d today,%d / %d aujourd'hui,%d / %d hoy
 %d average,%d average,%d moyen,%d promedio
 %d best,%d best,%d meilleur,%d mejor
@@ -30,7 +30,7 @@ Bots,Bots,Bots,Bots
 Built with,Built with,Construit avec,Construido con
 Calculates without mercy.,Calculates without mercy.,Calcule sans merci.,Calcula sin piedad.
 Cancel,Cancel,Annuler,Cancelar
-Casual,Casual,Amateur,Casual
+Casual,Casual,Amateur,Aficionado
 Checkmate,Checkmate,Échec et mat,Jaque mate
 Checkmate!,Checkmate!,Échec et mat !,¡Jaque mate!
 Checkmate. Well played.,Checkmate. Well played.,Échec et mat. Bien joué.,Jaque mate. Bien jugado.
@@ -39,7 +39,7 @@ Chess is a fairy tale of 1001 blunders.,Chess is a fairy tale of 1001 blunders.,
 Chess is a struggle against one's own errors.,Chess is a struggle against one's own errors.,Les échecs sont une lutte contre ses propres erreurs.,El ajedrez es una lucha contra los propios errores.
 Chess pieces,Chess pieces,Pièces d'échecs,Piezas de ajedrez
 Close,Close,Fermer,Cerrar
-Club,Club,Confirmé,Club
+Club,Club,Confirmé,Avanzado
 Confirm,Confirm,Confirmer,Confirmar
 "Cool, precise, patient.","Cool, precise, patient.","Froid, précis, patient.","Frío, preciso, paciente."
 Credits,Credits,Crédits,Créditos
@@ -65,18 +65,18 @@ Victorias %d · Tablas %d · Derrotas %d
 Mejores movimientos encontrados: %d
 Errores graves: %d"
 Games played: 0,Games played: 0,Parties jouées : 0,Juegos jugados: 0
-"Buy once, keep forever","Buy once, keep forever","Un seul paiement, pas d'abonnement","Compra una vez, guarda para siempre"
+"Buy once, keep forever","Buy once, keep forever","Un seul paiement, pas d'abonnement","Un solo pago, sin suscripción"
 Give up,Give up,Abandonner,Rendirse
 Give up?,Give up?,Abandonner ?,¿Abandonar?
-Good,Good,Pas mal,Bueno
+Good,Good,Pas mal,Nada mal
 Grandmaster,Grandmaster,Grand Maître,Gran Maestro
 Great,Great,Excellent,Excelente
 Help your pieces so they can help you.,Help your pieces so they can help you.,Aidez vos pièces pour qu'elles vous aident.,Ayuda a tus piezas para que te ayuden.
 Home,Home,Accueil,Inicio
-Improver,Improver,Initié,Jugador en desarrollo
+Improver,Improver,Initié,Intermedio
 Inaccuracy,Inaccuracy,Imprécision,Imprecisión
 It is always better to sacrifice your opponent's men.,It is always better to sacrifice your opponent's men.,Il vaut toujours mieux sacrifier les pièces de votre adversaire.,Siempre es mejor sacrificar las piezas de tu adversario.
-Just learned how the pieces move.,Just learned how the pieces move.,Sait comment bougent les pièces.,Acaba de aprender cómo se mueven las piezas.
+Just learned how the pieces move.,Just learned how the pieces move.,Sait comment bougent les pièces.,Sabe cómo se mueven las piezas.
 Language,Language,Langue,Idioma
 Leaps at every capture.,Leaps at every capture.,Saute sur chaque capture.,Salta en cada captura.
 Gives lots of gifts.,Gives lots of gifts.,Offre plein de cadeaux.,Regala muchas piezas.
@@ -126,7 +126,7 @@ The blunder! The best was %s.,The blunder! The best was %s.,Quelle gaffe ! Le me
 The winner of the game is the player who makes the next-to-last mistake.,The winner of the game is the player who makes the next-to-last mistake.,Le gagnant de la partie est celui qui commet l'avant-dernière erreur.,El ganador de la partida es quien comete el penúltimo error.
 Typeface,Typeface,Police de caractères,Tipografía
 Undo move,Undo move,Annuler le coup,Deshacer
-Unlock Premium  ·  $3.99,Unlock Premium  ·  $3.99,"Déverrouiller Premium  ·  $3,99",Desbloquea Premium  ·  $3.99
+Unlock Premium  ·  $3.99,Unlock Premium  ·  $3.99,"Déverrouiller Premium  ·  $3,99","Desbloquear Premium  ·  $3,99"
 Unlock Premium  ·  %s,Unlock Premium  ·  %s,Déverrouiller Premium  ·  %s,Desbloquear Premium  ·  %s
 Unlocked,Unlocked,Déverrouillé,Desbloqueado
 "When you see a good move, look for a better one.","When you see a good move, look for a better one.","Quand vous voyez un bon coup, cherchez un meilleur.","Cuando ves un buen movimiento, busca uno mejor."
