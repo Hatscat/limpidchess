@@ -74,8 +74,14 @@ func _on_settings_close() -> void:
 func _refresh_sound_btn() -> void:
 	var on := GameManager.sound_enabled
 	sound_toggle.text = tr("Sound: %s") % (tr("On") if on else tr("Off"))
+	# Speaker glyph reflects the state: waves when on, muted (slashed) when off.
+	sound_toggle.icon = load("res://assets/icons/sound_on.png" if on else "res://assets/icons/sound_off.png")
+	sound_toggle.add_theme_constant_override("icon_max_width", 30)
+	sound_toggle.add_theme_constant_override("h_separation", 12)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = UI.SURFACE
+	sb.content_margin_left = 16
+	sb.content_margin_right = 16
 	sb.set_corner_radius_all(16)
 	sb.set_border_width_all(2 if on else 1)
 	sb.border_color = UI.ACCENT if on else UI.BORDER_SUBTLE
@@ -96,6 +102,9 @@ func _on_reset_pressed() -> void:
 	GameManager.go_to_home()  # reload fresh (non-premium, zeroed stats)
 
 
+## Country flag per language code (a quick visual cue alongside the native name).
+const LANG_FLAGS := {"en": "flag_en.png", "fr": "flag_fr.png", "es": "flag_es.png"}
+
 func _build_lang_list() -> void:
 	for c in lang_list.get_children():
 		c.queue_free()
@@ -107,9 +116,16 @@ func _build_lang_list() -> void:
 		b.custom_minimum_size = Vector2(0, 60)
 		b.focus_mode = Control.FOCUS_NONE
 		b.add_theme_font_size_override("font_size", 22)
+		var flag: String = LANG_FLAGS.get(lang["code"], "")
+		if flag != "":
+			b.icon = load("res://assets/icons/" + flag)
+			b.add_theme_constant_override("icon_max_width", 34)
+			b.add_theme_constant_override("h_separation", 14)
 		var selected: bool = lang["code"] == current
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = UI.SURFACE
+		sb.content_margin_left = 16
+		sb.content_margin_right = 16
 		sb.set_corner_radius_all(16)
 		sb.set_border_width_all(2 if selected else 1)
 		sb.border_color = UI.ACCENT if selected else UI.BORDER_SUBTLE

@@ -3,13 +3,13 @@
 [ext_resource type="Script" uid="uid://c07dq5tuavjqi" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" uid="uid://dsbi4m5efbwas" path="res://scripts/ui/chess_board.gd" id="2_board"]
 [ext_resource type="Texture2D" uid="uid://c74dn5k38h8ux" path="res://assets/icons/menu.png" id="4_menu"]
-[ext_resource type="Texture2D" path="res://assets/icons/undo.png" id="5_undo"]
-[ext_resource type="Texture2D" path="res://assets/icons/restart.png" id="6_restart"]
-[ext_resource type="Texture2D" path="res://assets/icons/flag.png" id="7_flag"]
-[ext_resource type="Texture2D" path="res://assets/icons/close.png" id="8_close"]
-[ext_resource type="Texture2D" path="res://assets/icons/check.png" id="9_check"]
-[ext_resource type="Texture2D" path="res://assets/icons/home.png" id="10_home"]
-[ext_resource type="Texture2D" path="res://assets/icons/robot.png" id="11_robot"]
+[ext_resource type="Texture2D" uid="uid://bmunll3grn0vt" path="res://assets/icons/undo.png" id="5_undo"]
+[ext_resource type="Texture2D" uid="uid://c6ce6hjrtu5s1" path="res://assets/icons/restart.png" id="6_restart"]
+[ext_resource type="Texture2D" uid="uid://cfxkuttjsmhds" path="res://assets/icons/flag.png" id="7_flag"]
+[ext_resource type="Texture2D" uid="uid://ovf8opbnaxrt" path="res://assets/icons/close.png" id="8_close"]
+[ext_resource type="Texture2D" uid="uid://7g4enesb2hgm" path="res://assets/icons/check.png" id="9_check"]
+[ext_resource type="Texture2D" uid="uid://dir7jlkxh0hwk" path="res://assets/icons/home.png" id="10_home"]
+[ext_resource type="Texture2D" uid="uid://d0ovxurc6wn88" path="res://assets/icons/robot.png" id="11_robot"]
 
 [sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
@@ -239,56 +239,56 @@ text = "Well played."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="ReviewTitle" type="Label" parent="ResultOverlay/Card/VBox"]
+[node name="ReviewTitle" type="Label" parent="ResultOverlay/Card/VBox" unique_id=276464659]
 modulate = Color(1, 1, 1, 0.45)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "THIS GAME"
 horizontal_alignment = 1
 
-[node name="ReviewBox" type="GridContainer" parent="ResultOverlay/Card/VBox"]
+[node name="ReviewBox" type="GridContainer" parent="ResultOverlay/Card/VBox" unique_id=936389532]
 layout_mode = 2
 size_flags_horizontal = 4
-columns = 2
 theme_override_constants/h_separation = 20
 theme_override_constants/v_separation = 16
+columns = 2
 
-[node name="SymBest" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+[node name="SymBest" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox" unique_id=1293380505]
 modulate = Color(0.36, 0.78, 0.52, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 text = "!!"
 horizontal_alignment = 1
 
-[node name="ReviewBest" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+[node name="ReviewBest" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox" unique_id=890588785]
 unique_name_in_owner = true
 modulate = Color(0.36, 0.78, 0.52, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "0 best"
 
-[node name="SymAvg" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+[node name="SymAvg" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox" unique_id=1881064253]
 modulate = Color(0.46, 0.66, 0.95, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 text = "="
 horizontal_alignment = 1
 
-[node name="ReviewAvg" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+[node name="ReviewAvg" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox" unique_id=1972360239]
 unique_name_in_owner = true
 modulate = Color(0.46, 0.66, 0.95, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "0 average"
 
-[node name="SymBlunder" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+[node name="SymBlunder" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox" unique_id=563512955]
 modulate = Color(0.91, 0.49, 0.44, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 text = "??"
 horizontal_alignment = 1
 
-[node name="ReviewBlunder" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox"]
+[node name="ReviewBlunder" type="Label" parent="ResultOverlay/Card/VBox/ReviewBox" unique_id=1152591481]
 unique_name_in_owner = true
 modulate = Color(0.91, 0.49, 0.44, 1)
 layout_mode = 2
@@ -321,7 +321,6 @@ theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 text = "Home"
 icon = ExtResource("10_home")
-alignment = 0
 
 [node name="BotsBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231104]
 custom_minimum_size = Vector2(0, 60)
@@ -336,7 +335,6 @@ theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 text = "Change opponent"
 icon = ExtResource("11_robot")
-alignment = 0
 
 [node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox" unique_id=596289663]
 unique_name_in_owner = true
@@ -350,7 +348,6 @@ theme_override_styles/normal = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")
 theme_override_styles/hover = SubResource("sb_btn_primary")
 text = "Play again"
-alignment = 0
 
 [node name="ConfirmOverlay" type="Control" parent="." unique_id=1669456548]
 unique_name_in_owner = true
@@ -441,7 +438,7 @@ text = "Confirm"
 icon = ExtResource("9_check")
 alignment = 0
 
-[node name="MenuOverlay" type="Control" parent="."]
+[node name="MenuOverlay" type="Control" parent="." unique_id=1258566020]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -451,7 +448,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="MenuOverlay"]
+[node name="Dim" type="ColorRect" parent="MenuOverlay" unique_id=316549414]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -460,7 +457,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Card" type="PanelContainer" parent="MenuOverlay"]
+[node name="Card" type="PanelContainer" parent="MenuOverlay" unique_id=2143023740]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -475,18 +472,18 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="VBox" type="VBoxContainer" parent="MenuOverlay/Card"]
+[node name="VBox" type="VBoxContainer" parent="MenuOverlay/Card" unique_id=325347946]
 layout_mode = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="MenuTitle" type="Label" parent="MenuOverlay/Card/VBox"]
+[node name="MenuTitle" type="Label" parent="MenuOverlay/Card/VBox" unique_id=1151334373]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Menu"
 horizontal_alignment = 1
 
-[node name="UndoBtn" type="Button" parent="MenuOverlay/Card/VBox"]
+[node name="UndoBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=9644525]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
@@ -503,7 +500,7 @@ text = "Undo move"
 icon = ExtResource("5_undo")
 alignment = 0
 
-[node name="RestartBtn" type="Button" parent="MenuOverlay/Card/VBox"]
+[node name="RestartBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=2016462874]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 focus_mode = 0
@@ -517,7 +514,7 @@ text = "Restart game"
 icon = ExtResource("6_restart")
 alignment = 0
 
-[node name="GiveUpBtn" type="Button" parent="MenuOverlay/Card/VBox"]
+[node name="GiveUpBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=890296422]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 focus_mode = 0
@@ -531,7 +528,7 @@ text = "Give up"
 icon = ExtResource("7_flag")
 alignment = 0
 
-[node name="CloseBtn" type="Button" parent="MenuOverlay/Card/VBox"]
+[node name="CloseBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=521607946]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 focus_mode = 0
@@ -541,17 +538,17 @@ theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")
 theme_override_styles/hover = SubResource("sb_btn_primary")
-text = "Close"
+text = "Back to game"
 icon = ExtResource("8_close")
 alignment = 0
 
 [connection signal="pressed" from="TopBar/Menu" to="." method="_open_menu"]
-[connection signal="pressed" from="MenuOverlay/Card/VBox/UndoBtn" to="." method="_on_menu_undo"]
-[connection signal="pressed" from="MenuOverlay/Card/VBox/RestartBtn" to="." method="_on_menu_restart"]
-[connection signal="pressed" from="MenuOverlay/Card/VBox/GiveUpBtn" to="." method="_on_menu_giveup"]
-[connection signal="pressed" from="MenuOverlay/Card/VBox/CloseBtn" to="." method="_on_menu_close"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/HomeBtn" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/BotsBtn" to="." method="_on_bots_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/PlayAgainBtn" to="." method="_on_play_again_pressed"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmCancel" to="." method="_on_confirm_no"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmYes" to="." method="_on_confirm_yes"]
+[connection signal="pressed" from="MenuOverlay/Card/VBox/UndoBtn" to="." method="_on_menu_undo"]
+[connection signal="pressed" from="MenuOverlay/Card/VBox/RestartBtn" to="." method="_on_menu_restart"]
+[connection signal="pressed" from="MenuOverlay/Card/VBox/GiveUpBtn" to="." method="_on_menu_giveup"]
+[connection signal="pressed" from="MenuOverlay/Card/VBox/CloseBtn" to="." method="_on_menu_close"]

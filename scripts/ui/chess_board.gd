@@ -12,7 +12,7 @@ extends Control
 signal option_chosen(option: Dictionary)
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
-const BADGE_FONT := preload("res://assets/fonts/OpenDyslexic-Regular.otf")
+const BADGE_FONT := preload("res://assets/fonts/OpenDyslexic-Bold.otf")
 
 var _tex := {}
 
@@ -42,6 +42,11 @@ var _anim2_piece := 0
 
 var _cell := 0.0
 var _origin := Vector2.ZERO
+
+# Cached coordinate labels (a1..h8 numbers/letters), shaped once into TextLines and
+# rebuilt only when the cell size or board orientation changes (see _ensure_coords).
+var _coord_cache: Array = []
+var _coord_key := ""
 
 
 func _ready() -> void:
@@ -159,6 +164,7 @@ func _draw() -> void:
 	_draw_squares()
 	_draw_highlights()
 	_draw_pieces()
+	_draw_coords()
 	_draw_options()
 
 
@@ -176,6 +182,58 @@ func _draw_squares() -> void:
 		var is_light := ((Rules.file_of(sq) + Rules.rank_of(sq)) % 2) == 1
 		var col: Color = UI.BOARD_LIGHT if is_light else UI.BOARD_DARK
 		draw_rect(_square_rect(sq), col)
+
+
+## Rank numbers (1-8) down the left column, file letters (a-h) along the bottom
+## row, like printed boards. Labels are shaped ONCE into cached TextLines (offsets
+## relative to _origin) and only rebuilt when the cell size or orientation changes,
+## so the per-frame slide animation just blits them, no per-frame text shaping.
+func _draw_coords() -> void:
+	_ensure_coords()
+	var ci := get_canvas_item()
+	for e in _coord_cache:
+		var tl: TextLine = e["tl"]
+		var off: Vector2 = e["off"]
+		var col: Color = e["color"]
+		tl.draw(ci, _origin + off, col)
+
+
+func _ensure_coords() -> void:
+	var key := "%d:%s" % [int(_cell), flipped]
+	if key == _coord_key:
+		return
+	_coord_key = key
+	_coord_cache.clear()
+	if _cell <= 0.0:
+		return
+	# Each label takes the OPPOSITE square's shade so it reads on light or dark.
+	var fs := int(maxf(11.0, _cell * 0.2))
+	var m := _cell * 0.06
+	for v in 8:
+		# Rank number in the top-left of the left-column square.
+		var rank := (7 - v) if not flipped else v
+		var rfile := 0 if not flipped else 7
+		var rlight := ((rfile + rank) % 2) == 1
+		var rtl := TextLine.new()
+		rtl.add_string(str(rank + 1), BADGE_FONT, fs)
+		_coord_cache.append({
+			"tl": rtl,
+			"off": Vector2(m, v * _cell + m),
+			"color": UI.BOARD_DARK if rlight else UI.BOARD_LIGHT,
+		})
+		# File letter in the bottom-right of the bottom-row square.
+		var file := v if not flipped else 7 - v
+		var frank := 0 if not flipped else 7
+		var flight := ((file + frank) % 2) == 1
+		var ftl := TextLine.new()
+		ftl.add_string(String.chr(97 + file), BADGE_FONT, fs)
+		ftl.width = _cell - 2.0 * m
+		ftl.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		_coord_cache.append({
+			"tl": ftl,
+			"off": Vector2(v * _cell + m, 8.0 * _cell - ftl.get_size().y - m),
+			"color": UI.BOARD_DARK if flight else UI.BOARD_LIGHT,
+		})
 
 
 func _draw_highlights() -> void:
