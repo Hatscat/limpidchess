@@ -60,7 +60,7 @@ offset_right = -28.0
 offset_bottom = -136.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 32
+theme_override_constants/separation = 40
 alignment = 1
 
 [node name="Crown" type="TextureRect" parent="Content" unique_id=568339273]
@@ -143,6 +143,7 @@ theme_override_styles/normal = SubResource("sb_ghost")
 theme_override_styles/pressed = SubResource("sb_ghost")
 theme_override_styles/hover = SubResource("sb_ghost")
 text = "Restore purchase"
+flat = true
 
 [node name="StatusLabel" type="Label" parent="Content" unique_id=1037929836]
 unique_name_in_owner = true
