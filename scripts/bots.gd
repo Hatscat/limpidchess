@@ -46,6 +46,14 @@ func _make_row(bot: Dictionary) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 96)
 	btn.focus_mode = Control.FOCUS_NONE
+	# PASS (not the default STOP) so a touch-drag that starts on a row bubbles up
+	# Button -> List(VBox) -> Scroll and scrolls the list. With STOP the button ate
+	# the drag and you could only scroll in the thin gaps between rows. A clean tap
+	# still fires (dragging out of the button cancels its press), and the Scroll's
+	# scroll_deadzone keeps small jitters from hijacking a tap. NOTE: this relies on
+	# the List VBox staying PASS (Containers default to PASS; bots.tscn sets it
+	# explicitly) so the event keeps bubbling up to the ScrollContainer.
+	btn.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = UI.SURFACE

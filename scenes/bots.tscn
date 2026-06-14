@@ -56,12 +56,14 @@ offset_bottom = -136.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
+scroll_deadzone = 24
 
 [node name="List" type="VBoxContainer" parent="Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
+mouse_filter = 1
 
 [node name="NavBar" parent="." instance=ExtResource("2_nav")]
 layout_mode = 1

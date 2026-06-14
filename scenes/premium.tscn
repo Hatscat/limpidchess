@@ -124,11 +124,15 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 focus_mode = 0
+theme_override_constants/h_separation = 12
+theme_override_constants/icon_max_width = 32
 theme_override_styles/normal = SubResource("sb_primary")
 theme_override_styles/hover = SubResource("sb_primary")
 theme_override_styles/pressed = SubResource("sb_primary")
 theme_override_styles/disabled = SubResource("sb_ghost")
 text = "Unlock Premium  ·  $3.99"
+icon = ExtResource("3_crown")
+alignment = 1
 
 [node name="RestoreButton" type="Button" parent="Content"]
 unique_name_in_owner = true

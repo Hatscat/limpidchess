@@ -43,6 +43,7 @@ const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before
 @onready var review_best: Label = %ReviewBest
 @onready var review_avg: Label = %ReviewAvg
 @onready var review_blunder: Label = %ReviewBlunder
+@onready var play_again_btn: Button = %PlayAgainBtn
 @onready var confirm_overlay: Control = %ConfirmOverlay
 @onready var confirm_title: Label = %ConfirmTitle
 @onready var confirm_message: Label = %ConfirmMessage
@@ -650,6 +651,15 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	review_avg.text = tr("%d average") % _decent_count
 	review_blunder.text = tr("%d blunder") % _blunder_count
 	GameManager.record_game_review(_best_count, _blunder_count)
+	# Make "Play again" concrete for kids who can't read yet: show WHO you'd replay,
+	# the opponent's avatar + name (the handshake for Pass & Play).
+	if GameManager.pass_and_play:
+		play_again_btn.icon = load("res://assets/icons/handshake.png")
+		play_again_btn.text = tr("Play again")
+	else:
+		var nm: String = bot_def.get("name", "Bot")
+		play_again_btn.icon = load(BotRoster.avatar_path(bot_def))
+		play_again_btn.text = tr("Play again") + " · " + nm
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
 	result_overlay.visible = true
@@ -775,3 +785,7 @@ func _on_play_again_pressed() -> void:
 
 func _on_home_pressed() -> void:
 	GameManager.go_to_home()
+
+
+func _on_bots_pressed() -> void:
+	GameManager.go_to_bots()  # pick a different opponent from the review dialog
