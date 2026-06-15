@@ -108,6 +108,17 @@ var _reply_uci := ""        ## result ("" while still searching)
 var _reply_pending := false
 signal _reply_ready
 
+# Options prefetch (Pass & Play): there's no bot reply to precompute there, so during the
+# same reveal idle we rank the position the OTHER player is about to face, and
+# _present_options consumes it instead of stalling on a fresh analysis. Bot games skip this
+# (they prefetch the bot's reply instead; the player's own next analysis can't be known
+# until the bot has moved). Keyed by (gen, post-move FEN); dropped if either changes.
+var _opts_fen := ""         ## position the prefetch is for ("" = none in flight)
+var _opts_gen := -1
+var _opts_ranked: Array = []  ## result (empty while still searching / on miss)
+var _opts_pending := false
+signal _opts_ready
+
 # Stockfish evaluation bar (bot games only; hidden in Pass & Play). Created in _ready.
 var eval_bar: Control
 
@@ -278,6 +289,9 @@ func _new_game() -> void:
 	_player_moves = 0
 	_reply_fen = ""
 	_reply_pending = false
+	_opts_fen = ""
+	_opts_pending = false
+	_opts_ranked = []
 	_update_captured()
 	eval_bar.visible = not GameManager.pass_and_play
 	eval_bar.set_eval(0)
@@ -332,12 +346,9 @@ func _present_options() -> void:
 	_busy = true
 	var g := _gen
 	status_label.text = "Reading the position…"
-	_ranked = await _rank_position()
+	_ranked = await _take_options(g)
 	if g != _gen:
 		return  # a new game / undo / game-end happened during analysis
-	await _promote_deep_best()
-	if g != _gen:
-		return
 	_push_eval_from_ranked()
 
 	var picks := ChessBotScript.select_options(_ranked)
@@ -361,51 +372,55 @@ func _present_options() -> void:
 	_busy = false
 
 
-func _rank_position() -> Array:
+func _rank_position(r: ChessRules = null) -> Array:
+	if r == null:
+		r = rules
 	if _use_sf and stockfish.available:
-		var legal := rules.generate_legal_moves()
+		var legal := r.generate_legal_moves()
 		var mpv := maxi(1, mini(legal.size(), 50))
-		var lines: Array = await stockfish.analyse(rules.get_fen(), mpv, ANALYSIS_DEPTH_SF)
-		var ranked := _ranked_from_sf(lines)
+		var lines: Array = await stockfish.analyse(r.get_fen(), mpv, ANALYSIS_DEPTH_SF)
+		var ranked := _ranked_from_sf(lines, r)
 		if not ranked.is_empty():
 			return ranked
-	return bot.rank_moves(rules, ChessBotScript.ANALYSIS_DEPTH)
+	return bot.rank_moves(r, ChessBotScript.ANALYSIS_DEPTH)
 
 
 ## Deepen ONLY the best line: a single full-strength search (think time scaled to
-## the opponent) replaces the shallow pass's #1, lifted to the front of _ranked as
-## the reference best. So "best" is genuinely strong vs deep-searching bots, while
-## the wide spread (decent / blunder / grading) stays cheap. Fallback path is a
-## no-op (the GDScript ranker has no separate deep search).
-func _promote_deep_best() -> void:
-	if not (_use_sf and stockfish.available) or _ranked.is_empty():
-		return
-	var g := _gen
+## the opponent) replaces the shallow pass's #1, lifted to the front of the ranked
+## list as the reference best. So "best" is genuinely strong vs deep-searching bots,
+## while the wide spread (decent / blunder / grading) stays cheap. Fallback path is a
+## no-op (the GDScript ranker has no separate deep search). Operates on the given rules
+## (the live board, or a throwaway clone for the Pass & Play prefetch) and returns the
+## reordered list.
+func _deep_promote(ranked: Array, r: ChessRules, g: int) -> Array:
+	if not (_use_sf and stockfish.available) or ranked.is_empty():
+		return ranked
 	var mt: int = clampi(int(bot_def.get("movetime", 400)) + BEST_MOVETIME_MARGIN,
 		BEST_MOVETIME_FLOOR, BEST_MOVETIME_CAP)
-	var uci: String = await stockfish.best_move(rules.get_fen(), {"skill": 20, "movetime": mt})
+	var uci: String = await stockfish.best_move(r.get_fen(), {"skill": 20, "movetime": mt})
 	if g != _gen:
-		return  # undo / restart / game-end happened during the deep search → don't touch _ranked
-	var best_move := rules.move_from_uci(uci)
+		return ranked  # undo / restart / game-end during the deep search → leave it untouched
+	var best_move := r.move_from_uci(uci)
 	if best_move < 0:
-		return
-	var top_score: int = int(_ranked[0]["score"])
-	for i in _ranked.size():
-		if int(_ranked[i]["move"]) == best_move:
-			var e: Dictionary = _ranked[i]
-			_ranked.remove_at(i)
-			_ranked.insert(0, e)
+		return ranked
+	var top_score: int = int(ranked[0]["score"])
+	for i in ranked.size():
+		if int(ranked[i]["move"]) == best_move:
+			var e: Dictionary = ranked[i]
+			ranked.remove_at(i)
+			ranked.insert(0, e)
 			break
-	if int(_ranked[0]["move"]) != best_move:  # wasn't in the spread → prepend it
-		_ranked.insert(0, {"move": best_move, "score": top_score})
+	if int(ranked[0]["move"]) != best_move:  # wasn't in the spread → prepend it
+		ranked.insert(0, {"move": best_move, "score": top_score})
 	# It is the true best, so it must carry the top score (keeps cp-loss grading sane).
-	_ranked[0]["score"] = maxi(int(_ranked[0]["score"]), top_score)
+	ranked[0]["score"] = maxi(int(ranked[0]["score"]), top_score)
+	return ranked
 
 
-func _ranked_from_sf(lines: Array) -> Array:
+func _ranked_from_sf(lines: Array, r: ChessRules) -> Array:
 	var by_uci := {}
-	for m in rules.generate_legal_moves():
-		by_uci[rules.move_to_uci(m)] = m
+	for m in r.generate_legal_moves():
+		by_uci[r.move_to_uci(m)] = m
 	var ranked: Array = []
 	for e in lines:
 		if by_uci.has(e["uci"]):
@@ -446,7 +461,8 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	# Reveal the qualities, then slow-slide the chosen piece (bullet time). While the
 	# reveal plays (~1.5s of idle CPU), search the bot's reply in the background.
 	board.reveal()
-	_prefetch_bot_reply(move, g)
+	_prefetch_bot_reply(move, g)   # bot games: search the reply while the reveal plays
+	_prefetch_options(move, g)     # Pass & Play: rank the next player's position instead
 	await board.animate_move(move, REVEAL_SLIDE_SEC)
 	if g != _gen:
 		return
@@ -527,9 +543,12 @@ func _search_reply(fen: String, g: int) -> void:
 		"skill": bot_def.get("sf_skill", 10),
 		"movetime": bot_def.get("movetime", 200),
 	})
-	_reply_pending = false
-	if g == _gen and fen == _reply_fen:
-		_reply_uci = uci
+	# Clear pending only for the live generation: an orphaned search (gen bumped under it)
+	# must not reset the flag a fresh prefetch already set, or a waiter could wake early.
+	if g == _gen:
+		_reply_pending = false
+		if fen == _reply_fen:
+			_reply_uci = uci
 	_reply_ready.emit()  # always wake a waiter; staleness is checked by the consumer
 
 
@@ -547,6 +566,59 @@ func _take_bot_reply(fen: String, g: int) -> String:
 		"skill": bot_def.get("sf_skill", 10),
 		"movetime": bot_def.get("movetime", 200),
 	})
+
+
+## Pass & Play has no bot reply to precompute, so during the reveal we instead rank the
+## position the OTHER player will face on a throwaway ChessRules clone (the live board is
+## left exactly as drawn), and _present_options consumes it. Bot games skip this.
+func _prefetch_options(player_move: int, g: int) -> void:
+	_opts_fen = ""
+	if not GameManager.pass_and_play or not (_use_sf and stockfish.available):
+		return
+	var undo := rules.make_move(player_move)
+	var fen := rules.get_fen()
+	rules.undo_move(player_move, undo)  # leave the board exactly as drawn (no redraw between)
+	var probe := ChessRules.new()
+	probe.set_fen(fen)
+	_opts_fen = fen
+	_opts_gen = g
+	_opts_ranked = []
+	_opts_pending = true
+	_search_options(probe, g)  # fire-and-forget; lands in _opts_ranked
+
+
+func _search_options(probe: ChessRules, g: int) -> void:
+	var ranked: Array = await _rank_position(probe)
+	if g == _gen:
+		ranked = await _deep_promote(ranked, probe, g)
+	# Clear pending only for the live generation (see _search_reply): an orphan must not
+	# reset the flag a fresh prefetch already set.
+	if g == _gen:
+		_opts_pending = false
+		if probe.get_fen() == _opts_fen:
+			_opts_ranked = ranked
+	_opts_ready.emit()  # always wake a waiter; staleness is checked by the consumer
+
+
+## The ranked option spread for the current position: the Pass & Play prefetch if it's for
+## this exact position, else a fresh analysis. Awaits a still-running prefetch (never starts
+## a second analysis for it). Mirrors _take_bot_reply for the options channel.
+func _take_options(g: int) -> Array:
+	if _opts_gen == g and _opts_fen == rules.get_fen():
+		# while (not if): only our keyed search clears _opts_pending; a stray wake re-awaits.
+		while _opts_pending:
+			await _opts_ready
+		var ranked: Array = _opts_ranked
+		_opts_ranked = []
+		_opts_fen = ""  # consumed
+		if g != _gen:
+			return []
+		if not ranked.is_empty():
+			return ranked
+	var fresh: Array = await _rank_position()
+	if g != _gen:
+		return fresh
+	return await _deep_promote(fresh, rules, g)
 
 
 func _play_move(move: int) -> void:
@@ -814,6 +886,12 @@ func _undo_last() -> void:
 	if not _can_undo():
 		return
 	_gen += 1  # invalidate any stray coroutine
+	# Drop any in-flight prefetch keyed to the pre-undo position (mirrors _new_game).
+	_reply_fen = ""
+	_reply_pending = false
+	_opts_fen = ""
+	_opts_pending = false
+	_opts_ranked = []
 	board.end_animation()
 	var plies := 0
 	while plies < 2 and _undo_stack.size() > 1:  # never pop the opening
