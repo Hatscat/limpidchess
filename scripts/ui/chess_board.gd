@@ -28,6 +28,7 @@ var check_square := -1
 var _options: Array = []
 var _revealed := false
 var _interactive := false
+var _chosen_move := -1  # the move the player tapped; drawn on top after the reveal
 
 # Piece-slide animation (used during the reveal).
 var _anim_active := false
@@ -95,6 +96,7 @@ func set_options(options: Array, interactive := true) -> void:
 	_options = options
 	_revealed = false
 	_interactive = interactive
+	_chosen_move = -1
 	queue_redraw()
 
 
@@ -102,6 +104,7 @@ func clear_options() -> void:
 	_options = []
 	_revealed = false
 	_interactive = false
+	_chosen_move = -1
 	queue_redraw()
 
 
@@ -276,51 +279,91 @@ func _draw_slider(piece: int, from_sq: int, to_sq: int) -> void:
 
 
 func _draw_options() -> void:
+	# Strict bottom-to-top layering: landing dots, then shafts, then heads. The dot
+	# stays UNDER both the line and the triangle; a head must sit above every shaft
+	# (two options can share a row/column). The player's chosen arrow is drawn last
+	# and whole so it stays on top even where arrows cross.
+	var others: Array = []
+	var chosen: Dictionary = {}
 	for opt in _options:
-		var col := UI.ACCENT
-		if _revealed:
-			match opt.get("quality", ""):
-				"best": col = UI.MOVE_BEST
-				"decent": col = UI.MOVE_DECENT
-				"blunder": col = UI.MOVE_BLUNDER
-		_draw_arrow(opt["move"], col, opt.get("quality", "") if _revealed else "")
+		if _revealed and int(opt["move"]) == _chosen_move:
+			chosen = opt
+		else:
+			others.append(opt)
+	for opt in others:  # pass 1: landing dots (bottom of everything)
+		_draw_arrow_dot(int(opt["move"]), _arrow_color(opt))
+	for opt in others:  # pass 2: shafts
+		_draw_arrow_shaft(int(opt["move"]), _arrow_color(opt))
+	for opt in others:  # pass 3: heads, above every shaft
+		_draw_arrow_head(int(opt["move"]), _arrow_color(opt), _arrow_quality(opt))
+	if not chosen.is_empty():  # the chosen arrow, whole, on top of everything
+		_draw_arrow(int(chosen["move"]), _arrow_color(chosen), _arrow_quality(chosen))
 
 
-func _draw_arrow(move: int, col: Color, quality: String) -> void:
+## Arrow colour: one neutral accent before the reveal, the quality colour after.
+func _arrow_color(opt: Dictionary) -> Color:
+	if not _revealed:
+		return UI.ACCENT
+	match opt.get("quality", ""):
+		"best": return UI.MOVE_BEST
+		"decent": return UI.MOVE_DECENT
+		"blunder": return UI.MOVE_BLUNDER
+	return UI.ACCENT
+
+
+func _arrow_quality(opt: Dictionary) -> String:
+	return String(opt.get("quality", "")) if _revealed else ""
+
+
+## The thin shaft line (dark outline + colour), drawn under every head. Geometry is
+## kept inline (plain Vector2 locals, no per-frame heap allocation) since _draw_options
+## runs every frame of the reveal slide.
+func _draw_arrow_shaft(move: int, col: Color) -> void:
+	var from := _square_center(Rules.move_from(move))
+	var to := _square_center(Rules.move_to(move))
+	var dir := (to - from).normalized()
+	var line_from := from + dir * _cell * 0.15  # small gap from the source center
+	var shaft_w := _cell * 0.11
+	var e := _cell * 0.05
+	draw_line(line_from, to, Color(0.04, 0.05, 0.08, 0.45), shaft_w + e, true)  # outline, slightly larger
+	draw_line(line_from, to, Color(col, 1.0), shaft_w, true)
+
+
+## The translucent landing circle at the target. Its own pass (before the shafts)
+## so it sits UNDER both the line and the arrowhead, never between them.
+func _draw_arrow_dot(move: int, col: Color) -> void:
+	draw_circle(_square_center(Rules.move_to(move)), _cell * 0.46, Color(col, 0.42))
+
+
+## The arrowhead: a dark shadow on the two LEADING edges only (base left open so the
+## shaft flows into the head with no seam), then the solid colour triangle + symbol.
+func _draw_arrow_head(move: int, col: Color, quality: String) -> void:
 	var from := _square_center(Rules.move_from(move))
 	var to := _square_center(Rules.move_to(move))
 	var dir := (to - from).normalized()
 	var perp := Vector2(-dir.y, dir.x)
-
-	# Geometry: shaft runs all the way to the target so it joins the head/dot
-	# (no gap); a big arrowhead sits over the target dot, hovering it.
-	var shaft_w := _cell * 0.11
-	var dot_r := _cell * 0.46
-	var tip := to + dir * _cell * 0.11
 	var base := to - dir * _cell * 0.30
 	var hw := _cell * 0.22
+	var tip := to + dir * _cell * 0.11
 	var p1 := base + perp * hw
 	var p2 := base - perp * hw
-	
-	var line_from = from + dir * _cell * 0.15 # little gap from the center of the cell
-
-	# Dark outline pass (slightly larger) so the arrow reads on light or dark squares.
-	var outline := Color(0.04, 0.05, 0.08, 0.45)
 	var e := _cell * 0.05
-	draw_line(line_from, to, outline, shaft_w + e, true)
-	#draw_circle(to, dot_r + e, outline)
-	draw_colored_polygon(PackedVector2Array([
-		tip + dir * e, p1 + (perp * e) - (dir * e), p2 - (perp * e) - (dir * e),
-	]), outline)
-
-	# Colour pass.
-	draw_circle(to, dot_r, Color(col, 0.42))
-	draw_line(line_from, to, Color(col, 0.77), shaft_w, true)
+	var outline := Color(0.04, 0.05, 0.08, 0.45)
+	# Shadow only p1->tip and p2->tip (tip nudged forward); the base p1->p2 is left
+	# open, so no dark bar is drawn across where the shaft meets the head.
+	#var otip := tip + dir * e
+	draw_line(p1, tip, outline, e, true)
+	draw_line(p2, tip, outline, e, true)
 	draw_colored_polygon(PackedVector2Array([tip, p1, p2]), Color(col, 1.0))
-
-	# On reveal, a shape symbol so the result reads without colour.
 	if quality != "":
 		_draw_quality_symbol(to, quality)
+
+
+## A whole arrow (dot, shaft, head) for the chosen move, drawn last so nothing overlaps it.
+func _draw_arrow(move: int, col: Color, quality: String) -> void:
+	_draw_arrow_dot(move, col)
+	_draw_arrow_shaft(move, col)
+	_draw_arrow_head(move, col, quality)
 
 
 ## A small white shape over the dot: check = best, dash = decent, cross = blunder.
@@ -390,6 +433,7 @@ func _gui_input(event: InputEvent) -> void:
 	# on a destination unambiguously picks one.
 	for opt in _options:
 		if Rules.move_to(opt["move"]) == sq:
+			_chosen_move = int(opt["move"])  # so reveal() draws it on top of the others
 			option_chosen.emit(opt)
 			get_viewport().set_input_as_handled()
 			return
