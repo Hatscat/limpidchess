@@ -309,12 +309,12 @@ theme_override_constants/separation = 16
 alignment = 1
 
 [node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231103]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 theme_override_constants/h_separation = 12
-theme_override_constants/icon_max_width = 32
+theme_override_constants/icon_max_width = 52
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
@@ -323,12 +323,12 @@ text = "Home"
 icon = ExtResource("10_home")
 
 [node name="BotsBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231104]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 theme_override_constants/h_separation = 12
-theme_override_constants/icon_max_width = 32
+theme_override_constants/icon_max_width = 52
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
@@ -338,11 +338,11 @@ icon = ExtResource("11_robot")
 
 [node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox" unique_id=596289663]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 focus_mode = 0
 theme_override_constants/h_separation = 14
-theme_override_constants/icon_max_width = 40
+theme_override_constants/icon_max_width = 52
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")

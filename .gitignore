@@ -28,3 +28,6 @@ native/**/*.os
 /addons/stockfish/bin/*.dylib
 # Generated post-build (references the libs above); the template lives in native/
 /addons/stockfish/stockfish.gdextension
+
+# Claude local only files
+.claude/

@@ -56,7 +56,7 @@ offset_bottom = -136.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
-scroll_deadzone = 24
+scroll_deadzone = 16
 
 [node name="List" type="VBoxContainer" parent="Scroll"]
 unique_name_in_owner = true
