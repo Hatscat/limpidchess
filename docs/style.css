@@ -1,0 +1,87 @@
+/* Limpid Chess website — palette mirrors the app (dark, calm, teal accent). */
+:root {
+  --bg: #16191e;
+  --surface: #21242b;
+  --line: rgba(255, 255, 255, .08);
+  --text: #eef1f4;
+  --dim: rgba(238, 241, 244, .6);
+  --accent: #6cc3de;
+  --accent-ink: #0c1116;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+
+/* header */
+header.site { padding: 14px 0; border-bottom: 1px solid var(--line); }
+header.site .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+.brand img { width: 36px; height: 36px; border-radius: 9px; }
+nav.top a { color: var(--dim); margin-left: 18px; font-size: .95rem; }
+nav.top a:hover { color: var(--text); text-decoration: none; }
+
+/* hero */
+.hero { text-align: center; padding: 66px 0 34px; }
+.hero img.icon { width: 132px; height: 132px; border-radius: 29px; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
+.hero h1 { font-size: 2.7rem; margin: .35em 0 .12em; letter-spacing: .5px; }
+.eyebrow { color: var(--dim); letter-spacing: .28em; font-size: .72rem; text-transform: uppercase; }
+.hero .tag { color: var(--dim); font-size: 1.22rem; margin: .5em auto 0; max-width: 40ch; }
+.cta {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 28px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 1.05rem;
+  padding: 14px 28px; border-radius: 14px;
+}
+.cta:hover { text-decoration: none; filter: brightness(1.07); }
+.cta-note { display: block; color: var(--dim); font-size: .82rem; margin-top: 12px; }
+
+/* features */
+h2.section { text-align: center; font-size: 1.7rem; margin: 8px 0 4px; }
+.sub { text-align: center; color: var(--dim); margin: 0 auto 8px; max-width: 52ch; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin: 30px 0; }
+.feature { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+.feature h3 { margin: 0 0 .3em; font-size: 1.12rem; }
+.feature p { margin: 0; color: var(--dim); font-size: .97rem; }
+
+/* screenshots */
+.shots { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin: 36px 0 10px; }
+.shots img { height: 440px; max-width: 100%; border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 8px 30px rgba(0, 0, 0, .45); }
+
+section.band { padding: 34px 0; }
+
+/* footer */
+footer.site { border-top: 1px solid var(--line); margin-top: 54px; padding: 28px 0 40px; color: var(--dim); font-size: .9rem; }
+footer.site .row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
+footer.site a { color: var(--dim); }
+footer.site a:hover { color: var(--text); }
+footer.site .credits { margin-top: 14px; font-size: .82rem; line-height: 1.7; }
+
+/* teaser video */
+.video-wrap { text-align: center; margin: 26px 0 6px; }
+.video-wrap video { width: 300px; max-width: 86%; border-radius: 26px; border: 1px solid var(--line); box-shadow: 0 12px 44px rgba(0, 0, 0, .55); background: #000; }
+
+/* how it works (before / after) */
+.how { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; margin: 30px 0 6px; }
+.how figure { margin: 0; max-width: 340px; }
+.how img { width: 100%; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 8px 30px rgba(0, 0, 0, .4); }
+.how figcaption { color: var(--dim); margin-top: 12px; font-size: .98rem; }
+.how figcaption b { color: var(--text); }
+
+/* legal documents */
+.doc { max-width: 760px; padding-bottom: 20px; }
+.doc h1 { font-size: 2rem; margin: 28px 0 .1em; }
+.doc .updated { color: var(--dim); margin: 0; }
+.doc h2 { font-size: 1.22rem; margin: 1.7em 0 .3em; border-bottom: 1px solid var(--line); padding-bottom: .25em; }
+.doc ul { padding-left: 1.2em; }
+.doc li { margin: .35em 0; }
+.doc .lead { font-size: 1.08rem; }
+.doc .back { display: inline-block; margin-top: 30px; color: var(--dim); }
