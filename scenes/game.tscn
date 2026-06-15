@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://7g4enesb2hgm" path="res://assets/icons/check.png" id="9_check"]
 [ext_resource type="Texture2D" uid="uid://dir7jlkxh0hwk" path="res://assets/icons/home.png" id="10_home"]
 [ext_resource type="Texture2D" uid="uid://d0ovxurc6wn88" path="res://assets/icons/robot.png" id="11_robot"]
+[ext_resource type="Texture2D" uid="uid://dlyyxad0h1tnk" path="res://assets/icons/magnifier.png" id="12_magnifier"]
 
 [sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
@@ -211,9 +212,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -344.0
-offset_top = -390.0
+offset_top = -450.0
 offset_right = 344.0
-offset_bottom = 390.0
+offset_bottom = 450.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
@@ -303,51 +304,65 @@ theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="ResultOverlay/Card/VBox" unique_id=983117511]
+[node name="Buttons" type="VBoxContainer" parent="ResultOverlay/Card/VBox" unique_id=983117511]
 layout_mode = 2
 theme_override_constants/separation = 16
-alignment = 1
-
-[node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231103]
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-theme_override_constants/h_separation = 12
-theme_override_constants/icon_max_width = 52
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("sb_btn")
-theme_override_styles/pressed = SubResource("sb_btn")
-theme_override_styles/hover = SubResource("sb_btn")
-text = "Home"
-icon = ExtResource("10_home")
 
 [node name="BotsBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231104]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
-theme_override_constants/h_separation = 12
-theme_override_constants/icon_max_width = 52
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 44
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 text = "Change opponent"
 icon = ExtResource("11_robot")
+alignment = 0
 
-[node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox" unique_id=596289663]
+[node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=596289663]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 focus_mode = 0
 theme_override_constants/h_separation = 14
-theme_override_constants/icon_max_width = 52
+theme_override_constants/icon_max_width = 44
 theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("sb_btn_primary")
-theme_override_styles/pressed = SubResource("sb_btn_primary")
-theme_override_styles/hover = SubResource("sb_btn_primary")
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
 text = "Play again"
+alignment = 0
+
+[node name="AnalyseBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=414004910]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 44
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+text = "Review the moves"
+icon = ExtResource("12_magnifier")
+alignment = 0
+
+[node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231103]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 44
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+text = "Go back home"
+icon = ExtResource("10_home")
+alignment = 0
 
 [node name="ConfirmOverlay" type="Control" parent="." unique_id=1669456548]
 unique_name_in_owner = true
@@ -544,9 +559,10 @@ icon = ExtResource("8_close")
 alignment = 0
 
 [connection signal="pressed" from="TopBar/Menu" to="." method="_open_menu"]
-[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/HomeBtn" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/BotsBtn" to="." method="_on_bots_pressed"]
-[connection signal="pressed" from="ResultOverlay/Card/VBox/PlayAgainBtn" to="." method="_on_play_again_pressed"]
+[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/PlayAgainBtn" to="." method="_on_play_again_pressed"]
+[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/AnalyseBtn" to="." method="_on_analyse_pressed"]
+[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/HomeBtn" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmCancel" to="." method="_on_confirm_no"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmYes" to="." method="_on_confirm_yes"]
 [connection signal="pressed" from="MenuOverlay/Card/VBox/UndoBtn" to="." method="_on_menu_undo"]

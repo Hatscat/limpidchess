@@ -373,6 +373,7 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 22
 text = "Sound"
+alignment = 0
 
 [node name="LangLabel" type="Label" parent="SettingsOverlay/Card/VBox" unique_id=1543917673]
 modulate = Color(1, 1, 1, 0.55)

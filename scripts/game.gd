@@ -683,7 +683,7 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	else:
 		var nm: String = bot_def.get("name", "Bot")
 		play_again_btn.icon = load(BotRoster.avatar_path(bot_def))
-		play_again_btn.text = tr("Play again") + " · " + nm
+		play_again_btn.text = tr("Play again") + " " + tr("with") + " " + nm
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
 	result_overlay.visible = true
@@ -728,7 +728,7 @@ func _on_menu_restart() -> void:
 func _on_menu_giveup() -> void:
 	menu_overlay.visible = false
 	if _is_early_game():
-		_ask_confirm("cancel", "Cancel game?", "This game won't count. Leave it?")
+		_ask_confirm("cancel", "Cancel game?", "This game won't count.")
 	else:
 		_ask_confirm("give_up", "Give up?", "Resign and end this game?")
 
@@ -849,3 +849,29 @@ func _on_home_pressed() -> void:
 
 func _on_bots_pressed() -> void:
 	GameManager.go_to_bots()  # pick a different opponent from the review dialog
+
+
+## Open the finished game in Chess.com's analysis board so a beginner can step
+## through every move with the engine when a suggested best move wasn't clear.
+## (Chess.com loads a full game from the URL; Lichess would need a login to import
+## one, so only a single FEN works there via a plain link.)
+func _on_analyse_pressed() -> void:
+	if _undo_stack.is_empty():
+		return
+	OS.shell_open("https://www.chess.com/analysis?pgn=" + _build_pgn().uri_encode())
+
+
+## PGN movetext of the game as actually played: replay the undo stack from the start
+## position (undone moves are already popped) and SAN each ply. The first entry is
+## White's auto-opening, so ply 0 is move 1 for White.
+func _build_pgn() -> String:
+	var r := ChessRules.new()
+	r.reset_startpos()
+	var parts: PackedStringArray = PackedStringArray()
+	for i in _undo_stack.size():
+		var m: int = _undo_stack[i]["move"]
+		if i % 2 == 0:
+			parts.append("%d." % ((i >> 1) + 1))  # move number before each White ply
+		parts.append(r.to_san(m))
+		r.make_move(m)
+	return " ".join(parts)

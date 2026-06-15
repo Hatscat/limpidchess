@@ -116,6 +116,7 @@ func _build_lang_list() -> void:
 		b.custom_minimum_size = Vector2(0, 60)
 		b.focus_mode = Control.FOCUS_NONE
 		b.add_theme_font_size_override("font_size", 22)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		var flag: String = LANG_FLAGS.get(lang["code"], "")
 		if flag != "":
 			b.icon = load("res://assets/icons/" + flag)
