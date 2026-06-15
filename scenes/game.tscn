@@ -248,6 +248,7 @@ text = "THIS GAME"
 horizontal_alignment = 1
 
 [node name="ReviewBox" type="GridContainer" parent="ResultOverlay/Card/VBox" unique_id=936389532]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/h_separation = 20
@@ -296,6 +297,101 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "0 blunder"
 
+[node name="ReviewBoxPP" type="GridContainer" parent="ResultOverlay/Card/VBox" unique_id=730010001]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 30
+theme_override_constants/v_separation = 16
+columns = 3
+
+[node name="HdrSpacer" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010002]
+layout_mode = 2
+
+[node name="PPWhite" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010003]
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "White"
+horizontal_alignment = 1
+
+[node name="PPBlack" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010004]
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Black"
+horizontal_alignment = 1
+
+[node name="SymBestPP" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010005]
+modulate = Color(0.36, 0.78, 0.52, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "!!"
+horizontal_alignment = 1
+
+[node name="PPBestW" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010006]
+unique_name_in_owner = true
+modulate = Color(0.36, 0.78, 0.52, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
+[node name="PPBestB" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010007]
+unique_name_in_owner = true
+modulate = Color(0.36, 0.78, 0.52, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
+[node name="SymAvgPP" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010008]
+modulate = Color(0.46, 0.66, 0.95, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "="
+horizontal_alignment = 1
+
+[node name="PPDecentW" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010009]
+unique_name_in_owner = true
+modulate = Color(0.46, 0.66, 0.95, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
+[node name="PPDecentB" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010010]
+unique_name_in_owner = true
+modulate = Color(0.46, 0.66, 0.95, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
+[node name="SymBlunderPP" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010011]
+modulate = Color(0.91, 0.49, 0.44, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "??"
+horizontal_alignment = 1
+
+[node name="PPBlunderW" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010012]
+unique_name_in_owner = true
+modulate = Color(0.91, 0.49, 0.44, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
+[node name="PPBlunderB" type="Label" parent="ResultOverlay/Card/VBox/ReviewBoxPP" unique_id=730010013]
+unique_name_in_owner = true
+modulate = Color(0.91, 0.49, 0.44, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
 [node name="ResultQuote" type="Label" parent="ResultOverlay/Card/VBox" unique_id=414004909]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.55)
@@ -309,6 +405,7 @@ layout_mode = 2
 theme_override_constants/separation = 16
 
 [node name="BotsBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231104]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 focus_mode = 0

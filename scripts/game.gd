@@ -25,6 +25,9 @@ const ANALYSIS_DEPTH_SF := 10
 const BEST_MOVETIME_MARGIN := 400  ## think a little longer than the opponent does
 const BEST_MOVETIME_FLOOR := 800   ## floor so suggestions stay sound vs weak bots (teaching)
 const BEST_MOVETIME_CAP := 2100    ## ceiling so the strongest bots' turns stay tolerable
+## Pass & Play has no opponent to scale to, and the best move is prefetched during the
+## reveal, so it gets a fixed, generous search for honest teaching (the wait is hidden).
+const PASS_PLAY_MOVETIME := 1500
 const OPENING_WINDOW_CP := 55
 const REVEAL_SLIDE_SEC := 0.8   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.75   ## extra pause so the result can be read
@@ -41,9 +44,18 @@ const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "can
 @onready var result_title: Label = %ResultTitle
 @onready var result_text: Label = %ResultText
 @onready var result_quote: Label = %ResultQuote
+@onready var review_box: Control = %ReviewBox
 @onready var review_best: Label = %ReviewBest
 @onready var review_avg: Label = %ReviewAvg
 @onready var review_blunder: Label = %ReviewBlunder
+@onready var review_box_pp: Control = %ReviewBoxPP
+@onready var pp_best_w: Label = %PPBestW
+@onready var pp_best_b: Label = %PPBestB
+@onready var pp_decent_w: Label = %PPDecentW
+@onready var pp_decent_b: Label = %PPDecentB
+@onready var pp_blunder_w: Label = %PPBlunderW
+@onready var pp_blunder_b: Label = %PPBlunderB
+@onready var bots_btn: Button = %BotsBtn
 @onready var play_again_btn: Button = %PlayAgainBtn
 @onready var confirm_overlay: Control = %ConfirmOverlay
 @onready var confirm_title: Label = %ConfirmTitle
@@ -79,10 +91,12 @@ var _pending_action := ""
 ## (e.g. the player restarts mid-animation or mid-bot-think).
 var _gen := 0
 
-# Per-game move-quality tally (reset each game) → the end-of-game review.
-var _best_count := 0
-var _decent_count := 0
-var _blunder_count := 0
+# Per-colour move-quality tally (index 0 = White, 1 = Black), reset each game → the
+# end-of-game review. In a bot game only the human picks options, so every count sits
+# under the player's colour; in Pass & Play they split White vs Black for the comparison.
+var _best: Array[int] = [0, 0]
+var _decent: Array[int] = [0, 0]
+var _blunder: Array[int] = [0, 0]
 
 # Captured-pieces strips (below the board). Codes accumulated as moves are played:
 # _caps_white = the black pieces White has taken, _caps_black = the white pieces
@@ -280,9 +294,9 @@ func _new_game() -> void:
 	result_overlay.visible = false
 	confirm_overlay.visible = false
 	feedback.text = ""
-	_best_count = 0
-	_decent_count = 0
-	_blunder_count = 0
+	_best.fill(0)
+	_decent.fill(0)
+	_blunder.fill(0)
 	_caps_white = PackedInt32Array()
 	_caps_black = PackedInt32Array()
 	_undo_stack.clear()
@@ -395,7 +409,8 @@ func _rank_position(r: ChessRules = null) -> Array:
 func _deep_promote(ranked: Array, r: ChessRules, g: int) -> Array:
 	if not (_use_sf and stockfish.available) or ranked.is_empty():
 		return ranked
-	var mt: int = clampi(int(bot_def.get("movetime", 400)) + BEST_MOVETIME_MARGIN,
+	var mt: int = PASS_PLAY_MOVETIME if GameManager.pass_and_play else clampi(
+		int(bot_def.get("movetime", 400)) + BEST_MOVETIME_MARGIN,
 		BEST_MOVETIME_FLOOR, BEST_MOVETIME_CAP)
 	var uci: String = await stockfish.best_move(r.get_fen(), {"skill": 20, "movetime": mt})
 	if g != _gen:
@@ -436,24 +451,25 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	var g := _gen
 
 	var move: int = opt["move"]
+	var mover := rules.side_to_move  # whose quality this pick counts toward (White/Black)
 	var grade := ChessBotScript.grade_move(_ranked, move)
 	var best_san := rules.to_san(grade["best_move"])
 
 	match opt.get("quality", ""):
 		"best":
-			_best_count += 1
+			_best[mover] += 1
 			feedback.text = tr("★ Best move!")
 			Audio.play("best")
 		"decent":
-			_decent_count += 1
+			_decent[mover] += 1
 			feedback.text = tr("%s. The best was %s.") % [tr(grade["label"]), best_san]
 			Audio.play("decent")
 		"blunder":
-			_blunder_count += 1
+			_blunder[mover] += 1
 			feedback.text = tr("The blunder! The best was %s.") % best_san
 			Audio.play("blunder")
 		_:
-			_decent_count += 1
+			_decent[mover] += 1
 			feedback.text = tr("%s. Best was %s.") % [tr(grade["label"]), best_san]
 			Audio.play("decent")
 	status_label.text = ""
@@ -804,16 +820,26 @@ func _finish_game_after_delay(title: String, text: String, quote_key: String) ->
 func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
-	review_best.text = tr("%d best") % _best_count
-	review_avg.text = tr("%d average") % _decent_count
-	review_blunder.text = tr("%d blunder") % _blunder_count
-	GameManager.record_game_review(_best_count, _blunder_count)
+	GameManager.record_game_review(_best[0] + _best[1], _blunder[0] + _blunder[1])
+	# Pass & Play shows a White-vs-Black comparison; a bot game shows the single tally.
 	# Make "Play again" concrete for kids who can't read yet: show WHO you'd replay,
 	# the opponent's avatar + name (the handshake for Pass & Play).
 	if GameManager.pass_and_play:
+		review_box.visible = false
+		review_box_pp.visible = true
+		bots_btn.visible = false  # no "Change opponent" when there's no opponent to change
+		pp_best_w.text = str(_best[0]); pp_best_b.text = str(_best[1])
+		pp_decent_w.text = str(_decent[0]); pp_decent_b.text = str(_decent[1])
+		pp_blunder_w.text = str(_blunder[0]); pp_blunder_b.text = str(_blunder[1])
 		play_again_btn.icon = load("res://assets/icons/handshake.png")
 		play_again_btn.text = tr("Play again")
 	else:
+		review_box.visible = true
+		review_box_pp.visible = false
+		bots_btn.visible = true
+		review_best.text = tr("%d best") % (_best[0] + _best[1])
+		review_avg.text = tr("%d average") % (_decent[0] + _decent[1])
+		review_blunder.text = tr("%d blunder") % (_blunder[0] + _blunder[1])
 		var nm: String = bot_def.get("name", "Bot")
 		play_again_btn.icon = load(BotRoster.avatar_path(bot_def))
 		play_again_btn.text = tr("Play again") + " " + tr("with") + " " + nm
@@ -874,14 +900,20 @@ func _on_menu_undo() -> void:
 
 # --- Undo ---
 
-## Can we rewind the player's last move + the reply? Only while it's the player's
-## turn (not mid-think / not over) and there are 2 plies above the auto-opening.
+## How many plies one undo rewinds: in a bot game, the player's move AND the bot's reply
+## (two); in Pass & Play, just the single last human move (the other side is also human).
+func _undo_plies() -> int:
+	return 1 if GameManager.pass_and_play else 2
+
+
+## Can we undo? Only while it's a human turn (not mid-think / not over) and there are
+## enough plies above the auto-opening to rewind without popping it.
 func _can_undo() -> bool:
-	return not _busy and not _game_over and _undo_stack.size() >= 3
+	return not _busy and not _game_over and _undo_stack.size() >= _undo_plies() + 1
 
 
-## Rewind two plies (the player's move and the opponent's reply), keeping the
-## opening, then re-offer options for the restored position.
+## Rewind one undo's worth of plies, keeping the opening, then re-offer options for the
+## restored position.
 func _undo_last() -> void:
 	if not _can_undo():
 		return
@@ -894,7 +926,8 @@ func _undo_last() -> void:
 	_opts_ranked = []
 	board.end_animation()
 	var plies := 0
-	while plies < 2 and _undo_stack.size() > 1:  # never pop the opening
+	var to_rewind := _undo_plies()
+	while plies < to_rewind and _undo_stack.size() > 1:  # never pop the opening
 		var e: Dictionary = _undo_stack.pop_back()
 		rules.undo_move(int(e["move"]), e["undo"])
 		var cap: int = e["captured"]
@@ -960,9 +993,16 @@ func _do_give_up() -> void:
 	_game_over = true
 	_gen += 1  # invalidate any in-flight bot-think / analysis coroutine
 	board.clear_options()
-	if not GameManager.pass_and_play:
-		GameManager.record_result("loss")
 	Audio.play("end")
+	# Pass & Play: the side to move is the one resigning, so the other colour wins.
+	if GameManager.pass_and_play:
+		var loser := rules.side_to_move
+		var winner := ChessRules.BLACK if loser == ChessRules.WHITE else ChessRules.WHITE
+		var loser_name := tr("White") if loser == ChessRules.WHITE else tr("Black")
+		var winner_name := tr("White") if winner == ChessRules.WHITE else tr("Black")
+		_show_result(tr("%s resigned") % loser_name, tr("%s wins!") % winner_name, "resign")
+		return
+	GameManager.record_result("loss")
 	_show_result("You gave up", "No shame, every game teaches something.", "resign")
 
 
