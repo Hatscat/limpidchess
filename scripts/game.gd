@@ -51,6 +51,7 @@ const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "can
 @onready var menu_overlay: Control = %MenuOverlay
 @onready var undo_btn: Button = %UndoBtn
 @onready var giveup_btn: Button = %GiveUpBtn
+@onready var restart_btn: Button = %RestartBtn
 
 var rules: ChessRules
 var bot: ChessBot
@@ -62,13 +63,16 @@ var player_color: int
 var _ranked: Array = []
 var _history: Array = []
 # _busy gates input during searches/animations. As a property it also keeps an
-# OPEN menu's Undo button live: when the bot finishes its reply (_busy -> false),
-# undo becomes available without having to close and reopen the menu.
+# OPEN menu's Undo + Restart buttons live: when the engine/animation finishes
+# (_busy -> false) they re-enable without having to close and reopen the menu.
+# Restart is locked while busy because it starts a fresh engine search, which must
+# never collide with an in-flight one (e.g. the reveal-time bot-reply prefetch).
 var _busy := false:
 	set(value):
 		_busy = value
 		if menu_overlay != null and menu_overlay.visible:
 			undo_btn.disabled = not _can_undo()
+			restart_btn.disabled = value
 var _game_over := false
 var _pending_action := ""
 ## Bumped on every new game; async turn coroutines bail if it changed under them
@@ -93,6 +97,16 @@ var _caps_black: PackedInt32Array = PackedInt32Array()
 # never past White's auto-opening (kept as the first entry).
 var _undo_stack: Array = []
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
+
+# Bot-reply prefetch: the reveal of the player's pick (slide + hold ~1.5s) is idle
+# CPU, so we search the bot's reply to the not-yet-committed move in the background
+# and consume it when the bot's turn actually starts — a slow engine bot then answers
+# without the player waiting. Keyed by (gen, post-move FEN); dropped if either changes.
+var _reply_fen := ""        ## position the prefetch is for ("" = none in flight)
+var _reply_gen := -1
+var _reply_uci := ""        ## result ("" while still searching)
+var _reply_pending := false
+signal _reply_ready
 
 # Stockfish evaluation bar (bot games only; hidden in Pass & Play). Created in _ready.
 var eval_bar: Control
@@ -262,6 +276,8 @@ func _new_game() -> void:
 	_caps_black = PackedInt32Array()
 	_undo_stack.clear()
 	_player_moves = 0
+	_reply_fen = ""
+	_reply_pending = false
 	_update_captured()
 	eval_bar.visible = not GameManager.pass_and_play
 	eval_bar.set_eval(0)
@@ -427,8 +443,10 @@ func _on_option_chosen(opt: Dictionary) -> void:
 			Audio.play("decent")
 	status_label.text = ""
 
-	# Reveal the qualities, then slow-slide the chosen piece (bullet time).
+	# Reveal the qualities, then slow-slide the chosen piece (bullet time). While the
+	# reveal plays (~1.5s of idle CPU), search the bot's reply in the background.
 	board.reveal()
+	_prefetch_bot_reply(move, g)
 	await board.animate_move(move, REVEAL_SLIDE_SEC)
 	if g != _gen:
 		return
@@ -464,10 +482,7 @@ func _bot_move() -> void:
 		if not legal.is_empty():
 			move = int(legal[randi() % legal.size()])
 	if move == -1 and _use_sf and stockfish.available:
-		var uci: String = await stockfish.best_move(rules.get_fen(), {
-			"skill": bot_def.get("sf_skill", 10),
-			"movetime": bot_def.get("movetime", 200),
-		})
+		var uci: String = await _take_bot_reply(rules.get_fen(), g)
 		if g != _gen:
 			return
 		move = rules.move_from_uci(uci)
@@ -486,6 +501,52 @@ func _bot_move() -> void:
 	_play_move(move)
 	_busy = false
 	_advance()
+
+
+## Search the bot's reply to the player's (not-yet-committed) move during the reveal,
+## so the bot can answer without the player waiting. Skipped in Pass & Play, without
+## an engine, or for bots that may play a random move (the result could go unused).
+func _prefetch_bot_reply(player_move: int, g: int) -> void:
+	_reply_fen = ""
+	if GameManager.pass_and_play or not (_use_sf and stockfish.available):
+		return
+	if float(bot_def.get("random_chance", 0.0)) > 0.0:
+		return
+	var undo := rules.make_move(player_move)
+	var fen := rules.get_fen()
+	rules.undo_move(player_move, undo)  # leave the board exactly as drawn (no redraw between)
+	_reply_fen = fen
+	_reply_gen = g
+	_reply_uci = ""
+	_reply_pending = true
+	_search_reply(fen, g)  # fire-and-forget; lands in _reply_uci
+
+
+func _search_reply(fen: String, g: int) -> void:
+	var uci: String = await stockfish.best_move(fen, {
+		"skill": bot_def.get("sf_skill", 10),
+		"movetime": bot_def.get("movetime", 200),
+	})
+	_reply_pending = false
+	if g == _gen and fen == _reply_fen:
+		_reply_uci = uci
+	_reply_ready.emit()  # always wake a waiter; staleness is checked by the consumer
+
+
+## The bot's engine reply: the prefetched search if it's for this exact position, else
+## a fresh one. Awaits a still-running prefetch (never starts a second search).
+func _take_bot_reply(fen: String, g: int) -> String:
+	if _reply_gen == g and _reply_fen == fen:
+		# while (not if): only our keyed search clears _reply_pending, so a stray wake from an
+		# unrelated _search_reply re-awaits instead of returning a half-done result.
+		while _reply_pending:
+			await _reply_ready
+		_reply_fen = ""  # consumed
+		return "" if g != _gen else _reply_uci
+	return await stockfish.best_move(fen, {
+		"skill": bot_def.get("sf_skill", 10),
+		"movetime": bot_def.get("movetime", 200),
+	})
 
 
 func _play_move(move: int) -> void:
@@ -695,6 +756,7 @@ func _open_menu() -> void:
 	if _game_over:
 		return  # the result dialog owns the screen once the game has ended
 	undo_btn.disabled = not _can_undo()
+	restart_btn.disabled = _busy  # locked while the engine/animation is running
 	_refresh_leave_btn()
 	menu_overlay.visible = true
 

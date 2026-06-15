@@ -14,6 +14,7 @@ extends Node
 ## Public API (analyse / best_move) is identical for both transports.
 
 signal _job_done(result: Dictionary)
+signal _run_free  ## fired when an in-flight search finishes, so a queued caller can start
 
 ## Mate scores fold into this centipawn magnitude so they sort above any real eval.
 const MATE_BASE := 1000000
@@ -35,6 +36,9 @@ var _mode := ""  # "ext" | "pipe" | ""
 
 # --- ext transport ---
 var _sf: Object = null
+
+# Serializes searches: the engine handles only one at a time (see _run).
+var _run_busy := false
 
 # --- pipe transport ---
 var _io: FileAccess
@@ -108,6 +112,12 @@ func stop() -> void:
 			_io.close()
 	available = false
 	_mode = ""
+	# Release the serialization gate defensively: if a search coroutine aborted mid-flight
+	# (e.g. the node left the tree on app teardown), _run_busy could be latched true with no
+	# one left to clear it, spinning every future _run() forever. Clearing it here keeps a
+	# re-init (start → stop → start) clean.
+	_run_busy = false
+	_run_free.emit()
 
 
 ## Is the currently-selected transport actually still usable? Guards start() from
@@ -153,11 +163,23 @@ func best_move(fen: String, opts: Dictionary) -> String:
 
 
 func _run(cmds: Array) -> Dictionary:
+	if _mode != "ext" and _mode != "pipe":
+		return {}
+	# Both transports handle exactly ONE search at a time: the pipe's _job_done would
+	# fan a single result to two awaiters, and two ext pollers would steal each other's
+	# output lines. Serialize here so a second caller queues behind the first instead of
+	# corrupting it — this is what makes the reveal-time bot-reply prefetch safe.
+	while _run_busy:
+		await _run_free
+	_run_busy = true
+	var res: Dictionary
 	if _mode == "ext":
-		return await _run_ext(cmds)
-	elif _mode == "pipe":
-		return await _run_pipe(cmds)
-	return {}
+		res = await _run_ext(cmds)
+	else:
+		res = await _run_pipe(cmds)
+	_run_busy = false
+	_run_free.emit()
+	return res
 
 
 # --- ext transport: poll the native engine each frame (no GDScript thread) ---
@@ -181,7 +203,13 @@ func _run_ext(cmds: Array) -> Dictionary:
 				var info := _parse_info(line)
 				if not info.is_empty():
 					by_index[info["k"]] = {"uci": info["uci"], "score": info["score"]}
-		await get_tree().process_frame
+		# Guard the frame await: if we've left the tree mid-search (app teardown / scene
+		# change), get_tree() is null and awaiting it would abort this coroutine before the
+		# gate is released in _run(). Bail cleanly instead so _run_busy always resets.
+		var tree := get_tree()
+		if tree == null:
+			break
+		await tree.process_frame
 	return _build_result(by_index, "")
 
 
