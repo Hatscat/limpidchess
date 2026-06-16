@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Limpid Chess"
-config/description="A calm chess game for beginners. Three guided move options each turn, find the best one."
+config/description="A smooth chess game for beginners. Three guided move options each turn, find the best one."
 run/main_scene="res://scenes/home.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
@@ -34,6 +34,10 @@ window/size/viewport_height=1280
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/GodotGooglePlayBilling/plugin.cfg")
 
 [gui]
 

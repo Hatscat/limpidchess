@@ -77,14 +77,14 @@ var _history: Array = []
 # _busy gates input during searches/animations. As a property it also keeps an
 # OPEN menu's Undo + Restart buttons live: when the engine/animation finishes
 # (_busy -> false) they re-enable without having to close and reopen the menu.
-# Restart is locked while busy because it starts a fresh engine search, which must
-# never collide with an in-flight one (e.g. the reveal-time bot-reply prefetch).
+# Restart is locked while busy (it would collide with an in-flight search) AND when a
+# free player has no daily game left to start the replay it triggers (see _can_restart).
 var _busy := false:
 	set(value):
 		_busy = value
 		if menu_overlay != null and menu_overlay.visible:
 			undo_btn.disabled = not _can_undo()
-			restart_btn.disabled = value
+			restart_btn.disabled = value or not _can_restart()
 var _game_over := false
 var _pending_action := ""
 ## Bumped on every new game; async turn coroutines bail if it changed under them
@@ -854,7 +854,7 @@ func _open_menu() -> void:
 	if _game_over:
 		return  # the result dialog owns the screen once the game has ended
 	undo_btn.disabled = not _can_undo()
-	restart_btn.disabled = _busy  # locked while the engine/animation is running
+	restart_btn.disabled = _busy or not _can_restart()
 	_refresh_leave_btn()
 	menu_overlay.visible = true
 
@@ -863,6 +863,13 @@ func _open_menu() -> void:
 ## (the player likely started by mistake) rather than a resignation.
 func _is_early_game() -> bool:
 	return _player_moves < EARLY_MOVES
+
+
+## Restart always ends in a NEW counted game with the same opponent (it must never be a free
+## re-roll past the daily limit). An early restart refunds first, so a slot is always free; a
+## late restart needs a daily slot for the replay. Pass & Play has no gate.
+func _can_restart() -> bool:
+	return GameManager.pass_and_play or _is_early_game() or GameManager.can_play_game()
 
 
 ## The resign button is a gentle "Cancel game" (no loss, no game spent) early on,
@@ -882,7 +889,12 @@ func _on_menu_close() -> void:
 
 func _on_menu_restart() -> void:
 	menu_overlay.visible = false
-	_ask_confirm("restart", "Restart game?", "Start over from a fresh position?")
+	if GameManager.pass_and_play:
+		_ask_confirm("restart", "Restart game?", "Start over from a fresh position?")
+	elif _is_early_game():
+		_ask_confirm("restart", "Restart game?", "Start a fresh game?")
+	else:
+		_ask_confirm("restart", "Restart game?", "Resign and start a new game?")
 
 
 func _on_menu_giveup() -> void:
@@ -982,7 +994,7 @@ func _on_confirm_yes() -> void:
 	var action := _pending_action
 	_pending_action = ""
 	match action:
-		"restart": _new_game()
+		"restart": _do_restart()
 		"give_up": _do_give_up()
 		"cancel": _do_cancel_game()
 
@@ -1019,8 +1031,36 @@ func _do_cancel_game() -> void:
 	GameManager.go_to_home()
 
 
+## Restart = leave the current game AND immediately play another with the SAME opponent, so it
+## can never be a free re-roll. Late (invested) → resign, a recorded loss; early → cancel, a
+## refund. Either way start_bot_game counts the fresh game against the daily limit. Pass & Play
+## has no gate / no result, so it just resets. Gated by _can_restart (the button is disabled
+## when a late free player has no slot for the replay), so the counted start always has room.
+func _do_restart() -> void:
+	if _game_over:
+		return
+	_game_over = true
+	_gen += 1  # stop any in-flight coroutine before the scene reloads
+	board.clear_options()
+	if GameManager.pass_and_play:
+		GameManager.start_pass_and_play()
+		return
+	if _is_early_game():
+		GameManager.cancel_game()           # refund the barely-started game
+	else:
+		GameManager.record_result("loss")   # resign the invested game
+	GameManager.start_bot_game(bot_def)     # counts as a new game; same bot, fresh random colour
+
+
 func _on_play_again_pressed() -> void:
-	_new_game()
+	# A replay is a NEW game and must consume a daily slot (the previous game already ended and
+	# was counted), so route through start_bot_game like Home/Bots do; out of games → Premium.
+	if GameManager.pass_and_play:
+		GameManager.start_pass_and_play()
+	elif GameManager.can_play_game():
+		GameManager.start_bot_game(bot_def)
+	else:
+		GameManager.go_to_premium()
 
 
 func _on_home_pressed() -> void:
