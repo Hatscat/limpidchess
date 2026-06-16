@@ -21,15 +21,18 @@ and explain what the best move was. Errors are the lesson, not the punishment.
 
 1. **Calm & encouraging.** Soft "limpid" palette, no clocks, no shame on losing.
    Feedback teaches; it never scolds.
-2. **The best move is always on the board.** The whole product is the three-option
+2. **Smooth & frictionless.** The one friction we kill is choice overload: a blank
+   board of 30 legal moves makes a beginner freeze. Surfacing exactly three keeps them
+   moving. Keep the whole flow smooth: fast turns, few taps, no dead-ends.
+3. **The best move is always on the board.** The whole product is the three-option
    mechanic. Protect it. Don't add a full free-move UI that dilutes the guidance
    (a free mode could be a deliberate future toggle, not a default).
-3. **Stay simple & offline.** No backend, no accounts, no ads, no online play. One
+4. **Stay simple & offline.** No backend, no accounts, no ads, no online play. One
    local save file. Premium is a local flag (clock-cheating is explicitly *not*
    worth fighting — see the business model).
-4. **Beginner-appropriate AI.** The opponent is Stockfish dialled DOWN (low Skill
+5. **Beginner-appropriate AI.** The opponent is Stockfish dialled DOWN (low Skill
    Level + short movetime) so it's *beatable and human-feeling*. Don't crank it up.
-5. **Keep the per-turn wait short.** The options analysis runs Stockfish each human
+6. **Keep the per-turn wait short.** The options analysis runs Stockfish each human
    turn — tune `ANALYSIS_DEPTH_SF` / MultiPV so it stays ~sub-second. The board is
    custom-drawn 2D — cheap. Don't introduce per-frame allocations.
 

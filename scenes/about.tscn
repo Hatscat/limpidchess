@@ -65,7 +65,7 @@ text = "About"
 [node name="Tagline" type="Label" parent="Scroll/VBox" unique_id=1403867006]
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
-text = "A calm chess game for beginners. The best move is always there, you just have to see it."
+text = "A smooth chess game. The best move is always there, you just have to see it."
 autowrap_mode = 2
 
 [node name="StatsCard" type="PanelContainer" parent="Scroll/VBox" unique_id=1000289398]

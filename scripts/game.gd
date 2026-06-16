@@ -29,8 +29,8 @@ const BEST_MOVETIME_CAP := 2100    ## ceiling so the strongest bots' turns stay 
 ## reveal, so it gets a fixed, generous search for honest teaching (the wait is hidden).
 const PASS_PLAY_MOVETIME := 1500
 const OPENING_WINDOW_CP := 55
-const REVEAL_SLIDE_SEC := 0.8   ## slow bullet-time slide of the chosen piece
-const REVEAL_HOLD_SEC := 0.75   ## extra pause so the result can be read
+const REVEAL_SLIDE_SEC := 0.7   ## slow bullet-time slide of the chosen piece
+const REVEAL_HOLD_SEC := 0.85   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
 const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
 const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "cancel", not a loss
