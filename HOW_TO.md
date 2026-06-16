@@ -169,6 +169,37 @@ To reset to a fresh, non-premium first launch:
 The UI language defaults to the **device language** (`OS.get_locale_language()`) if
 it's one we ship (en / fr / es), else English; the in-game picker overrides + saves it.
 
+## In-app purchase (Google Play Billing)
+
+Premium is one **managed (non-consumable)** product, unlocked once and kept forever. The flow
+lives in the [`Billing`](scripts/billing.gd) autoload; [`scripts/premium.gd`](scripts/premium.gd)
+only drives it and mirrors its signals. On desktop/dev (no Play) it degrades gracefully, and a
+**debug** build grants locally so the screen can be exercised. To make it live on Android:
+
+1. **Install a Play Billing plugin.** The code targets the `GodotGooglePlayBilling` Android
+   plugin singleton (Billing Library 5+ `queryProductDetails` API). Drop the plugin's `.aar` +
+   `.gdap` into `android/plugins/` (the gradle build is already enabled) and tick it for the
+   Android export preset. If the plugin you pick exposes a different singleton name, change
+   `Billing.SINGLETON`. The plugin contributes the `com.android.vending.BILLING` permission via
+   its own manifest, so there's nothing to add by hand.
+2. **Create the product in Play Console.** Monetize → Products → In-app products → create a
+   managed product with id **`premium_unlock`** (must match `Billing.PRODUCT_ID`) and set the
+   base price. Play auto-localizes it; the app shows the formatted price returned by
+   `queryProductDetails`, so currency handling is automatic (no hardcoded `$3.99`). Activate it.
+3. **Test.** Add license testers (Play Console → Setup → License testing) so test accounts can
+   "buy" without being charged, then install from an **internal testing** track signed with the
+   upload key. A sideloaded *debug* build can't reach real billing, so it uses the local debug
+   grant instead.
+4. **Promo codes (friends/family).** Generate promotional codes for the product in Play Console
+   and share them. The recipient taps **Redeem a code** (opens the Play redeem page), redeems,
+   then returns and taps **Restore**; `queryPurchases` picks the entitlement up. We also re-check
+   on every app resume, so it usually just appears on its own.
+
+Entitlement is **grant-only**: Premium is granted when Play reports the purchase (buy, restore,
+or redeemed code) and is never auto-revoked, so an offline launch can't lock out a paying player.
+`GameManager.is_premium` is the local cache; purchases are `acknowledgePurchase`d automatically
+(Play refunds unacknowledged purchases after 3 days).
+
 ## License (GPL-3.0)
 
 The project is GPL-3.0 (it ships Stockfish). [`LICENSE`](LICENSE) holds the full
@@ -178,7 +209,9 @@ make the source and the exact Stockfish build you ship available.
 ## TODOs wired but not implemented
 
 - **Android-native Stockfish** — see above; the main remaining task.
-- **In-app purchase**: [`scripts/premium.gd`](scripts/premium.gd) `_on_get_pressed()`
-  sets the premium flag locally. Wire Google Play Billing there; call
-  `GameManager.set_premium(true)` on a successful purchase.
+- **In-app purchase**: implemented in the [`Billing`](scripts/billing.gd) autoload (full buy /
+  restore / acknowledge / promo-code flow, localized price). Remaining work is outside the
+  engine: install a Play Billing plugin and create the `premium_unlock` product in Play Console
+  (see "In-app purchase (Google Play Billing)" above). Until the plugin is installed the buy
+  flow is a no-op in release and a local grant in debug.
   (Reset for testing via the dev "Reset save" button, see "Save data" above.)

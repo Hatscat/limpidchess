@@ -145,6 +145,17 @@ theme_override_styles/hover = SubResource("sb_ghost")
 text = "Restore purchase"
 flat = true
 
+[node name="RedeemButton" type="Button" parent="Content" unique_id=770010001]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_ghost")
+theme_override_styles/pressed = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
+text = "Redeem a code"
+flat = true
+
 [node name="StatusLabel" type="Label" parent="Content" unique_id=1037929836]
 unique_name_in_owner = true
 modulate = Color(0.4, 0.78, 0.52, 1)
@@ -159,3 +170,4 @@ current_tab = "premium"
 
 [connection signal="pressed" from="Content/GetButton" to="." method="_on_get_pressed"]
 [connection signal="pressed" from="Content/RestoreButton" to="." method="_on_restore_pressed"]
+[connection signal="pressed" from="Content/RedeemButton" to="." method="_on_redeem_pressed"]

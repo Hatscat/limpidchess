@@ -157,9 +157,11 @@ Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**).
 ## 💸 Business model (keep it generous)
 
 - 3 free games per day (`GameManager.FREE_GAMES_PER_DAY`), tracked locally by date.
-- **Premium**: one-time ~$3.99 → unlimited games + Pass & Play. Stored as a local
-  flag. Real billing (Google Play Billing) is a TODO in
-  [`scripts/premium.gd`](scripts/premium.gd) `_on_get_pressed()`.
+- **Premium**: one-time ~$3.99 → unlimited games + Pass & Play. Entitlement is a local
+  flag (`GameManager.is_premium`), granted by the [`Billing`](scripts/billing.gd) autoload
+  (Google Play Billing) on a successful buy / restore / promo-code redemption. The price is
+  read live from Play (localized). Remaining setup (plugin install + Play Console product)
+  is documented in HOW_TO.md under "In-app purchase".
 - No ads, ever. Don't add them.
 - **GPL is fine for a paid Android game** — GPL lets you sell the binary; you just
   must also offer the source. (We target Google Play, not the Apple App Store,
