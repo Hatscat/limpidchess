@@ -45,6 +45,13 @@ const ALL := [
 		"depth": 2, "weakness": 0.65,
 	},
 	{
+		"id": "leon", "name": "Léon", "avatar": "sheep.png",
+		"tagline": "Gentle. Tends to daydream.",
+		"difficulty": 2, "tier": "Beginner",
+		"sf_skill": 3, "movetime": 130,
+		"depth": 2, "weakness": 0.52,
+	},
+	{
 		"id": "whiskers", "name": "Whiskers", "avatar": "cat.png",
 		"tagline": "Curious, cautious, occasionally pounces.",
 		"difficulty": 3, "tier": "Casual",
@@ -64,6 +71,13 @@ const ALL := [
 		"difficulty": 4, "tier": "Improver",
 		"sf_skill": 11, "movetime": 300,
 		"depth": 3, "weakness": 0.12, "premium": true
+	},
+	{
+		"id": "rusty", "name": "Rusty", "avatar": "orangutan.png",
+		"tagline": "Smarter than he looks.",
+		"difficulty": 4, "tier": "Improver",
+		"sf_skill": 13, "movetime": 375,
+		"depth": 3, "weakness": 0.08, "premium": true,
 	},
 	{
 		"id": "professor", "name": "Professor", "avatar": "owl.png",

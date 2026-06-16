@@ -15,11 +15,10 @@ config/description="A calm chess game for beginners. Three guided move options e
 run/main_scene="res://scenes/home.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/icon="res://icon.svg"
 boot_splash/bg_color=Color(0.09, 0.1, 0.12, 1)
+boot_splash/stretch_mode=0
 boot_splash/image="res://assets/icon/adaptive_fg_432.png"
-boot_splash/fullsize=false
-boot_splash/use_filter=true
+config/icon="res://icon.svg"
 
 [autoload]
 
