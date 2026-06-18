@@ -41,6 +41,13 @@ var _anim2_from := -1
 var _anim2_to := -1
 var _anim2_piece := 0
 
+# Checkmate "shatter": the losing king's sprite splits into a grid of fragments that fly
+# apart, spin, and fade (the satisfying flourish before the review dialog). _explode_t 0→1.
+var _explode_active := false
+var _explode_sq := -1
+var _explode_piece := 0
+var _explode_t := 0.0
+
 var _cell := 0.0
 var _origin := Vector2.ZERO
 
@@ -105,6 +112,8 @@ func clear_options() -> void:
 	_revealed = false
 	_interactive = false
 	_chosen_move = -1
+	_explode_active = false
+	_explode_sq = -1
 	queue_redraw()
 
 
@@ -158,6 +167,29 @@ func _set_anim_progress(v: float) -> void:
 	queue_redraw()
 
 
+## Shatter the piece on `square` into spinning, fading fragments of its own sprite (the
+## checkmate flourish before the review dialog). Await-able; the piece is lifted out of the
+## static draw while it bursts and stays gone until the next game (clear_options resets it).
+## No-op on an empty square.
+func explode_piece(square: int, duration := 0.7) -> void:
+	if rules == null or square < 0 or rules.board[square] == 0:
+		return
+	_explode_sq = square
+	_explode_piece = rules.board[square]
+	_explode_t = 0.0
+	_explode_active = true
+	var tw := create_tween()
+	tw.tween_method(_set_explode_t, 0.0, 1.0, duration)
+	await tw.finished
+	# Leave it parked (fragments fully faded → nothing drawn, king stays gone) until the
+	# review dialog covers the board and the next game calls clear_options().
+
+
+func _set_explode_t(v: float) -> void:
+	_explode_t = v
+	queue_redraw()
+
+
 # --- Drawing ---
 
 func _draw() -> void:
@@ -169,6 +201,8 @@ func _draw() -> void:
 	_draw_pieces()
 	_draw_coords()
 	_draw_options()
+	if _explode_active:
+		_draw_explosion()
 
 
 func _recompute_layout() -> void:
@@ -257,6 +291,8 @@ func _draw_pieces() -> void:
 	for sq in 64:
 		if _anim_active and (sq == _anim_from or sq == _anim2_from):
 			continue  # the moving piece(s) are drawn separately, mid-slide
+		if _explode_active and sq == _explode_sq:
+			continue  # the shattering king is drawn by _draw_explosion()
 		var p: int = rules.board[sq]
 		if p == 0:
 			continue
@@ -276,6 +312,47 @@ func _draw_slider(piece: int, from_sq: int, to_sq: int) -> void:
 		return
 	var pos := _square_rect(from_sq).position.lerp(_square_rect(to_sq).position, _anim_progress)
 	draw_texture_rect(tex, Rect2(pos, Vector2(_cell, _cell)), false)
+
+
+## The checkmate shatter: a quick flash + shockwave ring, then the king's sprite split into
+## an N×N grid of fragments flung radially with gravity, each spinning and fading out. The
+## per-fragment jitter is a deterministic function of its index, so it's stable frame to frame.
+func _draw_explosion() -> void:
+	var tex: Texture2D = _tex.get(_explode_piece)
+	if tex == null:
+		return
+	var rect := _square_rect(_explode_sq)
+	var center := rect.position + rect.size * 0.5
+	var t := _explode_t
+	# Flash, then an expanding shockwave ring, both under the debris.
+	if t < 0.15:
+		draw_circle(center, _cell * 0.55, Color(1.0, 1.0, 0.85, (0.15 - t) / 0.15 * 0.6))
+	if t < 0.6:
+		var rt := t / 0.6
+		draw_arc(center, _cell * (0.25 + rt * 1.1), 0.0, TAU, 40,
+			Color(1.0, 0.95, 0.75, (1.0 - rt) * 0.5), maxf(2.0, _cell * 0.06 * (1.0 - rt)), true)
+	# Sprite fragments.
+	var n := 4
+	var frag := rect.size / float(n)
+	var src_cell := tex.get_size() / float(n)
+	var burst := 1.0 - pow(1.0 - t, 2.0)                  # fast out, slowing
+	var fade: float = clampf((1.0 - t) / 0.45, 0.0, 1.0)  # hold, then fade over the last 45%
+	var gravity := _cell * 2.4
+	for i in n:
+		for j in n:
+			var home := rect.position + Vector2((j + 0.5) * frag.x, (i + 0.5) * frag.y)
+			var seed := i * n + j
+			var ang := atan2(home.y - center.y, home.x - center.x) + sin(seed * 2.3) * 0.5
+			var dir := Vector2(cos(ang), sin(ang))
+			if home.distance_to(center) < 1.0:            # the middle fragment: shoot it up
+				dir = Vector2(sin(seed) * 0.4, -1.0).normalized()
+			var speed := _cell * (1.0 + 0.6 * absf(sin(seed * 1.7)))
+			var spin := (1.0 if seed % 2 == 0 else -1.0) * (PI * 1.5 + absf(cos(seed)) * PI)
+			var pos := home + dir * speed * burst + Vector2(0.0, gravity * t * t * 0.5)
+			draw_set_transform(pos, spin * t, Vector2.ONE)
+			draw_texture_rect_region(tex, Rect2(-frag * 0.5, frag),
+				Rect2(Vector2(j, i) * src_cell, src_cell), Color(1, 1, 1, fade))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_options() -> void:

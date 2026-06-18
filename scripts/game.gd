@@ -33,6 +33,7 @@ const REVEAL_SLIDE_SEC := 0.7   ## slow bullet-time slide of the chosen piece
 const REVEAL_HOLD_SEC := 0.85   ## extra pause so the result can be read
 const BOT_SLIDE_SEC := 0.35
 const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
+const MATE_EXPLODE_SEC := 0.7   ## checkmate: how long the losing king's shatter plays
 const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "cancel", not a loss
 
 @onready var board: Control = %Board
@@ -794,10 +795,12 @@ func _check_game_over() -> bool:
 		sfx = "win"
 	Audio.play(sfx)
 
-	# Announce the ending explicitly on the board, hold a beat, THEN the review.
+	# Announce the ending explicitly on the board, hold a beat, THEN the review. On a
+	# checkmate, shatter the losing king (the side to move, who has no escape) first.
 	feedback.text = _outcome_headline(outcome)
 	status_label.text = ""
-	_finish_game_after_delay(title, text, quote_key)
+	var mate_king := rules.king_square(rules.side_to_move) if outcome == ChessRules.Outcome.CHECKMATE else -1
+	_finish_game_after_delay(title, text, quote_key, mate_king)
 	return true
 
 
@@ -809,9 +812,15 @@ func _outcome_headline(outcome: int) -> String:
 		_: return "Draw."
 
 
-func _finish_game_after_delay(title: String, text: String, quote_key: String) -> void:
+func _finish_game_after_delay(title: String, text: String, quote_key: String, mate_king := -1) -> void:
 	var g := _gen
-	await get_tree().create_timer(END_DELAY).timeout
+	if mate_king >= 0:
+		await board.explode_piece(mate_king, MATE_EXPLODE_SEC)  # checkmate shatter
+		if g != _gen:
+			return
+		await get_tree().create_timer(0.2).timeout  # let the burst settle before the dialog
+	else:
+		await get_tree().create_timer(END_DELAY).timeout  # calm hold for a draw / stalemate
 	if g != _gen:
 		return  # a restart / undo happened during the hold
 	_show_result(title, text, quote_key)
