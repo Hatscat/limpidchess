@@ -341,13 +341,13 @@ func _draw_explosion() -> void:
 	for i in n:
 		for j in n:
 			var home := rect.position + Vector2((j + 0.5) * frag.x, (i + 0.5) * frag.y)
-			var seed := i * n + j
-			var ang := atan2(home.y - center.y, home.x - center.x) + sin(seed * 2.3) * 0.5
+			var fseed := i * n + j
+			var ang := atan2(home.y - center.y, home.x - center.x) + sin(fseed * 2.3) * 0.5
 			var dir := Vector2(cos(ang), sin(ang))
 			if home.distance_to(center) < 1.0:            # the middle fragment: shoot it up
-				dir = Vector2(sin(seed) * 0.4, -1.0).normalized()
-			var speed := _cell * (1.0 + 0.6 * absf(sin(seed * 1.7)))
-			var spin := (1.0 if seed % 2 == 0 else -1.0) * (PI * 1.5 + absf(cos(seed)) * PI)
+				dir = Vector2(sin(fseed) * 0.4, -1.0).normalized()
+			var speed := _cell * (1.0 + 0.6 * absf(sin(fseed * 1.7)))
+			var spin := (1.0 if fseed % 2 == 0 else -1.0) * (PI * 1.5 + absf(cos(fseed)) * PI)
 			var pos := home + dir * speed * burst + Vector2(0.0, gravity * t * t * 0.5)
 			draw_set_transform(pos, spin * t, Vector2.ONE)
 			draw_texture_rect_region(tex, Rect2(-frag * 0.5, frag),
