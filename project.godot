@@ -39,7 +39,7 @@ window/handheld/orientation=1
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/GodotGooglePlayBilling/plugin.cfg")
+enabled=PackedStringArray("res://addons/GMPShared/menu/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/InappReviewPlugin/plugin.cfg", "res://addons/NotificationSchedulerPlugin/plugin.cfg")
 
 [gui]
 
