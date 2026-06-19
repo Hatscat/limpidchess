@@ -20,6 +20,10 @@ func _ready() -> void:
 	# overflow the card. Grow each row to fit its content once it has a real width.
 	_fit_rows.call_deferred()
 	list.resized.connect(_fit_rows)
+	# Calm moment after a positive game (e.g. arriving here via "Change opponent"): ask for a rating.
+	if GameManager.pending_review_check:
+		GameManager.pending_review_check = false
+		Reviews.maybe_ask()
 
 
 ## Set each row's height to fit its (possibly wrapped) content; 96px floor. Runs on

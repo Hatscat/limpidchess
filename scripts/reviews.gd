@@ -15,7 +15,11 @@ var _review = null  # InappReview node, or null when the plugin isn't installed
 
 
 func _ready() -> void:
-	_review = _instantiate_global("InappReview")
+	# Only touch the plugin when its Android singleton actually exists; on desktop/dev the
+	# InappReview node would push "singleton not found" errors, so we stay a clean no-op there.
+	if not Engine.has_singleton("InappReviewPlugin"):
+		return
+	_review = _instantiate_plugin("InappReview")
 	if _review == null:
 		return
 	if _review.has_signal("review_info_generated"):
@@ -46,12 +50,13 @@ func _on_review_failed(_a = null, _b = null) -> void:
 		OS.shell_open(LISTING_URL)  # native card unavailable → fall back to the listing
 
 
-## Find a class_name script by name in the global class list and instantiate it, or null if the
-## plugin isn't installed. Avoids a parse-time reference to a class that may not exist.
-func _instantiate_global(cls: String) -> Object:
+## Instantiate the plugin's class_name node from the global class registry, or null if the addon
+## isn't installed / its class isn't registered. Avoids a parse-time reference to a maybe-absent
+## class; the can_instantiate guard keeps us graceful if the script failed to compile.
+func _instantiate_plugin(global_cls: String) -> Object:
 	for c in ProjectSettings.get_global_class_list():
-		if c.get("class", "") == cls:
+		if c.get("class", "") == global_cls:
 			var scr = load(c["path"])
-			if scr != null:
+			if scr is Script and scr.can_instantiate():
 				return scr.new()
 	return null

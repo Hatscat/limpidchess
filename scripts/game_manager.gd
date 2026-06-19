@@ -50,6 +50,7 @@ var blunders_made := 0        ## total blunders chosen across all games
 var current_bot: Dictionary = {}     ## a BotRoster entry, or {} for pass-and-play
 var player_is_white := true
 var pass_and_play := false
+var pending_review_check := false  ## set after a positive game; consumed on Home/Bots to ask for a review
 
 
 func _ready() -> void:

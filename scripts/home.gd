@@ -24,6 +24,10 @@ func _ready() -> void:
 	bot_name.text = bot.get("name", "a bot")
 
 	_refresh_games()
+	# Calm moment after a positive game: ask for a Play rating (gated to once, 2nd+ game).
+	if GameManager.pending_review_check:
+		GameManager.pending_review_check = false
+		Reviews.maybe_ask()
 
 
 func _refresh_games() -> void:

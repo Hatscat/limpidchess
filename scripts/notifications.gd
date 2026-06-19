@@ -18,7 +18,11 @@ var _pending := false  # a schedule was requested before the plugin finished ini
 
 
 func _ready() -> void:
-	_scheduler = _instantiate_global("NotificationScheduler")
+	# Only touch the plugin when its Android singleton exists; on desktop/dev the
+	# NotificationScheduler node would push "singleton not initialized" errors on every call.
+	if not Engine.has_singleton("NotificationSchedulerPlugin"):
+		return
+	_scheduler = _instantiate_plugin("NotificationScheduler")
 	if _scheduler == null:
 		return
 	if _scheduler.has_signal("initialization_completed"):
@@ -56,7 +60,7 @@ func _do_schedule() -> void:
 	if _scheduler.has_method("has_post_notifications_permission") \
 			and not _scheduler.has_post_notifications_permission():
 		_scheduler.request_post_notifications_permission()
-	var data = _instantiate_global("NotificationData")
+	var data = _instantiate_plugin("NotificationData")
 	if data == null:
 		return
 	data.set_id(REMINDER_ID)
@@ -75,12 +79,13 @@ func _delay_to_tomorrow_morning() -> int:
 	return (86400 - into_day) + 10 * 3600  # next midnight + 10h
 
 
-## Find a class_name script by name in the global class list and instantiate it, or null if the
-## plugin isn't installed. Avoids a parse-time reference to a class that may not exist.
-func _instantiate_global(cls: String) -> Object:
+## Instantiate the plugin's class_name node/resource from the global class registry, or null if the
+## addon isn't installed / its class isn't registered. Avoids a parse-time reference to a maybe-absent
+## class; the can_instantiate guard keeps us graceful if the script failed to compile.
+func _instantiate_plugin(global_cls: String) -> Object:
 	for c in ProjectSettings.get_global_class_list():
-		if c.get("class", "") == cls:
+		if c.get("class", "") == global_cls:
 			var scr = load(c["path"])
-			if scr != null:
+			if scr is Script and scr.can_instantiate():
 				return scr.new()
 	return null
