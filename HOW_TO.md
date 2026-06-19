@@ -178,9 +178,9 @@ make the source and the exact Stockfish build you ship available.
 ## TODOs wired but not implemented
 
 - **Android-native Stockfish** — see above; the main remaining task.
-- **In-app purchase**: implemented in the [`Billing`](scripts/billing.gd) autoload (full buy /
-  restore / acknowledge / promo-code flow, localized price). Remaining work is outside the
-  engine: install a Play Billing plugin and create the `premium_unlock` product in Play Console
-  (see "In-app purchase (Google Play Billing)" above). Until the plugin is installed the buy
-  flow is a no-op in release and a local grant in debug.
-  (Reset for testing via the dev "Reset save" button, see "Save data" above.)
+- **In-app purchase**: done in code. The `GodotGooglePlayBilling` v3.x addon (a `BillingClient`
+  node, under [`addons/GodotGooglePlayBilling/`](addons/GodotGooglePlayBilling/)) is installed, and
+  the [`Billing`](scripts/billing.gd) autoload wraps it (buy / restore / acknowledge / promo codes,
+  localized price, grant-only). Remaining: create + activate the `premium_unlock` managed product in
+  Play Console, then ship a new AAB. On desktop/dev (no Play singleton) the buy flow is a local grant
+  in a debug build, otherwise a no-op. (Reset for testing via the dev "Reset save" button, above.)

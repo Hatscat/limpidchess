@@ -79,7 +79,8 @@ func _on_purchase_succeeded() -> void:
 func _on_purchase_failed(message: String) -> void:
 	get_button.disabled = false
 	get_button.text = tr("Unlock Premium  ·  %s") % Billing.price_text
-	_set_status(message, false)
+	if message != "":  # empty = user cancelled; just re-enable, no error shown
+		_set_status(message, false)
 
 
 func _on_restore_finished(found: bool) -> void:

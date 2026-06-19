@@ -2,11 +2,11 @@ extends Node
 
 ## Google Play Billing for the one-time Premium unlock (autoload "Billing").
 ##
-## Talks to the GodotGooglePlayBilling Android plugin (singleton "GodotGooglePlayBilling")
-## when it is present. Everywhere else (desktop/dev, or an Android build before the plugin is
-## installed) it degrades gracefully: `available` stays false, the price falls back to
+## Wraps the GodotGooglePlayBilling addon's `BillingClient` node (installed under
+## addons/GodotGooglePlayBilling/). On desktop/dev, where the Android plugin singleton is
+## absent, it degrades gracefully: `available` stays false, the price falls back to
 ## DEFAULT_PRICE, and ONLY in a debug build the buy/restore stubs grant Premium locally so the
-## flow can be exercised without Play. See HOW_TO.md for the plugin + Play Console setup.
+## screen can be exercised without Play. See HOW_TO.md for the Play Console setup.
 ##
 ## Entitlement is GRANT-ONLY: we upgrade to Premium when Play reports the purchase (a fresh buy,
 ## a restore, or a redeemed promo code) and NEVER auto-revoke, so an offline launch can't lock
@@ -14,98 +14,66 @@ extends Node
 
 signal price_updated(formatted: String)   ## the localized price string changed
 signal purchase_succeeded                  ## Premium granted (buy or restore)
-signal purchase_failed(message: String)    ## a buy attempt failed / was cancelled
+signal purchase_failed(message: String)    ## a buy attempt failed (empty message = user cancelled)
 signal restore_finished(found: bool)       ## a user-initiated "Restore" completed
 
-## Plugin singleton + product identifiers. If you adopt a billing plugin that exposes a
-## different singleton name, change SINGLETON; PRODUCT_ID must match the Play Console product.
-const SINGLETON := "GodotGooglePlayBilling"
 const PRODUCT_ID := "premium_unlock"   ## Play Console managed product id (non-consumable)
-const PRODUCT_TYPE := "inapp"          ## one-time product (not "subs")
 const DEFAULT_PRICE := "$3.99"         ## shown until Play returns the localized price
 ## Google Play promo-code redemption page (friends/family codes are redeemed in the Play Store,
-## then flow back to us via queryPurchases on resume / Restore).
+## then flow back to us via query_purchases on resume / Restore).
 const REDEEM_URL := "https://play.google.com/redeem"
-
-## Reconnect backoff: Play can drop the billing connection; we retry on a delay (not a tight
-## loop) and give up after a few tries so a Play-less device can't drain the battery retrying.
+## Reconnect backoff: Play can drop the billing connection; retry on a delay (not a tight loop)
+## and give up after a few tries so a Play-less device can't drain the battery retrying.
 const RECONNECT_DELAY := 5.0
 const MAX_RECONNECTS := 8
 
-var available := false          ## the billing plugin is present on this build
+var available := false          ## the billing plugin singleton is present on this build
 var store_ready := false        ## connected to Play AND product details are known
 var price_text := DEFAULT_PRICE
-var _billing: Object = null
+var _client: BillingClient = null
 var _restoring := false         ## a user-tapped Restore is in flight (vs silent reconcile)
-var _connecting := false        ## a connection attempt is in flight (guards reconnect storms)
+var _connecting := false
 var _reconnect_attempts := 0
 
 
 func _ready() -> void:
-	if not Engine.has_singleton(SINGLETON):
+	if not Engine.has_singleton("GodotGooglePlayBilling"):
 		return  # desktop / dev / plugin not installed → graceful no-op
-	_billing = Engine.get_singleton(SINGLETON)
 	available = true
-	_bind("connected", _on_connected)
-	_bind("disconnected", _on_disconnected)
-	_bind("connect_error", _on_connect_error)
-	_bind("billing_resume", _on_billing_resume)
-	_bind("product_details_query_completed", _on_product_details)
-	_bind("product_details_query_error", _on_product_details_error)
-	_bind("purchases_updated", _on_purchases_updated)
-	_bind("purchase_error", _on_purchase_error)
-	_bind("query_purchases_response", _on_query_purchases)
-	_bind("purchase_acknowledged", _on_purchase_acknowledged)
-	_bind("purchase_acknowledgement_error", _on_ack_error)
+	_client = BillingClient.new()
+	add_child(_client)  # BillingClient is a Node; keep it under the autoload
+	_client.connected.connect(_on_connected)
+	_client.disconnected.connect(_on_disconnected)
+	_client.connect_error.connect(_on_connect_error)
+	_client.query_product_details_response.connect(_on_product_details)
+	_client.query_purchases_response.connect(_on_query_purchases)
+	_client.on_purchase_updated.connect(_on_purchase_updated)
 	_start_connection()
 
 
-## Connect a plugin signal only if it exists, so a plugin whose API differs slightly doesn't
-## spam startup errors (the rest of the flow still works with whatever signals are present).
-func _bind(sig: String, fn: Callable) -> void:
-	if _billing.has_signal(sig):
-		_billing.connect(sig, fn)
-	else:
-		push_warning("Billing: plugin singleton has no signal '%s'" % sig)
-
-
-## Start a connection unless one is already in flight (avoids reconnect storms).
-func _start_connection() -> void:
-	if _connecting or _billing == null:
-		return
-	_connecting = true
-	_billing.startConnection()
-
-
-## Reconnect after a delay (Play dropped us / a connect attempt failed), bounded by MAX_RECONNECTS.
-func _reconnect_later() -> void:
-	if _connecting or not available or _reconnect_attempts >= MAX_RECONNECTS:
-		return
-	_reconnect_attempts += 1
-	_connecting = true
-	var tree := get_tree()
-	if tree == null:
-		_connecting = false
-		return
-	await tree.create_timer(RECONNECT_DELAY).timeout
-	if available and _billing != null:
-		_billing.startConnection()  # stays "connecting" until connected / connect_error resolves it
-	else:
-		_connecting = false
+## App came back to the foreground: re-check entitlement (catches promo-code redemptions and
+## purchases finished outside the app). The addon has no billing_resume signal, so we poll here.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_RESUMED and available and _client != null and store_ready:
+		_client.query_purchases(BillingClient.ProductType.INAPP)
 
 
 # --- Public API (used by the Premium screen) ---
 
-## Can a purchase be initiated right now? (Or a dev grant in a debug build.)
 func can_purchase() -> bool:
 	return (available and store_ready) or OS.is_debug_build()
 
 
-## Launch the Google Play purchase flow for Premium.
+## Launch the Google Play purchase flow for Premium. The outcome arrives via on_purchase_updated.
 func buy() -> void:
 	if available and store_ready:
-		_billing.purchase(PRODUCT_ID)
-		return
+		var result: Dictionary = _client.purchase(PRODUCT_ID)
+		var code := int(result.get("response_code", BillingClient.BillingResponseCode.OK))
+		if code == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED:
+			_client.query_purchases(BillingClient.ProductType.INAPP)  # reconcile + grant
+		elif code != BillingClient.BillingResponseCode.OK:
+			purchase_failed.emit(tr("The purchase could not be completed."))
+		return  # OK: wait for on_purchase_updated
 	if OS.is_debug_build():
 		_grant()  # no Play on desktop → grant locally so the UI can be tested
 		return
@@ -116,7 +84,7 @@ func buy() -> void:
 func restore() -> void:
 	if available and store_ready:
 		_restoring = true
-		_billing.queryPurchases(PRODUCT_TYPE)
+		_client.query_purchases(BillingClient.ProductType.INAPP)
 		return
 	if OS.is_debug_build():
 		restore_finished.emit(GameManager.is_premium)
@@ -129,13 +97,36 @@ func open_redeem_page() -> void:
 	OS.shell_open(REDEEM_URL)
 
 
-# --- Plugin callbacks ---
+# --- Connection ---
+
+func _start_connection() -> void:
+	if _connecting or _client == null:
+		return
+	_connecting = true
+	_client.start_connection()
+
+
+func _reconnect_later() -> void:
+	if _connecting or not available or _reconnect_attempts >= MAX_RECONNECTS:
+		return
+	_reconnect_attempts += 1
+	_connecting = true
+	var tree := get_tree()
+	if tree == null:
+		_connecting = false
+		return
+	await tree.create_timer(RECONNECT_DELAY).timeout
+	if available and _client != null:
+		_client.start_connection()
+	else:
+		_connecting = false
+
 
 func _on_connected() -> void:
 	_connecting = false
 	_reconnect_attempts = 0
-	_billing.queryProductDetails(PackedStringArray([PRODUCT_ID]), PRODUCT_TYPE)
-	_billing.queryPurchases(PRODUCT_TYPE)  # silently reconcile a prior purchase on launch
+	_client.query_product_details(PackedStringArray([PRODUCT_ID]), BillingClient.ProductType.INAPP)
+	_client.query_purchases(BillingClient.ProductType.INAPP)  # silently reconcile on launch
 
 
 func _on_disconnected() -> void:
@@ -143,94 +134,73 @@ func _on_disconnected() -> void:
 	_reconnect_later()
 
 
-func _on_connect_error(_code: int, _msg: String) -> void:
+func _on_connect_error(_code: int, _msg := "") -> void:
 	store_ready = false
 	_connecting = false
 	_reconnect_later()
 
 
-func _on_billing_resume() -> void:
-	if available:
-		_billing.queryPurchases(PRODUCT_TYPE)  # app resumed → re-check (catches redemptions)
+# --- Plugin responses ---
 
-
-func _on_product_details(details) -> void:
-	for d in details:
-		if typeof(d) != TYPE_DICTIONARY:
+func _on_product_details(response: Dictionary) -> void:
+	for p in response.get("product_details", []):
+		if typeof(p) != TYPE_DICTIONARY:
 			continue
-		if not _matches_product(d):
+		var pid := str(p.get("product_id", PRODUCT_ID))
+		if pid != PRODUCT_ID:
 			continue
-		var price := _extract_price(d)
+		var price := _extract_price(p)
 		if price != "":
 			price_text = price
 			price_updated.emit(price_text)
 	store_ready = true
 
 
-func _on_product_details_error(_code: int, _msg: String, _ids = null) -> void:
-	pass  # keep DEFAULT_PRICE; without details buy() reports "unavailable"
+## Result of a buy: success carries the purchase(s); USER_CANCELED is a silent no-op.
+func _on_purchase_updated(response: Dictionary) -> void:
+	var code := int(response.get("response_code", BillingClient.BillingResponseCode.OK))
+	if code == BillingClient.BillingResponseCode.OK or response.has("purchases"):
+		_handle_purchases(response)
+	elif code == BillingClient.BillingResponseCode.USER_CANCELED:
+		purchase_failed.emit("")  # cancelled: just re-enable the button, no error shown
+	else:
+		purchase_failed.emit(tr("The purchase could not be completed."))
 
 
-func _on_purchases_updated(purchases) -> void:
-	_handle_purchases(purchases)
-
-
-func _on_purchase_error(_code: int, msg := "") -> void:
-	purchase_failed.emit(_friendly(msg))
-
-
-func _on_query_purchases(result) -> void:
-	var purchases = result.get("purchases", []) if typeof(result) == TYPE_DICTIONARY else result
-	var found := _handle_purchases(purchases)
+func _on_query_purchases(response: Dictionary) -> void:
+	var found := _handle_purchases(response)
 	if _restoring:
 		_restoring = false
 		restore_finished.emit(found or GameManager.is_premium)
-
-
-func _on_purchase_acknowledged(_token := "") -> void:
-	pass  # entitlement was already granted in _handle_purchases
-
-
-func _on_ack_error(_code: int, _msg := "", _token := "") -> void:
-	pass  # harmless: an unacknowledged purchase is re-acknowledged on the next launch
 
 
 # --- Purchase handling ---
 
 ## Grant Premium for any owned, valid Premium purchase, and acknowledge it if needed.
 ## Returns true if a Premium purchase was found. Grant-only: never revokes.
-func _handle_purchases(purchases) -> bool:
-	if purchases == null:
-		return false
+func _handle_purchases(response: Dictionary) -> bool:
 	var found := false
-	for p in purchases:
-		if typeof(p) != TYPE_DICTIONARY or not _matches_product(p):
+	for pu in response.get("purchases", []):
+		if typeof(pu) != TYPE_DICTIONARY or not _is_premium_purchase(pu):
 			continue
 		found = true
-		# purchase_state: 1 = PURCHASED, 2 = PENDING (don't grant a pending purchase yet).
-		var state := int(p.get("purchase_state", p.get("purchaseState", 1)))
-		if state != 1:
+		# PurchaseState: PURCHASED=1, PENDING=2. Don't grant a pending purchase yet.
+		var state := int(pu.get("purchase_state", BillingClient.PurchaseState.PURCHASED))
+		if state != BillingClient.PurchaseState.PURCHASED:
 			continue
 		_grant()
-		var acked := bool(p.get("is_acknowledged", p.get("isAcknowledged", false)))
-		if not acked:
-			var token := str(p.get("purchase_token", p.get("purchaseToken", "")))
-			if token != "" and available:
-				_billing.acknowledgePurchase(token)
+		if not bool(pu.get("is_acknowledged", false)):
+			var token := str(pu.get("purchase_token", ""))
+			if token != "" and _client != null:
+				_client.acknowledge_purchase(token)
 	return found
 
 
-## True if a product-detail / purchase dict refers to our Premium product. Billing Library 5+
-## reports a "products" array; older shapes use a "product_id" / "productId" string.
-func _matches_product(d: Dictionary) -> bool:
-	if d.has("products"):
-		var prods = d["products"]
-		if typeof(prods) == TYPE_ARRAY or typeof(prods) == TYPE_PACKED_STRING_ARRAY:
-			for pid in prods:
-				if str(pid) == PRODUCT_ID:
-					return true
-		return false
-	return str(d.get("product_id", d.get("productId", ""))) == PRODUCT_ID
+func _is_premium_purchase(pu: Dictionary) -> bool:
+	for pid in pu.get("product_ids", []):
+		if str(pid) == PRODUCT_ID:
+			return true
+	return false
 
 
 func _grant() -> void:
@@ -241,14 +211,10 @@ func _grant() -> void:
 
 
 ## Pull the localized formatted price from a one-time product's offer details.
-func _extract_price(d: Dictionary) -> String:
-	var offer = d.get("one_time_purchase_offer_details", d.get("oneTimePurchaseOfferDetails", null))
-	if typeof(offer) == TYPE_DICTIONARY:
-		var fp := str(offer.get("formatted_price", offer.get("formattedPrice", "")))
-		if fp != "":
-			return fp
-	return str(d.get("formatted_price", d.get("price", "")))  # some plugin builds flatten it
-
-
-func _friendly(msg: String) -> String:
-	return msg if msg != "" else tr("The purchase could not be completed.")
+func _extract_price(p: Dictionary) -> String:
+	for o in p.get("one_time_purchase_offer_details_list", []):
+		if typeof(o) == TYPE_DICTIONARY:
+			var fp := str(o.get("formatted_price", ""))
+			if fp != "":
+				return fp
+	return ""
