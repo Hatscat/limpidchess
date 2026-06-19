@@ -184,3 +184,14 @@ make the source and the exact Stockfish build you ship available.
   localized price, grant-only). Remaining: create + activate the `premium_unlock` managed product in
   Play Console, then ship a new AAB. On desktop/dev (no Play singleton) the buy flow is a local grant
   in a debug build, otherwise a no-op. (Reset for testing via the dev "Reset save" button, above.)
+- **In-app review + daily-reset notification**: done in code. [`Reviews`](scripts/reviews.gd) asks
+  for a Play rating once after the 2nd non-loss game; [`Notifications`](scripts/notifications.gd)
+  schedules a "your free games are back" reminder for tomorrow morning when a free player runs out
+  (cancelled when they have games again or go Premium). Both resolve the plugin's `class_name` nodes
+  dynamically, so they no-op until the addons are installed: drop in
+  [godot-inapp-review](https://github.com/godot-mobile-plugins/godot-inapp-review) (`InappReview`) and
+  [godot-notification-scheduler](https://github.com/godot-mobile-plugins/godot-notification-scheduler)
+  (`NotificationScheduler` + `NotificationData`), then rebuild. The notification adds the Android 13+
+  `POST_NOTIFICATIONS` permission (requested at first schedule) and uses inexact alarms, so no
+  `SCHEDULE_EXACT_ALARM` Play declaration is needed. A small-icon drawable + channel may need adding
+  per the notification plugin's README if no icon shows.

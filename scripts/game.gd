@@ -855,6 +855,9 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
 	result_overlay.visible = true
+	# A calm positive moment: ask for a Play rating once (gated to the 2nd+ game). Skip a loss/resign.
+	if quote_key != "loss" and quote_key != "resign":
+		Reviews.maybe_ask()
 
 
 # --- Menu + confirm ---

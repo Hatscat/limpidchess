@@ -26,6 +26,8 @@ GameManager="*res://scripts/game_manager.gd"
 ChessEngine="*res://scripts/chess/stockfish_engine.gd"
 Audio="*res://scripts/audio.gd"
 Billing="*res://scripts/billing.gd"
+Reviews="*res://scripts/reviews.gd"
+Notifications="*res://scripts/notifications.gd"
 
 [display]
 
