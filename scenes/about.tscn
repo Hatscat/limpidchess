@@ -113,6 +113,7 @@ Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]
 fit_content = true
 
 [node name="Version" type="Label" parent="Scroll/VBox" unique_id=926315340]
+unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.4)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12

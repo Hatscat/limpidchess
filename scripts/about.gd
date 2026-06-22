@@ -5,11 +5,15 @@ extends Control
 
 @onready var scroll: ScrollContainer = %Scroll
 @onready var stats: Label = %Stats
+@onready var version: Label = %Version
 
 
 func _ready() -> void:
 	var safe := DisplayServer.get_display_safe_area()
 	scroll.offset_top = max(safe.position.y, 16)
+	# Single source of truth for the version: the project setting (baked into the export and
+	# readable at runtime; export_presets.cfg is editor-only and not shipped).
+	version.text = "Limpid Chess · v%s" % ProjectSettings.get_setting("application/config/version", "")
 	_fill_stats()
 	# Wire every credit link: tapping a [url] opens it in the system browser.
 	for label in _find_rich_labels(self):
