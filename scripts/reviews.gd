@@ -56,14 +56,24 @@ func _show_pre_dialog() -> bool:
 	return true
 
 
-## Launch the actual review flow: the native in-app card when available, else the store listing.
-## Called when the player opts in (the pre-prompt's "Rate it", or the About "Review game" button).
+## Launch the in-app review card (the auto pre-prompt's "Rate it"). The native card is quota-limited
+## and may silently not show, which is fine for this one-shot positive moment; falls back to the
+## store listing without the plugin.
 func ask() -> void:
-	GameManager.mark_review_done()  # they chose to rate; hide the About button afterward
+	GameManager.mark_review_done()  # they engaged with rating → stop the automatic pre-prompt
 	if _review != null:
 		_review.generate_review_info()  # → review_info_generated → launch_review_flow()
 	elif not OS.has_feature("editor"):
 		OS.shell_open(LISTING_URL)  # no plugin → open the store listing (skip in the editor)
+
+
+## Open the Play Store listing so the player can rate or CHANGE their review at any time. Used by the
+## always-available About "Review game" button: unlike the in-app card it's reliable and repeatable
+## (the review API never reports whether they rated, so the button can't be hidden on "done").
+func open_store_listing() -> void:
+	GameManager.mark_review_done()  # they went to rate → quiet the automatic pre-prompt
+	if not OS.has_feature("editor"):
+		OS.shell_open(LISTING_URL)
 
 
 func _on_review_info(_a = null, _b = null) -> void:

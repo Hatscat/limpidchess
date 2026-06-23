@@ -122,6 +122,7 @@ Planned:
       [Lichess open puzzle database](https://database.lichess.org/) (CC0), one wrong move ends the
       run, beat your best streak, one attempt a day for free players
 - [ ] Verify the embedded native Stockfish on real Android devices
+- [ ] Upgrade to **Godot 4.7** post-launch (checklist in [HOW_TO.md](HOW_TO.md#upgrade-godot))
 - [ ] Later: Chinese / Japanese / Korean / Arabic (these need an additional font)
 
 ## Contributing

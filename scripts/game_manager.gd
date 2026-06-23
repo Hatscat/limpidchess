@@ -34,7 +34,7 @@ var is_premium := false
 var language := ""           ## chosen UI locale code; "" = follow the device language
 var sound_enabled := true    ## sound-effect cues on/off
 var last_review_prompt_date := "" ## "YYYY-MM-DD" we last auto-showed the rating prompt (cap: once/day)
-var review_done := false           ## player launched the review flow (hides the About "Review game" button)
+var review_done := false           ## player engaged with rating once → stops the automatic pre-prompt
 var last_bot_id := ""        ## id of the last bot played, so Home offers it again
 var games_today := 0
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
@@ -242,11 +242,6 @@ func mark_review_prompted() -> void:
 func mark_review_done() -> void:
 	review_done = true
 	_save()
-
-
-## The About "Review game" button shows until the player has launched the review flow once.
-func can_review() -> bool:
-	return not review_done
 
 
 # --- Persistence ---

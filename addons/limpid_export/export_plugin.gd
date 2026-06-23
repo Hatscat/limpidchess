@@ -1,0 +1,22 @@
+@tool
+extends EditorExportPlugin
+
+## Android manifest tweaks. Currently: remove SCHEDULE_EXACT_ALARM.
+##
+## The godot-notification-scheduler .aar declares SCHEDULE_EXACT_ALARM, but Limpid Chess only
+## schedules INEXACT alarms (Notifications uses set_delay and never requests the exact-alarm
+## permission). Shipping an unused, sensitive permission is needless surface on an otherwise
+## minimal, no-tracking app, so we strip it. The Android manifest merger honours tools:node="remove"
+## from the app manifest, and Godot's generated manifest declares the xmlns:tools namespace.
+
+
+func _get_name() -> String:
+	return "LimpidManifestTweaks"
+
+
+func _supports_platform(platform: EditorExportPlatform) -> bool:
+	return platform is EditorExportPlatformAndroid
+
+
+func _get_android_manifest_element_contents(_platform: EditorExportPlatform, _debug: bool) -> String:
+	return '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />'

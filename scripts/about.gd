@@ -16,9 +16,9 @@ func _ready() -> void:
 	# readable at runtime; export_presets.cfg is editor-only and not shipped).
 	version.text = "Limpid Chess · v%s" % ProjectSettings.get_setting("application/config/version", "")
 	_fill_stats()
-	# Offer a manual rating until they've launched the flow once (we can't know if they actually
-	# submitted, so that's the best proxy). Tapping it IS the intent, so it goes straight to the flow.
-	review_button.visible = GameManager.can_review()
+	# Always available: the Play review API never tells us whether the player actually rated, so we
+	# can't (and don't) hide this. It opens the store listing, where they can rate or change their
+	# review whenever (the in-app review card is quota-limited and can't be reliably re-shown).
 	review_button.pressed.connect(_on_review_pressed)
 	# Wire every credit link: tapping a [url] opens it in the system browser.
 	for label in _find_rich_labels(self):
@@ -26,8 +26,7 @@ func _ready() -> void:
 
 
 func _on_review_pressed() -> void:
-	Reviews.ask()
-	review_button.visible = false
+	Reviews.open_store_listing()
 
 
 func _notification(what: int) -> void:

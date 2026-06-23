@@ -54,6 +54,38 @@ godot --version
 If `godot: command not found`, recreate the symlink:
 `ln -sf ~/.local/opt/godot/godot ~/.local/bin/godot`
 
+### Bumping to Godot 4.7 (do it on a branch, after the current release)
+
+4.7 is a polish release; nothing in it is required, so ship the current Play release on 4.6.3 first.
+The pure-Godot side is low risk (no `.tscn`/`.tres` format bump, `config_version` unchanged, the
+GDScript is clean). The real cost is the native + Android layer. Keep 4.6.3 installed alongside 4.7
+until the branch is verified, and read the official guide first:
+`https://docs.godotengine.org/en/4.7/tutorials/migrating/upgrading_to_godot_4.7.html`
+
+The one hard blocker: **InappReview v5.2 is capped at Godot 4.6.3** (see
+`addons/GMPShared/menu/gmp.json`), so 4.7 *requires* swapping it.
+
+Order of operations:
+
+1. New git branch.
+2. Swap the Android plugins to their 4.7 builds, and replace the staged copies under `android/plugins/` too:
+   - **InappReview v5.2 → v5.3** (mandatory; `min_godot` 4.7).
+   - **GodotGooglePlayBilling**: refresh the `.aar` to the 4.7 build (v3.2.0 is listed 4.7-compatible).
+   - **NotificationScheduler v6.0**: already the 4.7-targeted build per the registry; just confirm on device.
+3. Reinstall the Android build template from the 4.7 editor (Project > Install Android Build Template).
+   This **overwrites `android/build/`**, so diff/back it up first and re-apply any local gradle edits.
+   Keep **JDK 17**.
+4. Open the project in 4.7 (it rewrites `features` to "4.7"), then `godot --headless --path . --import`.
+5. Run the full suite under 4.7: `perft_test.gd`, `validate.gd`, `test_engine.gd`, `test_selfplay.gd`.
+6. Native Stockfish GDExtension: it is forward-compatible, so the 4.5-built `.so`
+   (`compatibility_minimum=4.5`) should load as-is, and `stockfish_engine.gd` falls back gracefully if
+   not. Confirm `ClassDB.class_exists("StockfishGD")` is true. Only if it is false, rebuild:
+   `cd native && GODOT_CPP_BRANCH=4.7 ./build.sh` (delete `native/godot-cpp` first so it re-clones).
+7. Eyeball two 4.7 visual changes: CanvasItem no longer adds the antialiasing feather on lines (the
+   custom board + option arrows in `chess_board.gd`), and the font-hinting import default changed 1 to 3
+   (OpenDyslexic glyphs).
+8. Full arm64 AAB export, then an on-device smoke test: billing, reviews, notifications, gameplay, render.
+
 ## Asset pipeline
 
 ### Chess pieces (JohnPablok / Cburnett, CC0)
