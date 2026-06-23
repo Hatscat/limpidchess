@@ -1,0 +1,123 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/rate_dialog.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://eu4o70yxeqdq" path="res://assets/icons/star.png" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="sb_card"]
+content_margin_left = 28.0
+content_margin_top = 28.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+
+[sub_resource type="StyleBoxFlat" id="sb_primary"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+bg_color = Color(0.28, 0.58, 0.7, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="sb_ghost"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="RateDialog" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Center" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_right = -28.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("sb_card")
+
+[node name="Margin" type="MarginContainer" parent="Center/Card"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Icon" type="TextureRect" parent="Center/Card/Margin/VBox"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Do you enjoy the game?"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Body" type="Label" parent="Center/Card/Margin/VBox"]
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+text = "Let us know with a quick rating, it really helps!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="RateBtn" type="Button" parent="Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_primary")
+theme_override_styles/hover = SubResource("sb_primary")
+theme_override_styles/pressed = SubResource("sb_primary")
+text = "Rate it"
+
+[node name="LaterBtn" type="Button" parent="Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+focus_mode = 0
+modulate = Color(1, 1, 1, 0.7)
+theme_override_styles/normal = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
+theme_override_styles/pressed = SubResource("sb_ghost")
+text = "Not now"

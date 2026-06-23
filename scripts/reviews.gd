@@ -4,7 +4,7 @@ extends Node
 ##
 ## Wraps the godot-inapp-review plugin's `InappReview` node when installed; without the plugin
 ## (or on desktop) it falls back to opening the Play Store listing, and is a no-op in the editor.
-## We ask ONCE, after the player's 2nd non-loss game (a positive moment), gated by
+## We auto-ask at most once per day, after a non-loss game (a positive moment), gated by
 ## GameManager.should_ask_review(). Google throttles the native card, so it may not always show,
 ## which is expected and fine. The plugin's class_name nodes only exist once the addon is added,
 ## so we resolve + instantiate them dynamically to stay parse-safe when it isn't.
@@ -29,11 +29,37 @@ func _ready() -> void:
 	add_child(_review)
 
 
-## Ask for a review if eligible (gated to once, after the 2nd game). Safe to call any time.
+## Auto-prompt for a review if eligible (at most once per day, after the 2nd game). We never drop
+## the native review card on the player unannounced: first show our own gentle "do you enjoy it?"
+## dialog, and only launch the real flow if they tap "Rate it". Safe to call any time.
 func maybe_ask() -> void:
 	if not GameManager.should_ask_review():
 		return
-	GameManager.mark_review_prompted()  # once only, win or lose afterward
+	# Spend today's single slot only if the dialog actually appeared (so a failed show can retry).
+	if _show_pre_dialog():
+		GameManager.mark_review_prompted()  # at most once per day; "Not now" just waits for a later day
+
+
+## Show the friendly pre-prompt over the current scene; returns false if it couldn't be shown.
+## On "Rate it" it calls ask(); "Not now" just dismisses (the About "Review game" button stays
+## available, and we may gently ask again on a later day, never twice the same day).
+func _show_pre_dialog() -> bool:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return false
+	var ps := load("res://scenes/rate_dialog.tscn") as PackedScene
+	if ps == null:
+		return false
+	var dlg := ps.instantiate()
+	dlg.rated.connect(ask)
+	scene.add_child(dlg)
+	return true
+
+
+## Launch the actual review flow: the native in-app card when available, else the store listing.
+## Called when the player opts in (the pre-prompt's "Rate it", or the About "Review game" button).
+func ask() -> void:
+	GameManager.mark_review_done()  # they chose to rate; hide the About button afterward
 	if _review != null:
 		_review.generate_review_info()  # → review_info_generated → launch_review_flow()
 	elif not OS.has_feature("editor"):

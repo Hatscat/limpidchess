@@ -33,7 +33,8 @@ const UNLIMITED_GAMES := 999
 var is_premium := false
 var language := ""           ## chosen UI locale code; "" = follow the device language
 var sound_enabled := true    ## sound-effect cues on/off
-var review_prompted := false ## already asked for a Play rating once (don't nag again)
+var last_review_prompt_date := "" ## "YYYY-MM-DD" we last auto-showed the rating prompt (cap: once/day)
+var review_done := false           ## player launched the review flow (hides the About "Review game" button)
 var last_bot_id := ""        ## id of the last bot played, so Home offers it again
 var games_today := 0
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
@@ -103,7 +104,8 @@ func reset_save() -> void:
 	is_premium = false
 	language = ""
 	sound_enabled = true
-	review_prompted = false
+	last_review_prompt_date = ""
+	review_done = false
 	games_today = 0
 	last_play_date = ""
 	games_played = 0
@@ -224,14 +226,27 @@ func set_premium(value: bool) -> void:
 		Notifications.cancel_reset_reminder()  # unlimited games now → drop any pending reminder
 
 
-## Ask for a Play rating only once, and only after the player is engaged (2+ games started).
+## Auto-prompt for a Play rating at most once per calendar day, only after the player is engaged
+## (2+ games), and never once they've already rated via the dialog or the About button.
 func should_ask_review() -> bool:
-	return not review_prompted and games_played >= 2
+	if review_done or games_played < 2:
+		return false
+	return last_review_prompt_date != Time.get_date_string_from_system()
 
 
 func mark_review_prompted() -> void:
-	review_prompted = true
+	last_review_prompt_date = Time.get_date_string_from_system()
 	_save()
+
+
+func mark_review_done() -> void:
+	review_done = true
+	_save()
+
+
+## The About "Review game" button shows until the player has launched the review flow once.
+func can_review() -> bool:
+	return not review_done
 
 
 # --- Persistence ---
@@ -241,7 +256,8 @@ func _save() -> void:
 	cfg.set_value("player", "is_premium", is_premium)
 	cfg.set_value("player", "language", language)
 	cfg.set_value("player", "sound_enabled", sound_enabled)
-	cfg.set_value("player", "review_prompted", review_prompted)
+	cfg.set_value("player", "last_review_prompt_date", last_review_prompt_date)
+	cfg.set_value("player", "review_done", review_done)
 	cfg.set_value("player", "last_bot_id", last_bot_id)
 	cfg.set_value("daily", "games_today", games_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
@@ -262,7 +278,8 @@ func _load() -> void:
 	is_premium = bool(cfg.get_value("player", "is_premium", false))
 	language = str(cfg.get_value("player", "language", ""))
 	sound_enabled = bool(cfg.get_value("player", "sound_enabled", true))
-	review_prompted = bool(cfg.get_value("player", "review_prompted", false))
+	last_review_prompt_date = str(cfg.get_value("player", "last_review_prompt_date", ""))
+	review_done = bool(cfg.get_value("player", "review_done", false))
 	last_bot_id = str(cfg.get_value("player", "last_bot_id", ""))
 	if last_bot_id != "":
 		current_bot = BotRoster.get_by_id(last_bot_id)  # Home offers the last opponent

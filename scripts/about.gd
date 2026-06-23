@@ -6,6 +6,7 @@ extends Control
 @onready var scroll: ScrollContainer = %Scroll
 @onready var stats: Label = %Stats
 @onready var version: Label = %Version
+@onready var review_button: Button = %ReviewButton
 
 
 func _ready() -> void:
@@ -15,9 +16,18 @@ func _ready() -> void:
 	# readable at runtime; export_presets.cfg is editor-only and not shipped).
 	version.text = "Limpid Chess · v%s" % ProjectSettings.get_setting("application/config/version", "")
 	_fill_stats()
+	# Offer a manual rating until they've launched the flow once (we can't know if they actually
+	# submitted, so that's the best proxy). Tapping it IS the intent, so it goes straight to the flow.
+	review_button.visible = GameManager.can_review()
+	review_button.pressed.connect(_on_review_pressed)
 	# Wire every credit link: tapping a [url] opens it in the system browser.
 	for label in _find_rich_labels(self):
 		label.meta_clicked.connect(_on_link_clicked)
+
+
+func _on_review_pressed() -> void:
+	Reviews.ask()
+	review_button.visible = false
 
 
 func _notification(what: int) -> void:
