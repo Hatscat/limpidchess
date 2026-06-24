@@ -46,6 +46,7 @@ var draws := 0
 var losses := 0
 var best_moves_found := 0     ## total best moves found across all games
 var blunders_made := 0        ## total blunders chosen across all games
+var bot_wins: Dictionary = {} ## bot id (String) -> times the human has beaten that bot (int)
 
 # --- Current game context (set before entering the Game scene; not persisted) ---
 var current_bot: Dictionary = {}     ## a BotRoster entry, or {} for pass-and-play
@@ -114,6 +115,7 @@ func reset_save() -> void:
 	losses = 0
 	best_moves_found = 0
 	blunders_made = 0
+	bot_wins.clear()
 	current_bot = {}
 	last_bot_id = ""
 	_apply_locale()
@@ -200,12 +202,22 @@ func record_game_review(best_moves: int, blunders: int) -> void:
 
 
 ## result: "win" | "loss" | "draw" from the human player's perspective.
+## Only called for bot games (game.gd guards out Pass & Play), so current_bot is the opponent.
 func record_result(result: String) -> void:
 	match result:
-		"win": wins += 1
+		"win":
+			wins += 1
+			var bot_id: String = str(current_bot.get("id", ""))
+			if bot_id != "":
+				bot_wins[bot_id] = int(bot_wins.get(bot_id, 0)) + 1
 		"loss": losses += 1
 		"draw": draws += 1
 	_save()
+
+
+## How many times the human has beaten this bot (for the Bots screen badge).
+func wins_against(bot_id: String) -> int:
+	return int(bot_wins.get(bot_id, 0))
 
 
 ## Undo the start-time count for a game abandoned before it really began (player
@@ -262,6 +274,8 @@ func _save() -> void:
 	cfg.set_value("stats", "losses", losses)
 	cfg.set_value("stats", "best_moves_found", best_moves_found)
 	cfg.set_value("stats", "blunders_made", blunders_made)
+	for bot_id: String in bot_wins:  # ConfigFile has no nested values: one key per bot
+		cfg.set_value("bot_wins", bot_id, bot_wins[bot_id])
 	cfg.save(SAVE_PATH)
 
 
@@ -286,3 +300,7 @@ func _load() -> void:
 	losses = int(cfg.get_value("stats", "losses", 0))
 	best_moves_found = int(cfg.get_value("stats", "best_moves_found", 0))
 	blunders_made = int(cfg.get_value("stats", "blunders_made", 0))
+	bot_wins.clear()
+	if cfg.has_section("bot_wins"):
+		for bot_id: String in cfg.get_section_keys("bot_wins"):
+			bot_wins[bot_id] = int(cfg.get_value("bot_wins", bot_id, 0))

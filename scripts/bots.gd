@@ -93,14 +93,41 @@ func _make_row(bot: Dictionary) -> Button:
 	text_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	text_box.add_theme_constant_override("separation", 2)
 	text_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Name row: name on the left, an optional gold "wins" badge pinned to the right edge.
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 8)
+	name_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var name_label := Label.new()
 	name_label.text = bot["name"]
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_row.add_child(name_label)
+	var wins: int = GameManager.wins_against(bot["id"])
+	if wins > 0:  # hidden for bots the player hasn't beaten yet, to avoid clutter
+		var win_badge := HBoxContainer.new()
+		win_badge.add_theme_constant_override("separation", 3)
+		win_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		win_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var trophy := TextureRect.new()
+		trophy.custom_minimum_size = Vector2(20, 20)
+		trophy.texture = load("res://assets/icons/trophy.png")
+		trophy.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		trophy.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		trophy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		trophy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var count := Label.new()
+		count.text = str(wins)
+		count.add_theme_font_size_override("font_size", UI.FONT_CAPTION)
+		count.modulate = UI.COIN_BEST
+		count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		win_badge.add_child(trophy)
+		win_badge.add_child(count)
+		name_row.add_child(win_badge)
 	var tagline := Label.new()
 	tagline.text = bot["tagline"]
 	tagline.modulate = UI.TEXT_DIM
 	tagline.add_theme_font_size_override("font_size", UI.FONT_CAPTION)
 	tagline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text_box.add_child(name_label)
+	text_box.add_child(name_row)
 	text_box.add_child(tagline)
 	hb.add_child(text_box)
 
