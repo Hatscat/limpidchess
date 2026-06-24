@@ -19,19 +19,23 @@ signal restore_finished(found: bool)       ## a user-initiated "Restore" complet
 
 const PRODUCT_ID := "premium_unlock"   ## Play Console managed product id (non-consumable)
 const DEFAULT_PRICE := "$3.99"         ## shown until Play returns the localized price
-## Google Play promo-code redemption page (friends/family codes are redeemed in the Play Store,
-## then flow back to us via query_purchases on resume / Restore).
-const REDEEM_URL := "https://play.google.com/redeem"
 ## Reconnect backoff: Play can drop the billing connection; retry on a delay (not a tight loop)
 ## and give up after a few tries so a Play-less device can't drain the battery retrying.
 const RECONNECT_DELAY := 5.0
 const MAX_RECONNECTS := 8
+## A user-tapped Restore re-queries once after this delay before reporting "nothing to restore",
+## so a promo code redeemed outside the app that hasn't yet reached Play's on-device cache isn't
+## reported as a definitive failure.
+const RESTORE_RETRY_DELAY := 2.0
 
 var available := false          ## the billing plugin singleton is present on this build
-var store_ready := false        ## connected to Play AND product details are known
+var connected := false          ## the billing service connection is up (the catalog may not be loaded)
+var store_ready := false        ## connected AND product details (the localized price) are known
 var price_text := DEFAULT_PRICE
 var _client: BillingClient = null
 var _restoring := false         ## a user-tapped Restore is in flight (vs silent reconcile)
+var _restore_pending := false   ## a Restore tapped before the connection was up; run it on connect
+var _restore_retried := false   ## the one delayed re-query for the in-flight Restore has been spent
 var _connecting := false
 var _reconnect_attempts := 0
 
@@ -54,7 +58,7 @@ func _ready() -> void:
 ## App came back to the foreground: re-check entitlement (catches promo-code redemptions and
 ## purchases finished outside the app). The addon has no billing_resume signal, so we poll here.
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_RESUMED and available and _client != null and store_ready:
+	if what == NOTIFICATION_APPLICATION_RESUMED and available and _client != null and connected:
 		_client.query_purchases(BillingClient.ProductType.INAPP)
 
 
@@ -82,19 +86,22 @@ func buy() -> void:
 
 ## Re-check Play for an existing entitlement (manual "Restore" + redeemed promo codes).
 func restore() -> void:
-	if available and store_ready:
+	if available and connected:
 		_restoring = true
+		_restore_retried = false
 		_client.query_purchases(BillingClient.ProductType.INAPP)
+		return
+	if available and _client != null:
+		# Connection isn't up yet (dropped, or product details never loaded): kick a connection
+		# and run the purchase query the moment we connect, rather than reporting a false "not
+		# found". Restoring must never hinge on the catalog/price being readable.
+		_restore_pending = true
+		_start_connection()
 		return
 	if OS.is_debug_build():
 		restore_finished.emit(GameManager.is_premium)
 		return
 	restore_finished.emit(false)
-
-
-## Open the Play Store promo-code redemption page (friends/family codes).
-func open_redeem_page() -> void:
-	OS.shell_open(REDEEM_URL)
 
 
 # --- Connection ---
@@ -107,7 +114,12 @@ func _start_connection() -> void:
 
 
 func _reconnect_later() -> void:
-	if _connecting or not available or _reconnect_attempts >= MAX_RECONNECTS:
+	if _connecting or not available:
+		return
+	if _reconnect_attempts >= MAX_RECONNECTS:
+		if _restore_pending:  # gave up reconnecting with a Restore still queued: stop the spinner
+			_restore_pending = false
+			restore_finished.emit(GameManager.is_premium)
 		return
 	_reconnect_attempts += 1
 	_connecting = true
@@ -125,16 +137,23 @@ func _reconnect_later() -> void:
 func _on_connected() -> void:
 	_connecting = false
 	_reconnect_attempts = 0
+	connected = true
 	_client.query_product_details(PackedStringArray([PRODUCT_ID]), BillingClient.ProductType.INAPP)
-	_client.query_purchases(BillingClient.ProductType.INAPP)  # silently reconcile on launch
+	if _restore_pending:
+		_restore_pending = false  # a Restore was tapped before we connected: resolve it from this query
+		_restoring = true
+		_restore_retried = false
+	_client.query_purchases(BillingClient.ProductType.INAPP)  # reconcile on launch / pending restore
 
 
 func _on_disconnected() -> void:
+	connected = false
 	store_ready = false
 	_reconnect_later()
 
 
 func _on_connect_error(_code: int, _msg := "") -> void:
+	connected = false
 	store_ready = false
 	_connecting = false
 	_reconnect_later()
@@ -169,9 +188,40 @@ func _on_purchase_updated(response: Dictionary) -> void:
 
 func _on_query_purchases(response: Dictionary) -> void:
 	var found := _handle_purchases(response)
-	if _restoring:
+	if not _restoring:
+		return  # silent launch / resume reconcile: _handle_purchases already granted if owned
+	if found or GameManager.is_premium:
 		_restoring = false
-		restore_finished.emit(found or GameManager.is_premium)
+		_restore_retried = false
+		restore_finished.emit(true)
+		return
+	# Nothing found yet. A promo code redeemed outside the app can lag Play's on-device cache, so
+	# re-query once after a short delay before telling the player there is nothing to restore.
+	if not _restore_retried and connected and _client != null:
+		_restore_retried = true
+		_retry_restore_query()
+		return
+	_restoring = false
+	_restore_retried = false
+	restore_finished.emit(false)
+
+
+## One delayed re-query for an in-flight Restore (see RESTORE_RETRY_DELAY). The response lands
+## back in _on_query_purchases, where _restore_retried is now set so a second miss reports failure.
+func _retry_restore_query() -> void:
+	var tree := get_tree()
+	if tree == null:
+		_restoring = false
+		_restore_retried = false
+		restore_finished.emit(GameManager.is_premium)
+		return
+	await tree.create_timer(RESTORE_RETRY_DELAY).timeout
+	if _restoring and connected and _client != null:
+		_client.query_purchases(BillingClient.ProductType.INAPP)
+	elif _restoring:
+		_restoring = false
+		_restore_retried = false
+		restore_finished.emit(GameManager.is_premium)
 
 
 # --- Purchase handling ---

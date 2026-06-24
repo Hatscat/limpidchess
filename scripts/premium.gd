@@ -3,13 +3,13 @@ extends Control
 ## Premium screen. One-time purchase → unlimited games, all bots, and Pass & Play.
 ##
 ## The actual store flow lives in the [Billing] autoload (Google Play). This screen just
-## drives it and mirrors its signals: the price comes from Play (localized), the buy/restore
-## buttons call Billing, and a "Redeem a code" link opens the Play promo-code page. On
+## drives it and mirrors its signals: the price comes from Play (localized) and the buy/restore
+## buttons call Billing. Promo codes are redeemed outside the app via a prefilled Play redeem
+## link, then picked up by Billing's launch/resume reconcile (no in-app redeem button). On
 ## desktop/dev (no Play) Billing degrades gracefully and a debug build grants locally.
 
 @onready var get_button: Button = %GetButton
 @onready var restore_button: Button = %RestoreButton
-@onready var redeem_button: Button = %RedeemButton
 @onready var status_label: Label = %StatusLabel
 @onready var price_label: Label = %PriceLabel
 
@@ -35,7 +35,6 @@ func _refresh() -> void:
 	var premium := GameManager.is_premium
 	get_button.visible = not premium
 	restore_button.visible = not premium
-	redeem_button.visible = not premium
 	status_label.visible = premium
 	if premium:
 		_set_status(tr("✓ You're Premium. Thank you!"))
@@ -60,10 +59,6 @@ func _on_get_pressed() -> void:
 func _on_restore_pressed() -> void:
 	_set_status(tr("Checking your purchases…"))
 	Billing.restore()
-
-
-func _on_redeem_pressed() -> void:
-	Billing.open_redeem_page()
 
 
 func _on_price_updated(_formatted: String) -> void:
