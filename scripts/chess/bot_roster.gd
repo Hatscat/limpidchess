@@ -20,14 +20,14 @@ const ALL := [
 		"id": "coco", "name": "Coco", "avatar": "monkey.png",
 		"tagline": "Gives lots of gifts.",
 		"difficulty": 1, "tier": "First moves",
-		"sf_skill": 0, "movetime": 40, "random_chance": 0.85,
+		"sf_skill": 0, "movetime": 50, "random_chance": 0.66,
 		"depth": 1, "weakness": 0.95,
 	},
 	{
 		"id": "pebble", "name": "Pebble", "avatar": "pig.png",
 		"tagline": "Still learning the ropes.",
 		"difficulty": 1, "tier": "Newcomer",
-		"sf_skill": 0, "movetime": 80, "random_chance": 0.5,
+		"sf_skill": 0, "movetime": 80, "random_chance": 0.33,
 		"depth": 1, "weakness": 0.9,
 	},
 	{
@@ -134,4 +134,4 @@ static func get_by_id(id: String) -> Dictionary:
 
 
 static func default() -> Dictionary:
-	return get_by_id("pip")  # a gentle starting opponent (id-based, order-independent)
+	return get_by_id("coco")  # a gentle starting opponent (id-based, order-independent)
