@@ -1,7 +1,7 @@
 extends Control
 
 ## Home screen: today's remaining games and the big Play button.
-## Play starts a quick game vs the last-picked bot (default: Pip). Choosing a
+## Play starts a quick game vs the last-picked bot (default: Coco). Choosing a
 ## specific opponent happens on the Bots tab.
 
 @onready var games_label: Label = %GamesLabel
