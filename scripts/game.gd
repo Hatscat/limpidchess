@@ -41,6 +41,12 @@ const REVIEW_LINE_PLIES := 10
 const REVIEW_STEP_SEC := 0.45
 const REVIEW_STEP_HOLD := 0.4
 const REVIEW_STEP_FAST := 0.18
+## When a stored best line is shorter than REVIEW_MIN_LINE plies (a weak/slow engine on the device
+## can return a 1-2 ply stub even though the desktop engine returns 20+), re-fetch the continuation
+## after the best move with a DEPTH-based search (depth, not movetime, so the line is long enough to
+## explain the position regardless of device speed).
+const REVIEW_LINE_DEPTH := 14
+const REVIEW_MIN_LINE := 6
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -1345,6 +1351,7 @@ func _update_review_panel() -> void:
 	else:
 		review_line_label.visible = false
 		review_line.disabled = true
+	_ensure_review_line(_review_ply)  # lengthen the line in the background if it's too short
 
 
 ## Grade an un-reviewed ply (the auto-opening or a bot reply) on demand and fill its _review entry,
@@ -1382,6 +1389,48 @@ func _analyse_review_ply(i: int) -> void:
 	if review_overlay.visible and _review_ply == i and not _review_playing:
 		_update_review_panel()
 		_render_review_view()  # redraw with the played + best-move arrows now that we have data
+
+
+## If a ply's stored best line is too short (a slow device engine can return a 1-2 ply stub), play
+## the best move on a clone and search the continuation at a fixed DEPTH, then store the full line
+## (best move + continuation). Cached via a "deepened" flag so it runs at most once per ply. Keeps
+## the displayed best move (the green arrow) unchanged, just lengthens its line.
+func _ensure_review_line(i: int) -> void:
+	if i <= 0 or i >= _review.size():
+		return
+	var rv: Dictionary = _review[i]
+	if rv.is_empty() or bool(rv.get("deepened", false)):
+		return
+	var pv: PackedStringArray = rv.get("best_pv", PackedStringArray())
+	if pv.size() >= REVIEW_MIN_LINE:
+		rv["deepened"] = true
+		_review[i] = rv
+		return
+	if not (_use_sf and stockfish.available) or _review_analyzing.has(i):
+		return
+	var best := int(rv.get("best", -1))
+	if best < 0:
+		return
+	_review_analyzing[i] = true
+	var pre := _rules_after(i)
+	var after := ChessRules.new()
+	after.set_fen(pre.get_fen())
+	after.make_move(best)  # play the best move, then search the continuation deeply
+	var lines: Array = await stockfish.analyse(after.get_fen(), 1, REVIEW_LINE_DEPTH)
+	_review_analyzing.erase(i)
+	if i >= _review.size():
+		return
+	var deep := PackedStringArray([pre.move_to_uci(best)])  # line always starts with the best move
+	if not lines.is_empty():
+		for uci in lines[0].get("pv", PackedStringArray()):
+			deep.append(uci)
+	var ent: Dictionary = _review[i]
+	ent["best_pv"] = deep
+	ent["deepened"] = true
+	_review[i] = ent
+	if review_overlay.visible and _review_ply == i and not _review_playing:
+		_update_review_panel()
+		_render_review_view()
 
 
 ## Map a grade label to one of the three option-quality buckets, for colouring an analysed move.
