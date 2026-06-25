@@ -11,6 +11,7 @@ extends Control
 @onready var lang_list: VBoxContainer = %LangList
 @onready var sound_toggle: Button = %SoundToggle
 @onready var reset_btn: Button = %ResetBtn
+@onready var daily_limit: DailyLimitDialog = %DailyLimit
 
 
 func _ready() -> void:
@@ -62,7 +63,13 @@ func _on_play_pressed() -> void:
 	if GameManager.can_play_game():
 		GameManager.start_bot_game(bot, true)
 	else:
-		GameManager.go_to_premium()
+		daily_limit.open()  # out of free games: explain the daily reload (not a silent jump to the store)
+
+
+## Android back closes the daily-limit dialog if it's open (otherwise leave Home as-is).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and daily_limit.visible:
+		daily_limit.close()
 
 
 func _on_pass_play_pressed() -> void:

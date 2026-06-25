@@ -70,6 +70,7 @@ const REVIEW_MIN_LINE := 6
 @onready var pp_blunder_b: Label = %PPBlunderB
 @onready var bots_btn: Button = %BotsBtn
 @onready var play_again_btn: Button = %PlayAgainBtn
+@onready var daily_limit: DailyLimitDialog = %DailyLimit
 @onready var confirm_overlay: Control = %ConfirmOverlay
 @onready var confirm_title: Label = %ConfirmTitle
 @onready var confirm_message: Label = %ConfirmMessage
@@ -142,6 +143,7 @@ var _review_ply := 0
 var _review_gen := 0
 var _review_playing := false
 var _review_analyzing := {}  ## ply index -> true while an on-demand engine analysis is in flight
+var _review_unlocked := false  ## this game's review was already opened (counted) this session
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
 
 # Bot-reply prefetch: the reveal of the player's pick (slide + hold ~1.5s) is idle
@@ -213,7 +215,9 @@ func _notification(what: int) -> void:
 	# game by accident. Instead it peels off one layer at a time: close an open
 	# confirm, then the menu, and from the bare board it opens the menu so the player
 	# decides explicitly (Cancel game / Give up / …). Only leave once the game is over.
-	if review_overlay.visible:
+	if daily_limit.visible:
+		daily_limit.close()   # dismiss the daily-limit dialog, back to the result
+	elif review_overlay.visible:
 		_close_review()       # back from the review to the result dialog
 	elif confirm_overlay.visible:
 		_on_confirm_no()      # dismiss the confirm (takes no action)
@@ -341,6 +345,7 @@ func _new_game() -> void:
 	_caps_black = PackedInt32Array()
 	_undo_stack.clear()
 	_review.clear()
+	_review_unlocked = false
 	_player_moves = 0
 	_reply_fen = ""
 	_reply_pending = false
@@ -917,6 +922,10 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
 	result_overlay.visible = true
+	# Just used the last free game of the day: explain the daily reload on top of the result (some
+	# players think 3 games = the end / must pay). Bot games only; premium has no limit.
+	if not GameManager.pass_and_play and not GameManager.is_premium and GameManager.games_remaining_today() == 0:
+		daily_limit.open()
 	# Defer the rating ask to the next calm screen (Home / Bots), not over the result dialog. Only
 	# after a positive finish (skip a loss / resign); the prompt itself is still gated to once.
 	if quote_key != "loss" and quote_key != "resign":
@@ -1137,7 +1146,7 @@ func _on_play_again_pressed() -> void:
 	elif GameManager.can_play_game():
 		GameManager.start_bot_game(bot_def)
 	else:
-		GameManager.go_to_premium()
+		daily_limit.open()  # explain the daily reload + premium, not a silent jump to the store
 
 
 func _on_home_pressed() -> void:
@@ -1171,7 +1180,16 @@ func _setup_review_buttons() -> void:
 func _on_review_pressed() -> void:
 	if _undo_stack.is_empty():
 		return
-	_open_review()
+	# Free players get one moves review a day. Reopening THIS game's review (already unlocked this
+	# session) is free; the first open of a new game's review spends the daily allowance.
+	if GameManager.is_premium or _review_unlocked:
+		_open_review()
+	elif GameManager.can_review_today():
+		GameManager.count_review()
+		_review_unlocked = true
+		_open_review()
+	else:
+		daily_limit.open("review")
 
 
 ## Toggle the live-game chrome (everything the review hides while it owns the board): the top bar,

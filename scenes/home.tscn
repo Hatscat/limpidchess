@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://cw8pcxwr83nff" path="res://assets/pieces/b_pawn.png" id="6_bpawn"]
 [ext_resource type="Texture2D" uid="uid://dr03fdrxbna2q" path="res://assets/icons/gear.svg" id="7_gear"]
 [ext_resource type="Texture2D" uid="uid://ovf8opbnaxrt" path="res://assets/icons/close.png" id="8_close"]
+[ext_resource type="PackedScene" uid="uid://limpiddailydlg1" path="res://scenes/daily_limit_dialog.tscn" id="9_daily"]
 
 [sub_resource type="StyleBoxFlat" id="sb_pill"]
 content_margin_left = 14.0
@@ -418,6 +419,10 @@ icon = ExtResource("8_close")
 flat = true
 icon_alignment = 1
 expand_icon = true
+
+[node name="DailyLimit" parent="." instance=ExtResource("9_daily")]
+unique_name_in_owner = true
+visible = false
 
 [connection signal="gui_input" from="TopBar/GamesPill" to="." method="_on_games_input"]
 [connection signal="pressed" from="TopBar/Settings" to="." method="_on_settings_pressed"]

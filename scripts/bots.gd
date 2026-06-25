@@ -6,6 +6,7 @@ extends Control
 
 @onready var scroll: ScrollContainer = %Scroll
 @onready var list: VBoxContainer = %List
+@onready var daily_limit: DailyLimitDialog = %DailyLimit
 
 
 func _ready() -> void:
@@ -39,7 +40,11 @@ func _fit_rows() -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
+		return
+	if daily_limit.visible:
+		daily_limit.close()   # close the daily-limit dialog first
+	else:
 		GameManager.go_to_home()
 
 
@@ -178,4 +183,4 @@ func _on_bot_pressed(bot: Dictionary) -> void:
 	if GameManager.can_play_game():
 		GameManager.start_bot_game(bot, true)
 	else:
-		GameManager.go_to_premium()
+		daily_limit.open()  # out of free games: explain the daily reload (not a silent jump to the store)

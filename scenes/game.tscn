@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://dir7jlkxh0hwk" path="res://assets/icons/home.png" id="10_home"]
 [ext_resource type="Texture2D" uid="uid://d0ovxurc6wn88" path="res://assets/icons/robot.png" id="11_robot"]
 [ext_resource type="Texture2D" uid="uid://dlyyxad0h1tnk" path="res://assets/icons/magnifier.png" id="12_magnifier"]
+[ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="13_daily"]
 
 [sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
@@ -795,6 +796,11 @@ theme_override_styles/pressed = SubResource("sb_empty")
 theme_override_styles/hover = SubResource("sb_empty")
 icon = ExtResource("8_close")
 expand_icon = true
+
+[node name="DailyLimit" parent="." unique_id=2019426451 instance=ExtResource("13_daily")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
 
 [connection signal="pressed" from="TopBar/Menu" to="." method="_open_menu"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/BotsBtn" to="." method="_on_bots_pressed"]

@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://limpidbots01"]
+[gd_scene load_steps=4 format=3 uid="uid://limpidbots01"]
 
 [ext_resource type="Script" path="res://scripts/bots.gd" id="1_bots"]
 [ext_resource type="PackedScene" path="res://scenes/nav_bar.tscn" id="2_nav"]
+[ext_resource type="PackedScene" uid="uid://limpiddailydlg1" path="res://scenes/daily_limit_dialog.tscn" id="3_daily"]
 
 [node name="Bots" type="Control"]
 layout_mode = 3
@@ -68,3 +69,7 @@ mouse_filter = 1
 [node name="NavBar" parent="." instance=ExtResource("2_nav")]
 layout_mode = 1
 current_tab = "bots"
+
+[node name="DailyLimit" parent="." instance=ExtResource("3_daily")]
+unique_name_in_owner = true
+visible = false

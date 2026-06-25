@@ -1,0 +1,133 @@
+[gd_scene format=3 uid="uid://cwkkjgcgnb61c"]
+
+[ext_resource type="Script" uid="uid://boet6pq1sqr7h" path="res://scripts/daily_limit_dialog.gd" id="1_dld"]
+
+[sub_resource type="StyleBoxFlat" id="sb_card"]
+content_margin_left = 30.0
+content_margin_top = 30.0
+content_margin_right = 30.0
+content_margin_bottom = 30.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_primary"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.28, 0.58, 0.7, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="sb_btn"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="DailyLimitDialog" type="Control" unique_id=1907982912]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_dld")
+
+[node name="Dim" type="ColorRect" parent="." unique_id=356703044]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Card" type="PanelContainer" parent="." unique_id=860118995]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -230.0
+offset_right = 320.0
+offset_bottom = 230.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_card")
+
+[node name="VBox" type="VBoxContainer" parent="Card" unique_id=433169894]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="DailyTitle" type="Label" parent="Card/VBox" unique_id=614687822]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Out of free games today"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DailyMessage" type="Label" parent="Card/VBox" unique_id=14739957]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.7)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Your free games come back tomorrow and every day."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Buttons" type="VBoxContainer" parent="Card/VBox" unique_id=1084455574]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="DailyPremiumBtn" type="Button" parent="Card/VBox/Buttons" unique_id=297540597]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 34
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("sb_btn_primary")
+theme_override_styles/pressed = SubResource("sb_btn_primary")
+theme_override_styles/hover = SubResource("sb_btn_primary")
+text = "Get Premium"
+
+[node name="DailyCloseBtn" type="Button" parent="Card/VBox/Buttons" unique_id=1594270966]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+text = "Got it"
+
+[connection signal="pressed" from="Card/VBox/Buttons/DailyPremiumBtn" to="." method="_on_premium_pressed"]
+[connection signal="pressed" from="Card/VBox/Buttons/DailyCloseBtn" to="." method="_on_close_pressed"]

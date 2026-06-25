@@ -26,6 +26,9 @@ const LANGUAGES := [
 ]
 
 const FREE_GAMES_PER_DAY := 3
+## A free player can open the moves review once a day; premium is unlimited. (Daily puzzles will
+## get a similar cap once that mode exists.)
+const FREE_REVIEWS_PER_DAY := 1
 ## Sentinel "remaining games" for premium players (any value > 0 unlocks play).
 const UNLIMITED_GAMES := 999
 
@@ -37,6 +40,7 @@ var last_review_prompt_date := "" ## "YYYY-MM-DD" we last auto-showed the rating
 var review_done := false           ## player engaged with rating once → stops the automatic pre-prompt
 var last_bot_id := ""        ## id of the last bot played, so Home offers it again
 var games_today := 0
+var reviews_today := 0       ## moves reviews opened today (free players are capped, see can_review_today)
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
 
 # Lifetime career stats (for the About surface). NOT spendable currency.
@@ -108,6 +112,7 @@ func reset_save() -> void:
 	last_review_prompt_date = ""
 	review_done = false
 	games_today = 0
+	reviews_today = 0
 	last_play_date = ""
 	games_played = 0
 	wins = 0
@@ -171,6 +176,23 @@ func games_remaining_today() -> int:
 	return max(0, FREE_GAMES_PER_DAY - games_today)
 
 
+## A free player can open the moves review FREE_REVIEWS_PER_DAY times a day; premium is unlimited.
+func can_review_today() -> bool:
+	if is_premium:
+		return true
+	_roll_day()
+	return reviews_today < FREE_REVIEWS_PER_DAY
+
+
+## Count one moves-review opening against the day's free allowance (no-op accounting for premium).
+func count_review() -> void:
+	if is_premium:
+		return
+	_roll_day()
+	reviews_today += 1
+	_save()
+
+
 func _count_game() -> void:
 	games_played += 1
 	if not is_premium:
@@ -190,6 +212,7 @@ func _roll_day() -> void:
 	if today != last_play_date:
 		last_play_date = today
 		games_today = 0
+		reviews_today = 0
 
 
 # --- Stats ---
@@ -267,6 +290,7 @@ func _save() -> void:
 	cfg.set_value("player", "review_done", review_done)
 	cfg.set_value("player", "last_bot_id", last_bot_id)
 	cfg.set_value("daily", "games_today", games_today)
+	cfg.set_value("daily", "reviews_today", reviews_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
 	cfg.set_value("stats", "wins", wins)
@@ -293,6 +317,7 @@ func _load() -> void:
 	if last_bot_id != "":
 		current_bot = BotRoster.get_by_id(last_bot_id)  # Home offers the last opponent
 	games_today = int(cfg.get_value("daily", "games_today", 0))
+	reviews_today = int(cfg.get_value("daily", "reviews_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))
 	wins = int(cfg.get_value("stats", "wins", 0))
