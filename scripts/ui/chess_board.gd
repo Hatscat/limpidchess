@@ -31,6 +31,7 @@ var _interactive := false
 var _chosen_move := -1  # the move the player tapped; drawn on top after the reveal
 
 # Piece-slide animation (used during the reveal).
+var _anim_tween: Tween = null  ## the single owned slide tween (killed before a new one starts)
 var _anim_active := false
 var _anim_from := -1
 var _anim_to := -1
@@ -147,9 +148,13 @@ func animate_move(move: int, duration: float) -> void:
 			_anim2_to = 3 if white else 59
 		_anim2_piece = rules.board[_anim2_from]
 
-	var tw := create_tween()
-	tw.tween_method(_set_anim_progress, 0.0, 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await tw.finished
+	# Own a single slide tween: kill any still-running one (e.g. a review best-line slide the
+	# player interrupted by closing then replaying) so two tweens never race over _anim_progress.
+	if _anim_tween != null and _anim_tween.is_valid():
+		_anim_tween.kill()
+	_anim_tween = create_tween()
+	_anim_tween.tween_method(_set_anim_progress, 0.0, 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await _anim_tween.finished
 	# Leave the piece parked at the destination (anim still active, progress = 1)
 	# until the caller commits the move and calls end_animation(). Clearing here
 	# would snap the piece back to its origin (move not committed yet).

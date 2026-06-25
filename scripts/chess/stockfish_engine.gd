@@ -147,8 +147,17 @@ func analyse(fen: String, multipv: int, depth: int) -> Array:
 
 
 func best_move(fen: String, opts: Dictionary) -> String:
+	var line: Dictionary = await best_line(fen, opts)
+	return String(line.get("move", ""))
+
+
+## Like best_move(), but also returns the engine's principal variation (the expected best
+## line for both sides) and the score, all from the one search. Used by the post-game review
+## to show "here's the better continuation". Returns {move:String, pv:PackedStringArray, score:int};
+## pv[0] is the best move, and falls back to [move] if the engine reported no line.
+func best_line(fen: String, opts: Dictionary) -> Dictionary:
 	if not available:
-		return ""
+		return {"move": "", "pv": PackedStringArray(), "score": 0}
 	var skill: int = clampi(opts.get("skill", 20), 0, 20)
 	var movetime: int = opts.get("movetime", 200)
 	var cmds := [
@@ -159,7 +168,24 @@ func best_move(fen: String, opts: Dictionary) -> String:
 		"go movetime %d" % maxi(10, movetime),
 	]
 	var res: Dictionary = await _run(cmds)
-	return res.get("best", "")
+	var best: String = String(res.get("best", ""))
+	var pv := PackedStringArray()
+	var score := 0
+	for L in res.get("lines", []):
+		if String(L.get("uci", "")) == best:
+			pv = L.get("pv", PackedStringArray())
+			score = int(L.get("score", 0))
+			break
+	# A skill-limited search can return a bestmove that isn't the top MultiPV line's first move;
+	# fall back to that line's PV (still the engine's principal variation) before the bare [best].
+	if pv.is_empty():
+		var ls: Array = res.get("lines", [])
+		if not ls.is_empty():
+			pv = ls[0].get("pv", PackedStringArray())
+			score = int(ls[0].get("score", 0))
+	if pv.is_empty() and best != "":
+		pv = PackedStringArray([best])
+	return {"move": best, "pv": pv, "score": score}
 
 
 func _run(cmds: Array) -> Dictionary:

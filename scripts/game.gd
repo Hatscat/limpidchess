@@ -35,6 +35,11 @@ const BOT_SLIDE_SEC := 0.35
 const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
 const MATE_EXPLODE_SEC := 0.7   ## checkmate: how long the losing king's shatter plays
 const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "cancel", not a loss
+## Post-game review: how many plies of the engine's best line to show / animate, and the
+## per-move slide + pause when "Best line" plays it back on the board.
+const REVIEW_LINE_PLIES := 6
+const REVIEW_STEP_SEC := 0.45
+const REVIEW_STEP_HOLD := 0.4
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -65,6 +70,15 @@ const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "can
 @onready var undo_btn: Button = %UndoBtn
 @onready var giveup_btn: Button = %GiveUpBtn
 @onready var restart_btn: Button = %RestartBtn
+@onready var review_overlay: Control = %ReviewOverlay
+@onready var review_step: Label = %ReviewStep
+@onready var review_move: Label = %ReviewMove
+@onready var review_quality: Label = %ReviewQuality
+@onready var review_line_label: Label = %ReviewBestLine
+@onready var review_prev: Button = %ReviewPrev
+@onready var review_next: Button = %ReviewNext
+@onready var review_line: Button = %ReviewLine
+@onready var review_done: Button = %ReviewDone
 
 var rules: ChessRules
 var bot: ChessBot
@@ -111,6 +125,14 @@ var _caps_black: PackedInt32Array = PackedInt32Array()
 # move" rewinds the player's last move AND the opponent's reply (two plies),
 # never past White's auto-opening (kept as the first entry).
 var _undo_stack: Array = []
+# Parallel to _undo_stack: the post-game review entry for each ply ({} for the auto-opening and
+# bot replies, which carry no player pick). An entry holds {quality, label, cp_loss, best, best_pv}.
+var _review: Array = []
+# Review navigation state. _review_gen is bumped on any step / close so a "Best line" playback
+# coroutine in flight bails instead of fighting the new view.
+var _review_ply := 0
+var _review_gen := 0
+var _review_playing := false
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
 
 # Bot-reply prefetch: the reveal of the player's pick (slide + hold ~1.5s) is idle
@@ -166,6 +188,7 @@ func _ready() -> void:
 	result_overlay.visible = false
 	confirm_overlay.visible = false
 	menu_overlay.visible = false
+	review_overlay.visible = false
 
 	_layout_for_safe_area()
 	get_viewport().size_changed.connect(_layout_for_safe_area)
@@ -180,7 +203,9 @@ func _notification(what: int) -> void:
 	# game by accident. Instead it peels off one layer at a time: close an open
 	# confirm, then the menu, and from the bare board it opens the menu so the player
 	# decides explicitly (Cancel game / Give up / …). Only leave once the game is over.
-	if confirm_overlay.visible:
+	if review_overlay.visible:
+		_close_review()       # back from the review to the result dialog
+	elif confirm_overlay.visible:
 		_on_confirm_no()      # dismiss the confirm (takes no action)
 	elif menu_overlay.visible:
 		_on_menu_close()      # close the menu, back to the game
@@ -258,6 +283,10 @@ func _layout_for_safe_area() -> void:
 		cap_bottom.position = Vector2(bx, sy + _CAP_STRIP_H + _CAP_GAP)
 		cap_bottom.size = Vector2(board_size, _CAP_STRIP_H)
 
+	# Keep the review's board-relative panels aligned when the viewport changes.
+	if review_overlay != null and review_overlay.visible:
+		_position_review_ui()
+
 
 func _setup_opponent_panel() -> void:
 	if GameManager.pass_and_play:
@@ -301,6 +330,7 @@ func _new_game() -> void:
 	_caps_white = PackedInt32Array()
 	_caps_black = PackedInt32Array()
 	_undo_stack.clear()
+	_review.clear()
 	_player_moves = 0
 	_reply_fen = ""
 	_reply_pending = false
@@ -413,12 +443,14 @@ func _deep_promote(ranked: Array, r: ChessRules, g: int) -> Array:
 	var mt: int = PASS_PLAY_MOVETIME if GameManager.pass_and_play else clampi(
 		int(bot_def.get("movetime", 400)) + BEST_MOVETIME_MARGIN,
 		BEST_MOVETIME_FLOOR, BEST_MOVETIME_CAP)
-	var uci: String = await stockfish.best_move(r.get_fen(), {"skill": 20, "movetime": mt})
+	var line: Dictionary = await stockfish.best_line(r.get_fen(), {"skill": 20, "movetime": mt})
 	if g != _gen:
 		return ranked  # undo / restart / game-end during the deep search → leave it untouched
+	var uci: String = String(line.get("move", ""))
 	var best_move := r.move_from_uci(uci)
 	if best_move < 0:
 		return ranked
+	var deep_pv: PackedStringArray = line.get("pv", PackedStringArray())
 	var top_score: int = int(ranked[0]["score"])
 	for i in ranked.size():
 		if int(ranked[i]["move"]) == best_move:
@@ -427,9 +459,12 @@ func _deep_promote(ranked: Array, r: ChessRules, g: int) -> Array:
 			ranked.insert(0, e)
 			break
 	if int(ranked[0]["move"]) != best_move:  # wasn't in the spread → prepend it
-		ranked.insert(0, {"move": best_move, "score": top_score})
+		ranked.insert(0, {"move": best_move, "score": top_score, "pv": deep_pv})
 	# It is the true best, so it must carry the top score (keeps cp-loss grading sane).
 	ranked[0]["score"] = maxi(int(ranked[0]["score"]), top_score)
+	# Prefer the deep search's line for the best move (longer / stronger than the shallow pass).
+	if not deep_pv.is_empty():
+		ranked[0]["pv"] = deep_pv
 	return ranked
 
 
@@ -440,7 +475,7 @@ func _ranked_from_sf(lines: Array, r: ChessRules) -> Array:
 	var ranked: Array = []
 	for e in lines:
 		if by_uci.has(e["uci"]):
-			ranked.append({"move": by_uci[e["uci"]], "score": int(e["score"])})
+			ranked.append({"move": by_uci[e["uci"]], "score": int(e["score"]), "pv": e.get("pv", PackedStringArray())})
 	ranked.sort_custom(func(a, b): return a["score"] > b["score"])
 	return ranked
 
@@ -455,6 +490,22 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	var mover := rules.side_to_move  # whose quality this pick counts toward (White/Black)
 	var grade := ChessBotScript.grade_move(_ranked, move)
 	var best_san := rules.to_san(grade["best_move"])
+
+	# Capture this pick for the post-game review: the quality, the best move, and the engine's
+	# best line (PV) so the review can replay the better continuation. Everything here is already
+	# computed for the live feedback, so recording it costs nothing extra.
+	var best_pv := PackedStringArray()
+	for e in _ranked:
+		if int(e["move"]) == int(grade["best_move"]):
+			best_pv = e.get("pv", PackedStringArray())
+			break
+	var review_entry := {
+		"quality": String(opt.get("quality", "")),
+		"label": String(grade["label"]),
+		"cp_loss": int(grade["cp_loss"]),
+		"best": int(grade["best_move"]),
+		"best_pv": best_pv,
+	}
 
 	match opt.get("quality", ""):
 		"best":
@@ -487,7 +538,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	if g != _gen:
 		return
 
-	_play_move(move)
+	_play_move(move, review_entry)
 	_player_moves += 1  # a move the human actually chose (not the auto-opening / bot)
 	_push_eval_after_move(move)
 	board.clear_options()
@@ -638,7 +689,7 @@ func _take_options(g: int) -> Array:
 	return await _deep_promote(fresh, rules, g)
 
 
-func _play_move(move: int) -> void:
+func _play_move(move: int, review := {}) -> void:
 	var mover := rules.side_to_move
 	var undo := rules.make_move(move)
 	var captured: int = undo.get("captured_piece", 0)
@@ -648,6 +699,7 @@ func _play_move(move: int) -> void:
 		else:
 			_caps_black.append(captured)
 	_undo_stack.append({"move": move, "undo": undo, "captured": captured, "mover": mover})
+	_review.append(review)  # parallel to _undo_stack; {} for the opening / bot plies
 	Audio.play("capture" if captured != 0 else "move")
 	board.set_last_move(move, mover)
 	board.set_rules(rules)
@@ -954,6 +1006,8 @@ func _undo_last() -> void:
 	var to_rewind := _undo_plies()
 	while plies < to_rewind and _undo_stack.size() > 1:  # never pop the opening
 		var e: Dictionary = _undo_stack.pop_back()
+		if not _review.is_empty():
+			_review.pop_back()  # keep the review log in lockstep with the move stack
 		rules.undo_move(int(e["move"]), e["undo"])
 		var cap: int = e["captured"]
 		if cap != 0:
@@ -1084,27 +1138,247 @@ func _on_bots_pressed() -> void:
 	GameManager.go_to_bots()  # pick a different opponent from the review dialog
 
 
-## Open the finished game in Chess.com's analysis board so a beginner can step
-## through every move with the engine when a suggested best move wasn't clear.
-## (Chess.com loads a full game from the URL; Lichess would need a login to import
-## one, so only a single FEN works there via a plain link.)
-func _on_analyse_pressed() -> void:
+# --- Post-game review: step through the game and replay the engine's best lines ---
+
+## Entry point from the result dialog's "Review the moves" button (in-app, replacing the old
+## external Chess.com link).
+func _on_review_pressed() -> void:
 	if _undo_stack.is_empty():
 		return
-	OS.shell_open("https://www.chess.com/analysis?pgn=" + _build_pgn().uri_encode())
+	_open_review()
 
 
-## PGN movetext of the game as actually played: replay the undo stack from the start
-## position (undone moves are already popped) and SAN each ply. The first entry is
-## White's auto-opening, so ply 0 is move 1 for White.
-func _build_pgn() -> String:
+## Toggle the live-game chrome (everything the review hides while it owns the board): the top bar,
+## the feedback / status captions, the eval bar (bot games only), and the captured-pieces strips.
+func _set_live_chrome(vis: bool) -> void:
+	$TopBar.visible = vis
+	feedback.visible = vis
+	status_label.visible = vis
+	if eval_bar: eval_bar.visible = vis and not GameManager.pass_and_play
+	if cap_top: cap_top.visible = vis
+	if cap_bottom: cap_bottom.visible = vis
+
+
+func _open_review() -> void:
+	_set_live_chrome(false)  # the review owns the board and shows its own panels
+	result_overlay.visible = false
+	_review_gen += 1
+	_review_playing = false
+	review_overlay.visible = true
+	_position_review_ui()
+	_show_review_ply(0)
+
+
+func _close_review() -> void:
+	_review_gen += 1        # abort any best-line playback in flight
+	_review_playing = false
+	review_overlay.visible = false
+	# Restore the finished game's final position + chrome, so nothing stale (a reviewed ply, or a
+	# mid-best-line frame) shows through the result overlay's translucent dim.
+	board.set_rules(rules)
+	board.clear_options()
+	board.clear_last_moves()
+	if not _undo_stack.is_empty():
+		var top: Dictionary = _undo_stack.back()
+		board.set_last_move(int(top["move"]), int(top["mover"]))
+	_update_check_highlight()
+	board.end_animation()
+	_set_live_chrome(true)
+	result_overlay.visible = true
+
+
+## Place the top info band (between the safe area and the board) and the close button: both depend
+## on the live safe area / board rect. The nav bar is bottom-anchored in the scene. Re-run from
+## _layout_for_safe_area while the review is open.
+func _position_review_ui() -> void:
+	if review_overlay == null or not review_overlay.visible:
+		return
+	var safe_top: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
+	var info := review_step.get_parent() as Control
+	if info != null:
+		info.offset_top = safe_top + 8.0
+		info.offset_bottom = maxf(info.offset_top + 132.0, board.offset_top - 8.0)
+	review_done.offset_top = safe_top + 6.0
+	review_done.offset_bottom = safe_top + 62.0
+
+
+## Show the position AFTER ply `i`, with that move lit, and fill the info panel.
+func _show_review_ply(i: int) -> void:
+	if _undo_stack.is_empty():
+		return
+	_review_ply = clampi(i, 0, _undo_stack.size() - 1)
+	_review_playing = false
+	var post := _rules_after(_review_ply + 1)
+	board.set_rules(post)
+	board.clear_options()
+	board.clear_last_moves()
+	var e: Dictionary = _undo_stack[_review_ply]
+	board.set_last_move(int(e["move"]), int(e["mover"]))
+	if post.is_in_check():
+		board.set_check_square(post.king_square(post.side_to_move))
+	else:
+		board.set_check_square(-1)
+	board.end_animation()
+	_update_review_panel()
+	review_prev.disabled = _review_ply <= 0
+	review_next.disabled = _review_ply >= _undo_stack.size() - 1
+
+
+func _update_review_panel() -> void:
+	var total := _undo_stack.size()
+	var e: Dictionary = _undo_stack[_review_ply]
+	var move := int(e["move"])
+	var pre := _rules_after(_review_ply)
+	var san := pre.to_san(move)
+	@warning_ignore("integer_division")
+	var move_no := (_review_ply / 2) + 1
+	review_step.text = "%s %d · %d / %d" % [tr("Move"), move_no, _review_ply + 1, total]
+	review_move.text = "%s: %s" % [_review_who(int(e["mover"])), san]
+	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
+	if rv.is_empty():  # the auto-opening or a bot reply: no player pick to grade
+		review_quality.visible = false
+		review_line_label.visible = false
+		review_line.disabled = true
+		return
+	review_quality.visible = true
+	if int(rv.get("best", -1)) == move:
+		review_quality.text = tr("★ Best move!")
+		review_quality.modulate = _quality_color("best")
+	else:
+		review_quality.text = tr(String(rv.get("label", "")))
+		review_quality.modulate = _quality_color(String(rv.get("quality", "")))
+	var pv: PackedStringArray = rv.get("best_pv", PackedStringArray())
+	var seq := _best_line_san(pre, pv, int(rv.get("best", -1)))
+	if seq != "":
+		review_line_label.visible = true
+		review_line_label.text = tr("Best line: %s") % seq
+		review_line.disabled = false
+	else:
+		review_line_label.visible = false
+		review_line.disabled = true
+
+
+## Replay the engine's best line for the move under review, branching from the position the player
+## faced. Snaps back to the reviewed move when done (or bails if the player navigates / closes).
+func _play_best_line() -> void:
+	if _review_playing or _undo_stack.is_empty():
+		return
+	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
+	if rv.is_empty():
+		return
+	var pre := _rules_after(_review_ply)
+	var pv: PackedStringArray = rv.get("best_pv", PackedStringArray())
+	var moves := _line_moves(pre, pv, int(rv.get("best", -1)))
+	if moves.is_empty():
+		return
+	_review_gen += 1
+	var g := _review_gen
+	_review_playing = true
+	review_prev.disabled = true
+	review_next.disabled = true
+	review_line.disabled = true
+	var sim := ChessRules.new()
+	sim.set_fen(pre.get_fen())
+	board.clear_options()
+	board.clear_last_moves()
+	board.set_check_square(-1)
+	board.set_rules(sim)
+	board.end_animation()
+	await get_tree().create_timer(0.3).timeout
+	if g != _review_gen:
+		return
+	for m: int in moves:
+		var mv := sim.side_to_move
+		await board.animate_move(m, REVIEW_STEP_SEC)
+		if g != _review_gen:
+			return
+		sim.make_move(m)
+		board.set_rules(sim)
+		board.set_last_move(m, mv)
+		if sim.is_in_check():
+			board.set_check_square(sim.king_square(sim.side_to_move))
+		else:
+			board.set_check_square(-1)
+		board.end_animation()
+		await get_tree().create_timer(REVIEW_STEP_HOLD).timeout
+		if g != _review_gen:
+			return
+	await get_tree().create_timer(0.5).timeout
+	if g != _review_gen:
+		return
+	_review_playing = false
+	_show_review_ply(_review_ply)  # back to the reviewed move
+
+
+func _on_review_prev() -> void:
+	if _review_playing:
+		return
+	_review_gen += 1  # cancel any in-flight best-line playback
+	_show_review_ply(_review_ply - 1)
+
+
+func _on_review_next() -> void:
+	if _review_playing:
+		return
+	_review_gen += 1
+	_show_review_ply(_review_ply + 1)
+
+
+## Who made ply `_review_ply`: the auto-opening, "You" / the bot in a bot game, or White / Black
+## in Pass & Play.
+func _review_who(mover: int) -> String:
+	if _review_ply == 0:
+		return tr("Opening")
+	if GameManager.pass_and_play:
+		return tr("White") if mover == ChessRules.WHITE else tr("Black")
+	return tr("You") if mover == player_color else String(bot_def.get("name", "Bot"))
+
+
+func _quality_color(quality: String) -> Color:
+	match quality:
+		"best": return UI.MOVE_BEST
+		"decent": return UI.MOVE_DECENT
+		"blunder": return UI.MOVE_BLUNDER
+	return Color(1, 1, 1, 1)
+
+
+## A fresh ChessRules at the position after the first `n` plies of the played game.
+func _rules_after(n: int) -> ChessRules:
 	var r := ChessRules.new()
 	r.reset_startpos()
-	var parts: PackedStringArray = PackedStringArray()
-	for i in _undo_stack.size():
-		var m: int = _undo_stack[i]["move"]
-		if i % 2 == 0:
-			parts.append("%d." % ((i >> 1) + 1))  # move number before each White ply
-		parts.append(r.to_san(m))
-		r.make_move(m)
+	for i in clampi(n, 0, _undo_stack.size()):
+		r.make_move(int(_undo_stack[i]["move"]))
+	return r
+
+
+## The engine's best line as packed moves from `base`, capped at REVIEW_LINE_PLIES. Uses the PV if
+## present, else the single best move. Never mutates `base`.
+func _line_moves(base: ChessRules, pv: PackedStringArray, best: int) -> Array:
+	var sim := ChessRules.new()
+	sim.set_fen(base.get_fen())
+	var out: Array = []
+	for uci in pv:
+		if out.size() >= REVIEW_LINE_PLIES:
+			break
+		var m := sim.move_from_uci(uci)
+		if m < 0:
+			break
+		out.append(m)
+		sim.make_move(m)
+	if out.is_empty() and best >= 0:
+		out.append(best)
+	return out
+
+
+## SAN text of the best line for the info panel (e.g. "Bb5 a6 Bxc6 dxc6").
+func _best_line_san(base: ChessRules, pv: PackedStringArray, best: int) -> String:
+	var moves := _line_moves(base, pv, best)
+	if moves.is_empty():
+		return ""
+	var sim := ChessRules.new()
+	sim.set_fen(base.get_fen())
+	var parts := PackedStringArray()
+	for m: int in moves:
+		parts.append(sim.to_san(m))
+		sim.make_move(m)
 	return " ".join(parts)
