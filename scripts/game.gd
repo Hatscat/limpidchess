@@ -83,6 +83,7 @@ const REVIEW_MIN_LINE := 6
 @onready var review_avatar: TextureRect = %ReviewAvatar
 @onready var review_move: Label = %ReviewMove
 @onready var review_quality: Label = %ReviewQuality
+@onready var review_analyse_icon: TextureRect = %ReviewAnalyseIcon
 @onready var review_line_label: Label = %ReviewBestLine
 @onready var review_prev: Button = %ReviewPrev
 @onready var review_next: Button = %ReviewNext
@@ -1336,6 +1337,7 @@ func _update_review_panel() -> void:
 	review_avatar.visible = is_bot_move
 	if is_bot_move:
 		review_avatar.texture = load(BotRoster.avatar_path(bot_def))
+	review_analyse_icon.visible = false  # only shown beside "Analysing…"
 	# The opening is always a fine first move: no quality / best line for it.
 	if _review_ply == 0:
 		review_quality.visible = false
@@ -1349,6 +1351,7 @@ func _update_review_panel() -> void:
 		review_line_label.visible = false
 		review_line.disabled = true
 		review_quality.visible = true
+		review_analyse_icon.visible = true  # the magnifier beside "Analysing…"
 		review_quality.text = tr("Analysing…")
 		review_quality.modulate = Color(1, 1, 1, 0.5)
 		_analyse_review_ply(_review_ply)

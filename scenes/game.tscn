@@ -714,9 +714,28 @@ theme_override_font_sizes/font_size = 30
 text = "You: e4"
 horizontal_alignment = 1
 
-[node name="ReviewQuality" type="Label" parent="ReviewOverlay/ReviewInfo" unique_id=770020005]
+[node name="QualityRow" type="HBoxContainer" parent="ReviewOverlay/ReviewInfo" unique_id=770020014]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="ReviewAnalyseIcon" type="TextureRect" parent="ReviewOverlay/ReviewInfo/QualityRow" unique_id=770020015]
+unique_name_in_owner = true
+visible = false
+modulate = Color(1, 1, 1, 0.6)
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("12_magnifier")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ReviewQuality" type="Label" parent="ReviewOverlay/ReviewInfo/QualityRow" unique_id=770020005]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 4
 theme_override_font_sizes/font_size = 26
 text = "Good"
 horizontal_alignment = 1
