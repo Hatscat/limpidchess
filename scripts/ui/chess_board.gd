@@ -132,8 +132,6 @@ func animate_move(move: int, duration: float) -> void:
 	_anim_from = Rules.move_from(move)
 	_anim_to = Rules.move_to(move)
 	_anim_piece = rules.board[_anim_from]
-	_anim_progress = 0.0
-	_anim_active = true
 
 	# Castle: also slide the rook from its corner to beside the king, in sync.
 	_anim2_from = -1
@@ -147,9 +145,28 @@ func animate_move(move: int, duration: float) -> void:
 			_anim2_from = 0 if white else 56
 			_anim2_to = 3 if white else 59
 		_anim2_piece = rules.board[_anim2_from]
+	await _run_slide(duration)
 
-	# Own a single slide tween: kill any still-running one (e.g. a review best-line slide the
-	# player interrupted by closing then replaying) so two tweens never race over _anim_progress.
+
+## Reverse-slide a move, for stepping BACKWARD in the review: the piece sitting on the move's
+## destination glides back to its origin. The board still shows the post-move position underneath;
+## the caller swaps to the pre-move position once this returns (so a captured piece reappears then,
+## and a castled rook snaps back). Kept deliberately simple for a quick review step.
+func animate_unmove(move: int, duration: float) -> void:
+	if rules == null:
+		return
+	_anim_from = Rules.move_to(move)    # the piece currently sits on the destination
+	_anim_to = Rules.move_from(move)    # glide it back to where it came from
+	_anim_piece = rules.board[_anim_from]
+	_anim2_from = -1
+	await _run_slide(duration)
+
+
+## Shared slide driver: one owned tween (killed before a new one starts, so two never race over the
+## shared _anim_progress). Leaves the piece parked at the destination until end_animation().
+func _run_slide(duration: float) -> void:
+	_anim_progress = 0.0
+	_anim_active = true
 	if _anim_tween != null and _anim_tween.is_valid():
 		_anim_tween.kill()
 	_anim_tween = create_tween()

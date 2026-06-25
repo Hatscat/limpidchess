@@ -35,11 +35,12 @@ const BOT_SLIDE_SEC := 0.35
 const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before the review dialog
 const MATE_EXPLODE_SEC := 0.7   ## checkmate: how long the losing king's shatter plays
 const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "cancel", not a loss
-## Post-game review: how many plies of the engine's best line to show / animate, and the
-## per-move slide + pause when "Best line" plays it back on the board.
-const REVIEW_LINE_PLIES := 6
+## Post-game review: how many plies of the engine's best line to show / animate, the per-move
+## slide + pause when "Best line" plays it back, and the quick slide when stepping Prev / Next.
+const REVIEW_LINE_PLIES := 10
 const REVIEW_STEP_SEC := 0.45
 const REVIEW_STEP_HOLD := 0.4
+const REVIEW_STEP_FAST := 0.18
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -133,6 +134,7 @@ var _review: Array = []
 var _review_ply := 0
 var _review_gen := 0
 var _review_playing := false
+var _review_analyzing := {}  ## ply index -> true while an on-demand engine analysis is in flight
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
 
 # Bot-reply prefetch: the reveal of the player's pick (slide + hold ~1.5s) is idle
@@ -189,6 +191,7 @@ func _ready() -> void:
 	confirm_overlay.visible = false
 	menu_overlay.visible = false
 	review_overlay.visible = false
+	_setup_review_buttons()
 
 	_layout_for_safe_area()
 	get_viewport().size_changed.connect(_layout_for_safe_area)
@@ -1140,6 +1143,18 @@ func _on_bots_pressed() -> void:
 
 # --- Post-game review: step through the game and replay the engine's best lines ---
 
+## Give the review buttons their icons (chevrons for Prev/Next, a star for Best line). Done keeps
+## the close icon from the scene. Done once in _ready.
+func _setup_review_buttons() -> void:
+	review_prev.icon = load("res://assets/icons/chevron_left.svg")
+	review_next.icon = load("res://assets/icons/chevron_right.svg")
+	review_next.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT  # chevron on the trailing edge
+	review_line.icon = load("res://assets/icons/star.png")
+	for b: Button in [review_prev, review_line, review_next]:
+		b.add_theme_constant_override("icon_max_width", 34)
+		b.add_theme_constant_override("h_separation", 10)
+
+
 ## Entry point from the result dialog's "Review the moves" button (in-app, replacing the old
 ## external Chess.com link).
 func _on_review_pressed() -> void:
@@ -1202,26 +1217,64 @@ func _position_review_ui() -> void:
 	review_done.offset_bottom = safe_top + 62.0
 
 
-## Show the position AFTER ply `i`, with that move lit, and fill the info panel.
-func _show_review_ply(i: int) -> void:
+## Step the review to ply `i`. A single-step transition gets a quick slide (forward for Next, in
+## reverse for Prev); a jump (open / snap-back) renders instantly. The panel updates immediately.
+func _show_review_ply(i: int, animate := true) -> void:
 	if _undo_stack.is_empty():
 		return
+	var from_ply := _review_ply
 	_review_ply = clampi(i, 0, _undo_stack.size() - 1)
 	_review_playing = false
+	review_prev.disabled = _review_ply <= 0
+	review_next.disabled = _review_ply >= _undo_stack.size() - 1
+	_update_review_panel()
+	if animate and _review_ply == from_ply + 1:
+		_render_review_step(_review_ply, false)  # forward: slide move[_review_ply] in
+	elif animate and _review_ply == from_ply - 1:
+		_render_review_step(from_ply, true)       # reverse: slide move[from_ply] back out
+	else:
+		_render_review_static()
+
+
+## Snap the board to the reviewed ply's position with its move lit (no slide).
+func _render_review_static() -> void:
 	var post := _rules_after(_review_ply + 1)
+	var e: Dictionary = _undo_stack[_review_ply]
 	board.set_rules(post)
 	board.clear_options()
 	board.clear_last_moves()
-	var e: Dictionary = _undo_stack[_review_ply]
 	board.set_last_move(int(e["move"]), int(e["mover"]))
-	if post.is_in_check():
-		board.set_check_square(post.king_square(post.side_to_move))
+	_set_review_check(post)
+	board.end_animation()
+
+
+## Quick slide for one Prev/Next step. forward (reverse=false): play move[idx] from its pre-position;
+## reverse=true: un-play move[idx] from its post-position. Guarded so a rapid step / close interrupts.
+func _render_review_step(idx: int, reverse: bool) -> void:
+	_review_gen += 1
+	var g := _review_gen
+	var mv := int(_undo_stack[idx]["move"])
+	board.clear_options()
+	board.clear_last_moves()
+	board.set_check_square(-1)
+	if reverse:
+		board.set_rules(_rules_after(idx + 1))  # post: the piece sits on its destination
+		board.end_animation()
+		await board.animate_unmove(mv, REVIEW_STEP_FAST)
+	else:
+		board.set_rules(_rules_after(idx))       # pre-move position
+		board.end_animation()
+		await board.animate_move(mv, REVIEW_STEP_FAST)
+	if g != _review_gen:
+		return
+	_render_review_static()
+
+
+func _set_review_check(r: ChessRules) -> void:
+	if r.is_in_check():
+		board.set_check_square(r.king_square(r.side_to_move))
 	else:
 		board.set_check_square(-1)
-	board.end_animation()
-	_update_review_panel()
-	review_prev.disabled = _review_ply <= 0
-	review_next.disabled = _review_ply >= _undo_stack.size() - 1
 
 
 func _update_review_panel() -> void:
@@ -1235,10 +1288,15 @@ func _update_review_panel() -> void:
 	review_step.text = "%s %d · %d / %d" % [tr("Move"), move_no, _review_ply + 1, total]
 	review_move.text = "%s: %s" % [_review_who(int(e["mover"])), san]
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
-	if rv.is_empty():  # the auto-opening or a bot reply: no player pick to grade
-		review_quality.visible = false
+	if rv.is_empty():
+		# The auto-opening or a bot reply: not graded during play. Analyse it on demand so the
+		# review covers BOTH sides (engine when present, GDScript fallback otherwise).
 		review_line_label.visible = false
 		review_line.disabled = true
+		review_quality.visible = true
+		review_quality.text = tr("Analysing…")
+		review_quality.modulate = Color(1, 1, 1, 0.5)
+		_analyse_review_ply(_review_ply)
 		return
 	review_quality.visible = true
 	if int(rv.get("best", -1)) == move:
@@ -1256,6 +1314,50 @@ func _update_review_panel() -> void:
 	else:
 		review_line_label.visible = false
 		review_line.disabled = true
+
+
+## Grade an un-reviewed ply (the auto-opening or a bot reply) on demand and fill its _review entry,
+## so the review shows a quality + best line for BOTH sides. Async (engine, or the GDScript
+## fallback); refreshes the panel if the player is still on that ply when it lands.
+func _analyse_review_ply(i: int) -> void:
+	if i < 0 or i >= _undo_stack.size():
+		return
+	if i < _review.size() and not (_review[i] as Dictionary).is_empty():
+		return  # already a captured pick, or already analysed
+	if _review_analyzing.has(i):
+		return  # one is already in flight for this ply
+	_review_analyzing[i] = true
+	var pre := _rules_after(i)
+	var played := int(_undo_stack[i]["move"])
+	var ranked: Array = await _rank_position(pre)
+	if not ranked.is_empty():
+		ranked = await _deep_promote(ranked, pre, _gen)
+	_review_analyzing.erase(i)
+	if ranked.is_empty() or i >= _review.size():
+		return
+	var grade := ChessBotScript.grade_move(ranked, played)
+	var best_pv := PackedStringArray()
+	for entry in ranked:
+		if int(entry["move"]) == int(grade["best_move"]):
+			best_pv = entry.get("pv", PackedStringArray())
+			break
+	_review[i] = {
+		"quality": _quality_from_label(String(grade["label"])),
+		"label": String(grade["label"]),
+		"cp_loss": int(grade["cp_loss"]),
+		"best": int(grade["best_move"]),
+		"best_pv": best_pv,
+	}
+	if review_overlay.visible and _review_ply == i and not _review_playing:
+		_update_review_panel()
+
+
+## Map a grade label to one of the three option-quality buckets, for colouring an analysed move.
+func _quality_from_label(label: String) -> String:
+	match label:
+		"Best", "Great": return "best"
+		"Good", "Inaccuracy": return "decent"
+		_: return "blunder"  # Mistake / Blunder
 
 
 ## Replay the engine's best line for the move under review, branching from the position the player
