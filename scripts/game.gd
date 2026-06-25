@@ -81,6 +81,7 @@ const REVIEW_MIN_LINE := 6
 @onready var review_overlay: Control = %ReviewOverlay
 @onready var review_step: Label = %ReviewStep
 @onready var review_avatar: TextureRect = %ReviewAvatar
+@onready var review_pawn: TextureRect = %ReviewPawn
 @onready var review_move: Label = %ReviewMove
 @onready var review_quality: Label = %ReviewQuality
 @onready var review_analyse_icon: TextureRect = %ReviewAnalyseIcon
@@ -1337,6 +1338,14 @@ func _update_review_panel() -> void:
 	review_avatar.visible = is_bot_move
 	if is_bot_move:
 		review_avatar.texture = load(BotRoster.avatar_path(bot_def))
+	# A pawn in the mover's colour marks the human player's own rows: beside "You:" vs a bot, and
+	# beside both "White:"/"Black:" in Pass & Play (both sides are human there). Same piece art as
+	# the board. The opening (ply 0) and the bot's own moves get no pawn.
+	var is_player_row := _review_ply > 0 and (GameManager.pass_and_play or mover == player_color)
+	review_pawn.visible = is_player_row
+	if is_player_row:
+		var side := "w" if mover == ChessRules.WHITE else "b"
+		review_pawn.texture = load("res://assets/pieces/%s_pawn.png" % side)
 	review_analyse_icon.visible = false  # only shown beside "Analysing…"
 	# The opening is always a fine first move: no quality / best line for it.
 	if _review_ply == 0:

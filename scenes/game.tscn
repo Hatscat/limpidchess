@@ -704,6 +704,15 @@ size_flags_vertical = 4
 expand_mode = 1
 stretch_mode = 5
 
+[node name="ReviewPawn" type="TextureRect" parent="ReviewOverlay/ReviewInfo/MoveRow" unique_id=770020016]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
 [node name="ReviewMove" type="Label" parent="ReviewOverlay/ReviewInfo/MoveRow" unique_id=770020004]
 unique_name_in_owner = true
 layout_mode = 2
