@@ -1176,7 +1176,7 @@ func _setup_review_buttons() -> void:
 	review_line.add_theme_constant_override("h_separation", 10)
 
 
-## Entry point from the result dialog's "Review the moves" button (in-app, replacing the old
+## Entry point from the result dialog's "Understand your moves" button (in-app, replacing the old
 ## external Chess.com link).
 func _on_review_pressed() -> void:
 	if _undo_stack.is_empty():

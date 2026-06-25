@@ -49,6 +49,17 @@ corner_radius_bottom_left = 28
 shadow_color = Color(0, 0, 0, 0.5)
 shadow_size = 18
 
+[sub_resource type="StyleBoxFlat" id="sb_btn_primary"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.28, 0.58, 0.7, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
 [sub_resource type="StyleBoxFlat" id="sb_btn"]
 content_margin_left = 20.0
 content_margin_top = 16.0
@@ -60,17 +71,6 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(1, 1, 1, 0.08)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="sb_btn_primary"]
-content_margin_left = 20.0
-content_margin_top = 16.0
-content_margin_right = 20.0
-content_margin_bottom = 16.0
-bg_color = Color(0.28, 0.58, 0.7, 1)
 corner_radius_top_left = 16
 corner_radius_top_right = 16
 corner_radius_bottom_right = 16
@@ -405,6 +405,20 @@ autowrap_mode = 2
 layout_mode = 2
 theme_override_constants/separation = 16
 
+[node name="AnalyseBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=414004910]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 44
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn_primary")
+theme_override_styles/pressed = SubResource("sb_btn_primary")
+theme_override_styles/hover = SubResource("sb_btn_primary")
+text = "Understand your moves"
+icon = ExtResource("12_magnifier")
+alignment = 0
+
 [node name="BotsBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231104]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
@@ -432,20 +446,6 @@ theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 text = "Play again"
-alignment = 0
-
-[node name="AnalyseBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=414004910]
-custom_minimum_size = Vector2(0, 64)
-layout_mode = 2
-focus_mode = 0
-theme_override_constants/h_separation = 14
-theme_override_constants/icon_max_width = 44
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("sb_btn")
-theme_override_styles/pressed = SubResource("sb_btn")
-theme_override_styles/hover = SubResource("sb_btn")
-text = "Review the moves"
-icon = ExtResource("12_magnifier")
 alignment = 0
 
 [node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231103]
@@ -818,9 +818,9 @@ visible = false
 layout_mode = 1
 
 [connection signal="pressed" from="TopBar/Menu" to="." method="_open_menu"]
+[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/AnalyseBtn" to="." method="_on_review_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/BotsBtn" to="." method="_on_bots_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/PlayAgainBtn" to="." method="_on_play_again_pressed"]
-[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/AnalyseBtn" to="." method="_on_review_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/HomeBtn" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmCancel" to="." method="_on_confirm_no"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmYes" to="." method="_on_confirm_yes"]
