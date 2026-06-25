@@ -419,9 +419,11 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
+[connection signal="gui_input" from="TopBar/GamesPill" to="." method="_on_games_input"]
 [connection signal="pressed" from="TopBar/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="Center/VBox/PlayCard" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="Center/VBox/PassPlay" to="." method="_on_pass_play_pressed"]
+[connection signal="gui_input" from="SettingsOverlay/Dim" to="." method="_on_dim_input"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/SoundToggle" to="." method="_on_sound_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/ResetBtn" to="." method="_on_reset_pressed"]
 [connection signal="pressed" from="SettingsOverlay/CloseX" to="." method="_on_settings_close"]

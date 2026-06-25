@@ -37,6 +37,18 @@ func _refresh_games() -> void:
 		games_label.text = tr("%d / %d today") % [GameManager.games_remaining_today(), GameManager.FREE_GAMES_PER_DAY]
 
 
+## The daily-games pill is tappable: it routes to Premium (which explains the daily limit and
+## offers unlimited play), so a player puzzled by the counter learns what it means.
+func _on_games_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		GameManager.go_to_premium()
+		return
+	var touch := event as InputEventScreenTouch
+	if touch != null and touch.pressed:
+		GameManager.go_to_premium()
+
+
 func _selected_bot() -> Dictionary:
 	return GameManager.current_bot if not GameManager.current_bot.is_empty() else BotRoster.default()
 
@@ -71,6 +83,21 @@ func _on_settings_pressed() -> void:
 
 func _on_settings_close() -> void:
 	settings_overlay.visible = false
+
+
+## Tap outside the Settings card (on the dim) to dismiss it. We close on RELEASE, not press: the
+## dim is a full-screen STOP control above the home content, so it swallows the whole tap while the
+## overlay is still visible. Closing on press would hide the overlay mid-tap and let the release
+## (or, on touch, the emulated mouse press that follows) fall through to the Play / Pass & Play
+## buttons and start a game.
+func _on_dim_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb != null and not mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		_on_settings_close()
+		return
+	var touch := event as InputEventScreenTouch
+	if touch != null and not touch.pressed:
+		_on_settings_close()
 
 
 ## The sound toggle is a full-width button (big tap target, matches the language
