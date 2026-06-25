@@ -13,7 +13,6 @@ extends Control
 
 func _ready() -> void:
 	visible = false
-	(%DailyPremiumBtn as Button).icon = load("res://assets/icons/crown.png")
 
 
 ## Open the dialog, explaining which daily free limit was hit. reason: "games" (default) or

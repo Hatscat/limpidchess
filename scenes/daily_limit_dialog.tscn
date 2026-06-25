@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cwkkjgcgnb61c"]
 
 [ext_resource type="Script" uid="uid://boet6pq1sqr7h" path="res://scripts/daily_limit_dialog.gd" id="1_dld"]
+[ext_resource type="Texture2D" uid="uid://cn4xvwxwrw4l2" path="res://assets/icons/crown.png" id="2_crown"]
 
 [sub_resource type="StyleBoxFlat" id="sb_card"]
 content_margin_left = 30.0
@@ -118,6 +119,7 @@ theme_override_styles/normal = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")
 theme_override_styles/hover = SubResource("sb_btn_primary")
 text = "Get Premium"
+icon = ExtResource("2_crown")
 
 [node name="DailyCloseBtn" type="Button" parent="Card/VBox/Buttons" unique_id=1594270966]
 custom_minimum_size = Vector2(0, 60)
