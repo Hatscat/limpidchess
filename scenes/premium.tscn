@@ -114,10 +114,10 @@ text = "✓   Support a solo indie dev"
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
-size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
 text = "$3.99 · one-time, forever"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="GetButton" type="Button" parent="Content" unique_id=1763221410]
 unique_name_in_owner = true
@@ -149,9 +149,9 @@ flat = true
 unique_name_in_owner = true
 modulate = Color(0.4, 0.78, 0.52, 1)
 layout_mode = 2
-size_flags_horizontal = 4
 text = "✓ You're Premium. Thank you!"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="NavBar" parent="." unique_id=1370521294 instance=ExtResource("2_nav")]
 layout_mode = 1
