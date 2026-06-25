@@ -36,7 +36,7 @@ const END_DELAY := 1.25   ## hold the "Checkmate!" / "Stalemate." message before
 const MATE_EXPLODE_SEC := 0.7   ## checkmate: how long the losing king's shatter plays
 const EARLY_MOVES := 10   ## below this many player moves, leaving = a free "cancel", not a loss
 ## Post-game review: how many plies of the engine's best line to show / animate, the per-move
-## slide + pause when "Best line" plays it back, and the quick slide when stepping Prev / Next.
+## slide + pause when "Best replies" plays it back, and the quick slide when stepping Prev / Next.
 const REVIEW_LINE_PLIES := 10
 const REVIEW_STEP_SEC := 0.45
 const REVIEW_STEP_HOLD := 0.4
@@ -138,7 +138,7 @@ var _undo_stack: Array = []
 # Parallel to _undo_stack: the post-game review entry for each ply ({} for the auto-opening and
 # bot replies, which carry no player pick). An entry holds {quality, label, cp_loss, best, best_pv}.
 var _review: Array = []
-# Review navigation state. _review_gen is bumped on any step / close so a "Best line" playback
+# Review navigation state. _review_gen is bumped on any step / close so a "Best replies" playback
 # coroutine in flight bails instead of fighting the new view.
 var _review_ply := 0
 var _review_gen := 0
@@ -1160,14 +1160,14 @@ func _on_bots_pressed() -> void:
 
 # --- Post-game review: step through the game and replay the engine's best lines ---
 
-## Give the review buttons their icons (chevrons for Prev/Next, a star for Best line). Done keeps
+## Give the review buttons their icons (chevrons for Prev/Next, a star for Best replies). Done keeps
 ## the close icon from the scene. Done once in _ready.
 func _setup_review_buttons() -> void:
 	review_prev.icon = load("res://assets/icons/chevron_left.svg")
 	review_next.icon = load("res://assets/icons/chevron_right.svg")
 	review_line.icon = load("res://assets/icons/star.png")
 	# Prev / Next are icon-only with a centred chevron (so they stay short in every language);
-	# Best line keeps its star + label and expands to fill the middle.
+	# Best replies keeps its star + label and expands to fill the middle.
 	review_prev.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	review_next.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	review_prev.add_theme_constant_override("icon_max_width", 40)
@@ -1367,7 +1367,7 @@ func _update_review_panel() -> void:
 	var seq := _best_line_san(pre, pv, int(rv.get("best", -1)))
 	if seq != "":
 		review_line_label.visible = true
-		review_line_label.text = tr("Best line: %s") % seq
+		review_line_label.text = tr("Best replies: %s") % seq
 		review_line.disabled = false
 	else:
 		review_line_label.visible = false
