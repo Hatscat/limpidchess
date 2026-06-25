@@ -202,7 +202,7 @@ func _run_ext(cmds: Array) -> Dictionary:
 			elif line.begins_with("info ") and line.find(" pv ") != -1 and line.find(" multipv ") != -1:
 				var info := _parse_info(line)
 				if not info.is_empty():
-					by_index[info["k"]] = {"uci": info["uci"], "score": info["score"]}
+					by_index[info["k"]] = {"uci": info["uci"], "score": info["score"], "pv": info["pv"]}
 		# Guard the frame await: if we've left the tree mid-search (app teardown / scene
 		# change), get_tree() is null and awaiting it would abort this coroutine before the
 		# gate is released in _run(). Bail cleanly instead so _run_busy always resets.
@@ -257,7 +257,7 @@ func _execute(cmds: Array) -> Dictionary:
 		elif line.begins_with("info ") and line.find(" pv ") != -1 and line.find(" multipv ") != -1:
 			var info := _parse_info(line)
 			if not info.is_empty():
-				by_index[info["k"]] = {"uci": info["uci"], "score": info["score"]}
+				by_index[info["k"]] = {"uci": info["uci"], "score": info["score"], "pv": info["pv"]}
 	return _build_result(by_index, best)
 
 
@@ -274,6 +274,7 @@ func _parse_info(line: String) -> Dictionary:
 	var k := -1
 	var uci := ""
 	var score := 0
+	var pv := PackedStringArray()
 	var i := 0
 	while i < p.size():
 		match p[i]:
@@ -287,13 +288,16 @@ func _parse_info(line: String) -> Dictionary:
 					score = (MATE_BASE - absi(m)) * (1 if m > 0 else -1)
 				i += 3
 			"pv":
-				uci = p[i + 1]
+				# "pv" is always the last token group on a UCI info line, so the whole
+				# remainder is the principal variation (UCI moves), best move first.
+				pv = p.slice(i + 1)
+				uci = pv[0] if pv.size() > 0 else ""
 				i = p.size()
 			_:
 				i += 1
 	if k == -1 or uci == "":
 		return {}
-	return {"k": k, "uci": uci, "score": score}
+	return {"k": k, "uci": uci, "score": score, "pv": pv}
 
 
 func _resolve_binary() -> String:
