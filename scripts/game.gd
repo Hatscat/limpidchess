@@ -1515,15 +1515,13 @@ func _quality_from_label(label: String) -> String:
 ## faced. Snaps back to the reviewed move when done (or bails if the player navigates / closes).
 ## "Best replies": build the scrubbable timeline for the reviewed ply's best line, then auto-play it
 ## forward. The stepping happens in _process so the player can grab the board to scrub (rewind /
-## pause / fast-forward) at any time. Re-tapping restarts from the top.
+## pause / fast-forward) at any time. It's a toggle: re-tapping leaves the line and restores the
+## played + best-move arrows on the same move.
 func _play_best_line() -> void:
 	if _undo_stack.is_empty():
 		return
-	if _line_active:  # already showing the line -> restart from the top
-		_line_pos = 0.0
-		_line_rate = LINE_AUTO_RATE
-		_scrubbing = false
-		_scrub_rate = 0.0
+	if _line_active:  # toggle OFF: leave exploration, back to the played + best arrows on this same move
+		_show_review_ply(_review_ply, false)
 		return
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 	if rv.is_empty():
