@@ -121,3 +121,13 @@ theme_override_styles/normal = SubResource("sb_ghost")
 theme_override_styles/hover = SubResource("sb_ghost")
 theme_override_styles/pressed = SubResource("sb_ghost")
 text = "Not now"
+
+[node name="NeverBtn" type="Button" parent="Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+modulate = Color(1, 1, 1, 0.45)
+theme_override_font_sizes/font_size = 16
+flat = true
+text = "Don't ask again"

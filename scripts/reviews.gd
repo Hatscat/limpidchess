@@ -52,6 +52,7 @@ func _show_pre_dialog() -> bool:
 		return false
 	var dlg := ps.instantiate()
 	dlg.rated.connect(ask)
+	dlg.never_ask.connect(GameManager.mark_review_done)  # "Don't ask again" stops the auto-prompt for good
 	scene.add_child(dlg)
 	return true
 

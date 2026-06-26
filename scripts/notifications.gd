@@ -3,15 +3,19 @@ extends Node
 ## "Your free games are back" local notification (autoload "Notifications").
 ##
 ## Wraps the godot-notification-scheduler plugin's `NotificationScheduler` + `NotificationData`
-## nodes when installed; a harmless no-op on desktop/dev or without the plugin. Scheduled when a
-## free player runs out of daily games (GameManager._count_game), cancelled when they have games
-## again or go Premium. We schedule via set_delay and never request SCHEDULE_EXACT_ALARM, so the
+## nodes when installed; a harmless no-op on desktop/dev or without the plugin. A free player gets a
+## DAILY repeating reminder (the free games reset every day): (re)scheduled for tomorrow morning once
+## they've played 2+ games (GameManager._count_game, so the permission ask lands on an engaged player)
+## and cancelled when they go Premium. Because each game re-anchors it to tomorrow, it mostly nudges
+## players who skip a day rather than active ones.
+## We schedule via set_delay/set_interval and never request SCHEDULE_EXACT_ALARM, so the
 ## plugin falls back to an inexact while-idle alarm: it still fires while the app is closed and
 ## survives a reboot, but may land up to ~1h late (fine for a daily "games are back" nudge). The
 ## plugin's class_name nodes only exist once the addon is added, so we resolve + instantiate them
 ## dynamically to stay parse-safe when it isn't.
 
 const REMINDER_ID := 1001
+const DAY_SECONDS := 86400  # repeat interval: a daily nudge
 const CHANNEL_ID := "limpid_daily"
 const CHANNEL_IMPORTANCE_DEFAULT := 3  # NotificationChannel.Importance.DEFAULT (literal = parse-safe)
 
@@ -114,6 +118,7 @@ func _post_reminder() -> void:
 	data.set_title(tr("Your free games are back!"))
 	data.set_content(tr("Come back and find the best move."))
 	data.set_delay(_delay_to_tomorrow_morning())
+	data.set_interval(DAY_SECONDS)  # repeat every day (the free games reset daily), so a skipped day still gets a nudge
 	_scheduler.schedule(data)
 
 

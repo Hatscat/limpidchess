@@ -199,11 +199,14 @@ func _count_game() -> void:
 		_roll_day()
 		games_today += 1
 	_save()
-	# Remind a free player when their games refill; cancel if they still have some (or are premium).
-	if not is_premium and games_remaining_today() == 0:
-		Notifications.schedule_reset_reminder()
-	else:
+	# Free players get a daily "your free games are back" reminder (the games reset every day), so a
+	# player who forgets a day still gets nudged the next. Re-anchored to tomorrow on each game, and
+	# dropped for Premium (unlimited games). Gated to 2+ games played so the notification-permission
+	# ask lands on an engaged player, not on their very first game (matches should_ask_review).
+	if is_premium:
 		Notifications.cancel_reset_reminder()
+	elif games_played >= 2:
+		Notifications.schedule_reset_reminder()
 
 
 ## Reset the daily counter when the local date changes.
