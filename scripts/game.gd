@@ -1650,12 +1650,14 @@ func _on_scrub_released() -> void:
 func _best_replies_markup(parts: PackedStringArray, active: int) -> String:
 	var out := PackedStringArray()
 	for j in parts.size():
+		# Non-breaking hyphen so castling ("O-O" / "O-O-O") never wraps across two lines.
+		var san := parts[j].replace("-", "‑")
 		if j == active:
 			# The move currently sliding: full white, a bit larger, bold. Its own colour overrides
 			# the dim wrap below.
-			out.append("[color=#ffffff][font_size=%d][b]%s[/b][/font_size][/color]" % [REVIEW_HL_SIZE, parts[j]])
+			out.append("[color=#ffffff][font_size=%d][b]%s[/b][/font_size][/color]" % [REVIEW_HL_SIZE, san])
 		else:
-			out.append(parts[j])
+			out.append(san)
 	# Everything else stays dim (the prefix + the other moves); the active move overrides to white.
 	return "[center][color=#ffffff99]%s[/color][/center]" % (tr("Best replies: %s") % " ".join(out))
 
