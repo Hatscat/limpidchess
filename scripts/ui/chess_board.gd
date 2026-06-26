@@ -10,6 +10,10 @@ extends Control
 ## readable without relying on colour (colour-blind friendly).
 
 signal option_chosen(option: Dictionary)
+## Best-replies scrub (review): a touch/drag reports its horizontal position in [-1, 1] (0 = centre);
+## scrub_released fires on lift. game.gd maps these to the line-playback rate.
+signal scrub_rate(rate: float)
+signal scrub_released()
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
 const BADGE_FONT := preload("res://assets/fonts/OpenDyslexic-Bold.otf")
@@ -51,6 +55,13 @@ var _explode_t := 0.0
 
 var _cell := 0.0
 var _origin := Vector2.ZERO
+
+# Best-replies scrub: when on, a touch/drag reports its horizontal position to game.gd instead of
+# selecting an option (the board is non-interactive during review anyway).
+var _scrub_enabled := false
+var _scrub_dragging := false
+const SCRUB_FRAME_W := 6.0       ## accent frame drawn around the board while scrub mode is on
+var _scrub_frame: StyleBoxFlat = null
 
 # Cached coordinate labels (a1..h8 numbers/letters), shaped once into TextLines and
 # rebuilt only when the cell size or board orientation changes (see _ensure_coords).
@@ -124,16 +135,77 @@ func reveal() -> void:
 	queue_redraw()
 
 
+## Enable/disable the best-replies scrub (review). While on, board touches drive playback rate
+## (via the scrub_rate / scrub_released signals) rather than picking an option.
+func set_scrub_enabled(on: bool) -> void:
+	_scrub_enabled = on
+	_scrub_dragging = false
+	queue_redraw()  # show/hide the accent frame around the board
+
+
+## A rounded accent border framing the board while best-replies scrub is active, so the player knows
+## the position is interactive (touch left/right to rewind / pause / fast-forward) even when paused.
+func _draw_scrub_frame() -> void:
+	if _scrub_frame == null:
+		_scrub_frame = StyleBoxFlat.new()
+		_scrub_frame.bg_color = Color(0, 0, 0, 0)  # frame only, no fill
+		_scrub_frame.set_border_width_all(int(SCRUB_FRAME_W))
+		_scrub_frame.border_color = UI.ACCENT
+		_scrub_frame.set_corner_radius_all(16)
+	var used := _cell * 8.0
+	var g := SCRUB_FRAME_W * 0.5  # straddle the board edge (half in, half out)
+	draw_style_box(_scrub_frame, Rect2(_origin - Vector2(g, g), Vector2(used + 2.0 * g, used + 2.0 * g)))
+
+
+func _handle_scrub(event: InputEvent) -> void:
+	var down := false
+	var up := false
+	var moved := false
+	var pos := Vector2.ZERO
+	if event is InputEventScreenTouch:
+		down = event.pressed
+		up = not event.pressed
+		pos = event.position
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		down = event.pressed
+		up = not event.pressed
+		pos = event.position
+	elif event is InputEventScreenDrag:
+		moved = true
+		pos = event.position
+	elif event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+		moved = true
+		pos = event.position
+	if down:
+		_scrub_dragging = true
+		scrub_rate.emit(_scrub_x(pos))
+	elif up and _scrub_dragging:
+		_scrub_dragging = false
+		scrub_released.emit()
+	elif moved and _scrub_dragging:
+		scrub_rate.emit(_scrub_x(pos))
+
+
+func _scrub_x(pos: Vector2) -> float:
+	if size.x <= 0.0:
+		return 0.0
+	return clampf((pos.x - size.x * 0.5) / (size.x * 0.5), -1.0, 1.0)
+
+
 ## Slide the piece of `move` from its origin to its target over `duration` secs.
 ## Await-able. The board keeps showing the pre-move position underneath.
 func animate_move(move: int, duration: float) -> void:
 	if rules == null:
 		return
+	_setup_slide_targets(move)
+	await _run_slide(duration)
+
+
+## Resolve the from/to squares for the slide overlay (plus the castling rook, slid in sync).
+func _setup_slide_targets(move: int) -> void:
 	_anim_from = Rules.move_from(move)
 	_anim_to = Rules.move_to(move)
 	_anim_piece = rules.board[_anim_from]
-
-	# Castle: also slide the rook from its corner to beside the king, in sync.
 	_anim2_from = -1
 	var flag := Rules.move_flag(move)
 	if flag == Rules.F_CASTLE_K or flag == Rules.F_CASTLE_Q:
@@ -145,7 +217,19 @@ func animate_move(move: int, duration: float) -> void:
 			_anim2_from = 0 if white else 56
 			_anim2_to = 3 if white else 59
 		_anim2_piece = rules.board[_anim2_from]
-	await _run_slide(duration)
+
+
+## Park the slide overlay at a specific progress (no tween) for scrubbing the best-replies line
+## frame-by-frame: set_rules() to the pre-move position first, then call this each frame.
+func show_move_frame(move: int, progress: float) -> void:
+	if rules == null:
+		return
+	if _anim_tween != null and _anim_tween.is_valid():
+		_anim_tween.kill()
+	_setup_slide_targets(move)
+	_anim_active = true
+	_anim_progress = clampf(progress, 0.0, 1.0)
+	queue_redraw()
 
 
 ## Reverse-slide a move, for stepping BACKWARD in the review: the piece sitting on the move's
@@ -223,6 +307,8 @@ func _draw() -> void:
 	_draw_pieces()
 	_draw_coords()
 	_draw_options()
+	if _scrub_enabled:
+		_draw_scrub_frame()  # signal "best-replies exploration mode: touch the board to control it"
 	if _explode_active:
 		_draw_explosion()
 
@@ -512,6 +598,9 @@ func _point_to_square(pos: Vector2) -> int:
 # --- Input ---
 
 func _gui_input(event: InputEvent) -> void:
+	if _scrub_enabled:
+		_handle_scrub(event)
+		return
 	if not _interactive or _options.is_empty():
 		return
 	var pressed := false

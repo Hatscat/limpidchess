@@ -745,14 +745,15 @@ theme_override_font_sizes/font_size = 26
 text = "Good"
 horizontal_alignment = 1
 
-[node name="ReviewBestLine" type="Label" parent="ReviewOverlay/ReviewInfo" unique_id=770020006]
+[node name="ReviewBestLine" type="RichTextLabel" parent="ReviewOverlay/ReviewInfo" unique_id=770020006]
 unique_name_in_owner = true
-modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Best replies:"
-horizontal_alignment = 1
-autowrap_mode = 2
+theme_override_font_sizes/normal_font_size = 20
+theme_override_font_sizes/bold_font_size = 20
+bbcode_enabled = true
+text = "[center]Best replies:[/center]"
+fit_content = true
+scroll_active = false
 
 [node name="Nav" type="HBoxContainer" parent="ReviewOverlay" unique_id=770020007]
 layout_mode = 1

@@ -47,6 +47,13 @@ const REVIEW_STEP_FAST := 0.18
 ## explain the position regardless of device speed).
 const REVIEW_LINE_DEPTH := 14
 const REVIEW_MIN_LINE := 6
+## Best-replies playback is a scrubbable timeline: position runs 0 .. ply-count, integer part = the
+## move index, fraction = that move's slide progress. Rate is in moves/sec.
+const LINE_AUTO_RATE := 1.1        ## auto-play speed when "Best replies" is tapped
+const LINE_MIN_RATE := 0.4         ## slowest shuttle speed (finger just off centre)
+const LINE_MAX_RATE := 4.0         ## fastest shuttle speed (finger at the edge)
+const LINE_SCRUB_DEADZONE := 0.10  ## |x| below this = paused (centre)
+const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in the best-replies line (base is 20)
 
 @onready var board: Control = %Board
 @onready var feedback: Label = %Feedback
@@ -85,7 +92,7 @@ const REVIEW_MIN_LINE := 6
 @onready var review_move: Label = %ReviewMove
 @onready var review_quality: Label = %ReviewQuality
 @onready var review_analyse_icon: TextureRect = %ReviewAnalyseIcon
-@onready var review_line_label: Label = %ReviewBestLine
+@onready var review_line_label: RichTextLabel = %ReviewBestLine
 @onready var review_prev: Button = %ReviewPrev
 @onready var review_next: Button = %ReviewNext
 @onready var review_line: Button = %ReviewLine
@@ -146,6 +153,18 @@ var _review_gen := 0
 var _review_playing := false
 var _review_analyzing := {}  ## ply index -> true while an on-demand engine analysis is in flight
 var _review_unlocked := false  ## this game's review was already opened (counted) this session
+
+# Best-replies scrubbable timeline (see the LINE_* constants).
+var _line_active := false
+var _line_states: Array = []     ## ChessRules after 0 .. k line moves (size k+1)
+var _line_moves_arr: Array = []  ## the k line moves (packed ints)
+var _line_san := PackedStringArray()  ## SAN of each line move, for the header highlight
+var _line_total := 0
+var _line_pos := 0.0             ## playback position in [0, k]
+var _line_rate := 0.0            ## auto-play rate (moves/sec; 0 = paused)
+var _line_hl_active := -2        ## last move index highlighted in the header (avoids rebuilding it every frame)
+var _scrubbing := false          ## a finger is currently on the board
+var _scrub_rate := 0.0           ## rate dictated by the finger while scrubbing
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
 
 # Bot-reply prefetch: the reveal of the player's pick (slide + hold ~1.5s) is idle
@@ -184,6 +203,8 @@ func _ready() -> void:
 
 	board.set_rules(rules)
 	board.option_chosen.connect(_on_option_chosen)
+	board.scrub_rate.connect(_on_scrub_rate)        # best-replies finger scrub (review)
+	board.scrub_released.connect(_on_scrub_released)
 
 	# Captured-pieces strips: keep them right after the board so the result /
 	# confirm overlays (later siblings) still draw on top.
@@ -522,6 +543,8 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		"cp_loss": int(grade["cp_loss"]),
 		"best": int(grade["best_move"]),
 		"best_pv": best_pv,
+		# Position eval (best play) as White-relative cp, for the review's eval bar.
+		"eval_cp": int(_ranked[0]["score"]) * (1 if mover == ChessRules.WHITE else -1),
 	}
 
 	match opt.get("quality", ""):
@@ -1206,6 +1229,7 @@ func _set_live_chrome(vis: bool) -> void:
 
 
 func _open_review() -> void:
+	_exit_line()
 	_set_live_chrome(false)  # the review owns the board and shows its own panels
 	result_overlay.visible = false
 	_review_gen += 1
@@ -1216,6 +1240,7 @@ func _open_review() -> void:
 
 
 func _close_review() -> void:
+	_exit_line()
 	_review_gen += 1        # abort any best-line playback in flight
 	_review_playing = false
 	review_overlay.visible = false
@@ -1230,6 +1255,7 @@ func _close_review() -> void:
 	_update_check_highlight()
 	board.end_animation()
 	_set_live_chrome(true)
+	_layout_for_safe_area()  # restore the live eval-bar / chrome positions moved during review
 	result_overlay.visible = true
 
 
@@ -1240,10 +1266,18 @@ func _position_review_ui() -> void:
 	if review_overlay == null or not review_overlay.visible:
 		return
 	var safe_top: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
+	# Eval bar: the classic strip just above the board (helps see where the game turned). It is
+	# hidden during live play's review-chrome teardown, so re-show + reposition it here.
+	var bar_top: float = board.offset_top
+	if eval_bar != null:
+		eval_bar.visible = true
+		bar_top = board.offset_top - _EVAL_H - 6.0
+		eval_bar.position = Vector2(board.offset_left, bar_top)
+		eval_bar.size = Vector2(board.size.x, _EVAL_H)
 	var info := review_step.get_parent() as Control
 	if info != null:
 		info.offset_top = safe_top + 8.0
-		info.offset_bottom = maxf(info.offset_top + 132.0, board.offset_top - 8.0)
+		info.offset_bottom = maxf(info.offset_top + 132.0, bar_top - 8.0)
 	review_done.offset_top = safe_top + 6.0
 	review_done.offset_bottom = safe_top + 62.0
 
@@ -1254,6 +1288,7 @@ func _position_review_ui() -> void:
 func _show_review_ply(i: int, animate := true) -> void:
 	if _undo_stack.is_empty():
 		return
+	_exit_line()  # any direct ply view leaves best-replies playback
 	var from_ply := _review_ply
 	_review_ply = clampi(i, 0, _undo_stack.size() - 1)
 	_review_playing = false
@@ -1332,6 +1367,10 @@ func _update_review_panel() -> void:
 	var san := pre.to_san(move)
 	review_step.text = "%s %d / %d" % [tr("Move"), _review_ply + 1, total]
 	review_move.text = "%s: %s" % [_review_who(mover), san]
+	# Eval bar reflects this position (best play, White-relative); 0/even until a score exists.
+	if eval_bar != null:
+		var ev: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
+		eval_bar.set_eval(int(ev.get("eval_cp", 0)))
 	# The opponent's avatar sits beside its move (bot games only; the player's own moves and Pass &
 	# Play don't map to one opponent face).
 	var is_bot_move := not GameManager.pass_and_play and _review_ply > 0 and mover != player_color
@@ -1373,10 +1412,10 @@ func _update_review_panel() -> void:
 		review_quality.text = tr(String(rv.get("label", "")))
 		review_quality.modulate = _quality_color(String(rv.get("quality", "")))
 	var pv: PackedStringArray = rv.get("best_pv", PackedStringArray())
-	var seq := _best_line_san(pre, pv, int(rv.get("best", -1)))
-	if seq != "":
+	var parts := _best_line_san_parts(pre, pv, int(rv.get("best", -1)))
+	if not parts.is_empty():
 		review_line_label.visible = true
-		review_line_label.text = tr("Best replies: %s") % seq
+		review_line_label.text = _best_replies_markup(parts, -1)  # static: nothing highlighted
 		review_line.disabled = false
 	else:
 		review_line_label.visible = false
@@ -1415,6 +1454,7 @@ func _analyse_review_ply(i: int) -> void:
 		"cp_loss": int(grade["cp_loss"]),
 		"best": int(grade["best_move"]),
 		"best_pv": best_pv,
+		"eval_cp": int(ranked[0]["score"]) * (1 if pre.side_to_move == ChessRules.WHITE else -1),
 	}
 	if review_overlay.visible and _review_ply == i and not _review_playing:
 		_update_review_panel()
@@ -1473,66 +1513,161 @@ func _quality_from_label(label: String) -> String:
 
 ## Replay the engine's best line for the move under review, branching from the position the player
 ## faced. Snaps back to the reviewed move when done (or bails if the player navigates / closes).
+## "Best replies": build the scrubbable timeline for the reviewed ply's best line, then auto-play it
+## forward. The stepping happens in _process so the player can grab the board to scrub (rewind /
+## pause / fast-forward) at any time. Re-tapping restarts from the top.
 func _play_best_line() -> void:
-	if _review_playing or _undo_stack.is_empty():
+	if _undo_stack.is_empty():
+		return
+	if _line_active:  # already showing the line -> restart from the top
+		_line_pos = 0.0
+		_line_rate = LINE_AUTO_RATE
+		_scrubbing = false
+		_scrub_rate = 0.0
 		return
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 	if rv.is_empty():
 		return
 	var pre := _rules_after(_review_ply)
 	var pv: PackedStringArray = rv.get("best_pv", PackedStringArray())
-	var moves := _line_moves(pre, pv, int(rv.get("best", -1)))
-	if moves.is_empty():
+	var best := int(rv.get("best", -1))
+	_line_moves_arr = _line_moves(pre, pv, best)
+	if _line_moves_arr.is_empty():
 		return
-	_review_gen += 1
-	var g := _review_gen
-	_review_playing = true
-	review_prev.disabled = true
-	review_next.disabled = true
-	review_line.disabled = true
+	_line_total = _line_moves_arr.size()
+	_line_san = _best_line_san_parts(pre, pv, best)
+	# Precompute the position after each prefix once, so per-frame rendering is just refs/ints.
+	_line_states.clear()
 	var sim := ChessRules.new()
 	sim.set_fen(pre.get_fen())
-	board.clear_options()
-	board.clear_last_moves()
-	board.set_check_square(-1)
-	board.set_rules(sim)
-	board.end_animation()
-	await get_tree().create_timer(0.3).timeout
-	if g != _review_gen:
-		return
-	for m: int in moves:
-		var mv := sim.side_to_move
-		await board.animate_move(m, REVIEW_STEP_SEC)
-		if g != _review_gen:
-			return
+	_line_states.append(_dup_rules(sim))
+	for m: int in _line_moves_arr:
 		sim.make_move(m)
-		board.set_rules(sim)
-		board.set_last_move(m, mv)
-		if sim.is_in_check():
-			board.set_check_square(sim.king_square(sim.side_to_move))
-		else:
-			board.set_check_square(-1)
-		board.end_animation()
-		await get_tree().create_timer(REVIEW_STEP_HOLD).timeout
-		if g != _review_gen:
-			return
-	await get_tree().create_timer(0.5).timeout
-	if g != _review_gen:
+		_line_states.append(_dup_rules(sim))
+	_review_gen += 1            # cancel any step animation in flight
+	_line_active = true
+	_review_playing = true      # keep existing "line busy" guards satisfied
+	_line_pos = 0.0
+	_line_rate = LINE_AUTO_RATE
+	_scrubbing = false
+	_scrub_rate = 0.0
+	_line_hl_active = -2
+	board.clear_options()  # once: the line frames never add option arrows
+	board.set_scrub_enabled(true)
+	_render_line_frame()
+
+
+func _process(delta: float) -> void:
+	if not _line_active:
 		return
+	var rate: float = _scrub_rate if _scrubbing else _line_rate
+	if rate == 0.0:
+		return
+	_line_pos = clampf(_line_pos + rate * delta, 0.0, float(_line_total))
+	_render_line_frame()
+	if not _scrubbing and rate > 0.0 and _line_pos >= float(_line_total):
+		_line_rate = 0.0  # auto-play reached the end; rest there
+
+
+## Draw the timeline at _line_pos: base position after floor(pos) moves, the current move sliding at
+## the fractional part, the matching SAN highlighted in the header.
+func _render_line_frame() -> void:
+	var k := _line_total
+	var i: int = clampi(int(floor(_line_pos)), 0, k)
+	if i >= k:
+		board.set_rules(_line_states[k])
+		_line_last_move_and_check(k)
+		board.end_animation()
+		_highlight_line_san(k - 1)
+		return
+	board.set_rules(_line_states[i])
+	_line_last_move_and_check(i)
+	board.show_move_frame(int(_line_moves_arr[i]), _line_pos - float(i))
+	_highlight_line_san(i)
+
+
+## Light the last completed line move and flag a check, from the precomputed states.
+func _line_last_move_and_check(i: int) -> void:
+	board.clear_last_moves()
+	if i > 0:
+		var prev: ChessRules = _line_states[i - 1]
+		board.set_last_move(int(_line_moves_arr[i - 1]), prev.side_to_move)
+	var st: ChessRules = _line_states[i]
+	if st.is_in_check():
+		board.set_check_square(st.king_square(st.side_to_move))
+	else:
+		board.set_check_square(-1)
+
+
+func _highlight_line_san(active: int) -> void:
+	if _line_san.is_empty() or active == _line_hl_active:
+		return  # only rebuild the markup when the highlighted move actually changes
+	_line_hl_active = active
+	review_line_label.visible = true
+	review_line_label.text = _best_replies_markup(_line_san, active)
+
+
+func _dup_rules(r: ChessRules) -> ChessRules:
+	var c := ChessRules.new()
+	c.set_fen(r.get_fen())
+	return c
+
+
+## Leave best-replies mode (stop scrubbing, re-enable normal stepping).
+func _exit_line() -> void:
+	if not _line_active:
+		return
+	_line_active = false
 	_review_playing = false
-	_show_review_ply(_review_ply)  # back to the reviewed move
+	_scrubbing = false
+	_scrub_rate = 0.0
+	_line_rate = 0.0
+	board.set_scrub_enabled(false)
+
+
+# A finger on the board sets the playback rate: centre = paused, left = rewind, right = forward,
+# faster the further from centre. Releasing pauses where it left off.
+func _on_scrub_rate(x: float) -> void:
+	if not _line_active:
+		return
+	_scrubbing = true
+	var ax := absf(x)
+	if ax < LINE_SCRUB_DEADZONE:
+		_scrub_rate = 0.0
+	else:
+		var s := (ax - LINE_SCRUB_DEADZONE) / (1.0 - LINE_SCRUB_DEADZONE)
+		_scrub_rate = signf(x) * (LINE_MIN_RATE + s * (LINE_MAX_RATE - LINE_MIN_RATE))
+
+
+func _on_scrub_released() -> void:
+	_scrubbing = false
+	_scrub_rate = 0.0
+	_line_rate = 0.0
+
+
+## "Best replies: m0 m1 …" as centred BBCode, the active move bold + accent-coloured (active < 0 =
+## none, the static display).
+func _best_replies_markup(parts: PackedStringArray, active: int) -> String:
+	var out := PackedStringArray()
+	for j in parts.size():
+		if j == active:
+			# The move currently sliding: full white, a bit larger, bold. Its own colour overrides
+			# the dim wrap below.
+			out.append("[color=#ffffff][font_size=%d][b]%s[/b][/font_size][/color]" % [REVIEW_HL_SIZE, parts[j]])
+		else:
+			out.append(parts[j])
+	# Everything else stays dim (the prefix + the other moves); the active move overrides to white.
+	return "[center][color=#ffffff99]%s[/color][/center]" % (tr("Best replies: %s") % " ".join(out))
 
 
 func _on_review_prev() -> void:
-	if _review_playing:
-		return
-	_review_gen += 1  # cancel any in-flight best-line playback
+	_exit_line()  # tapping a step leaves best-replies playback
+	_review_gen += 1
 	_show_review_ply(_review_ply - 1)
 
 
 func _on_review_next() -> void:
-	if _review_playing:
-		return
+	_exit_line()
 	_review_gen += 1
 	_show_review_ply(_review_ply + 1)
 
@@ -1584,14 +1719,16 @@ func _line_moves(base: ChessRules, pv: PackedStringArray, best: int) -> Array:
 
 
 ## SAN text of the best line for the info panel (e.g. "Bb5 a6 Bxc6 dxc6").
-func _best_line_san(base: ChessRules, pv: PackedStringArray, best: int) -> String:
+func _best_line_san_parts(base: ChessRules, pv: PackedStringArray, best: int) -> PackedStringArray:
 	var moves := _line_moves(base, pv, best)
-	if moves.is_empty():
-		return ""
 	var sim := ChessRules.new()
 	sim.set_fen(base.get_fen())
 	var parts := PackedStringArray()
 	for m: int in moves:
 		parts.append(sim.to_san(m))
 		sim.make_move(m)
-	return " ".join(parts)
+	return parts
+
+
+func _best_line_san(base: ChessRules, pv: PackedStringArray, best: int) -> String:
+	return " ".join(_best_line_san_parts(base, pv, best))
