@@ -15,8 +15,13 @@ sf_sources = [f for f in Glob("stockfish/src/*.cpp")
 sf_sources += Glob("stockfish/src/syzygy/*.cpp")
 
 env.Append(CPPPATH=["src/", "stockfish/src/", "stockfish/src/syzygy/"])
-# Stockfish 11 = classical eval (no NNUE net). arm64-friendly flags.
-env.Append(CPPDEFINES=["IS_64BIT", "USE_PREFETCH", "NDEBUG"])
+# Stockfish 11 = classical eval (no NNUE net). USE_PREFETCH works on every target;
+# IS_64BIT must be set ONLY on 64-bit arches — defining it on a 32-bit build
+# (arm32 / armeabi-v7a, for older devices) would select 64-bit-only code paths.
+sf_defines = ["USE_PREFETCH", "NDEBUG"]
+if env["arch"] in ("arm64", "x86_64", "rv64"):
+    sf_defines.append("IS_64BIT")
+env.Append(CPPDEFINES=sf_defines)
 
 # Android 15+ requires native libraries aligned to 16 KB pages (NDK r23c defaults
 # to 4 KB). Align our LOAD segments to 16 KB so Google Play accepts the app.

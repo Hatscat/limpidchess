@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the Stockfish GDExtension for Android (arm64). One command, from scratch:
+# Build the Stockfish GDExtension for Android (arm64 + armeabi-v7a). One command, from scratch:
 # downloads the NDK + SCons + godot-cpp + Stockfish 11, then compiles the .so
 # into ../addons/stockfish/bin/. Re-running is incremental (skips what exists).
 #
@@ -66,13 +66,18 @@ echo "SCons: ${SCONS[*]}"
 
 mkdir -p ../addons/stockfish/bin
 
-# --- 4. Build Android arm64 (debug + release) -------------------------------
-for TARGET in template_debug template_release; do
-	say "Building android arm64 $TARGET…"
-	# ANDROID_HOME= forces godot-cpp to use ANDROID_NDK_ROOT (our downloaded NDK)
-	# instead of looking for $ANDROID_HOME/ndk/<version>.
-	"${SCONS[@]}" platform=android arch=arm64 target="$TARGET" \
-		android_api_level="$ANDROID_API" "ANDROID_HOME=" -j"$JOBS"
+# --- 4. Build Android arm64 + arm32 (debug + release) -----------------------
+# arm64 covers modern phones; arm32 (armeabi-v7a) covers older/budget devices
+# that Google Play otherwise reports as "not compatible". The AAB splits by ABI,
+# so each user only downloads their own slice.
+for ARCH in arm64 arm32; do
+	for TARGET in template_debug template_release; do
+		say "Building android $ARCH $TARGET…"
+		# ANDROID_HOME= forces godot-cpp to use ANDROID_NDK_ROOT (our downloaded NDK)
+		# instead of looking for $ANDROID_HOME/ndk/<version>.
+		"${SCONS[@]}" platform=android arch="$ARCH" target="$TARGET" \
+			android_api_level="$ANDROID_API" "ANDROID_HOME=" -j"$JOBS"
+	done
 done
 
 # --- 5. Optional desktop build (only if a host C++ compiler is present) ------
