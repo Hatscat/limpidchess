@@ -9,7 +9,6 @@
 [ext_resource type="Texture2D" uid="uid://ovf8opbnaxrt" path="res://assets/icons/close.png" id="8_close"]
 [ext_resource type="Texture2D" uid="uid://7g4enesb2hgm" path="res://assets/icons/check.png" id="9_check"]
 [ext_resource type="Texture2D" uid="uid://dir7jlkxh0hwk" path="res://assets/icons/home.png" id="10_home"]
-[ext_resource type="Texture2D" uid="uid://d0ovxurc6wn88" path="res://assets/icons/robot.png" id="11_robot"]
 [ext_resource type="Texture2D" uid="uid://dlyyxad0h1tnk" path="res://assets/icons/magnifier.png" id="12_magnifier"]
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="13_daily"]
 
@@ -815,8 +814,8 @@ layout_mode = 1
 
 [connection signal="pressed" from="TopBar/Menu" to="." method="_open_menu"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/AnalyseBtn" to="." method="_on_review_pressed"]
-[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/BotsBtn" to="." method="_on_bots_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/PlayAgainBtn" to="." method="_on_play_again_pressed"]
+[connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/BotsBtn" to="." method="_on_bots_pressed"]
 [connection signal="pressed" from="ResultOverlay/Card/VBox/Buttons/HomeBtn" to="." method="_on_home_pressed"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmCancel" to="." method="_on_confirm_no"]
 [connection signal="pressed" from="ConfirmOverlay/Card/VBox/Buttons/ConfirmYes" to="." method="_on_confirm_yes"]
