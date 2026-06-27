@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://d0ovxurc6wn88" path="res://assets/icons/robot.png" id="11_robot"]
 [ext_resource type="Texture2D" uid="uid://dlyyxad0h1tnk" path="res://assets/icons/magnifier.png" id="12_magnifier"]
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="13_daily"]
+[ext_resource type="Texture2D" uid="uid://cweflca3h6gbk" path="res://assets/icons/chevron_right.svg" id="14_chevron"]
 
 [sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
@@ -430,8 +431,8 @@ theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
-text = "Change opponent"
-icon = ExtResource("11_robot")
+text = "Continue"
+icon = ExtResource("14_chevron")
 alignment = 0
 
 [node name="PlayAgainBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=596289663]
@@ -449,6 +450,7 @@ text = "Play again"
 alignment = 0
 
 [node name="HomeBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=808231103]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 focus_mode = 0

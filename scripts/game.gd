@@ -77,6 +77,7 @@ const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in
 @onready var pp_blunder_b: Label = %PPBlunderB
 @onready var bots_btn: Button = %BotsBtn
 @onready var play_again_btn: Button = %PlayAgainBtn
+@onready var home_btn: Button = %HomeBtn
 @onready var daily_limit: DailyLimitDialog = %DailyLimit
 @onready var confirm_overlay: Control = %ConfirmOverlay
 @onready var confirm_title: Label = %ConfirmTitle
@@ -163,6 +164,8 @@ var _line_total := 0
 var _line_pos := 0.0             ## playback position in [0, k]
 var _line_rate := 0.0            ## auto-play rate (moves/sec; 0 = paused)
 var _line_hl_active := -2        ## last move index highlighted in the header (avoids rebuilding it every frame)
+var _line_style_off: StyleBox = null  ## "Best replies" button look when OFF (bright primary) ...
+var _line_style_on: StyleBox = null   ## ... vs ON (darker, pressed-in), so the toggle shows its state
 var _scrubbing := false          ## a finger is currently on the board
 var _scrub_rate := 0.0           ## rate dictated by the finger while scrubbing
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
@@ -926,24 +929,34 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	# Make "Play again" concrete for kids who can't read yet: show WHO you'd replay,
 	# the opponent's avatar + name (the handshake for Pass & Play).
 	if GameManager.pass_and_play:
+		# Pass & Play is unchanged: White/Black tally, Play again + Go back home, no opponent to change.
 		review_box.visible = false
 		review_box_pp.visible = true
-		bots_btn.visible = false  # no "Change opponent" when there's no opponent to change
+		bots_btn.visible = false
+		home_btn.visible = true
+		play_again_btn.visible = true
 		pp_best_w.text = str(_best[0]); pp_best_b.text = str(_best[1])
 		pp_decent_w.text = str(_decent[0]); pp_decent_b.text = str(_decent[1])
 		pp_blunder_w.text = str(_blunder[0]); pp_blunder_b.text = str(_blunder[1])
 		play_again_btn.icon = load("res://assets/icons/handshake.png")
 		play_again_btn.text = tr("Play again")
 	else:
+		# Bot game: guide the player onward. "Continue" (→ pick another bot) replaces Home, which is
+		# dropped here. "Retry with <bot>" is offered only after a defeat (so a win/draw pushes them
+		# to the next opponent instead of grinding the same one).
 		review_box.visible = true
 		review_box_pp.visible = false
 		bots_btn.visible = true
+		home_btn.visible = false
 		review_best.text = tr("%d best") % (_best[0] + _best[1])
 		review_avg.text = tr("%d average") % (_decent[0] + _decent[1])
 		review_blunder.text = tr("%d blunder") % (_blunder[0] + _blunder[1])
-		var nm: String = bot_def.get("name", "Bot")
-		play_again_btn.icon = load(BotRoster.avatar_path(bot_def))
-		play_again_btn.text = tr("Play again") + " " + tr("with") + " " + nm
+		var player_defeated := quote_key != "win" and quote_key != "draw"
+		play_again_btn.visible = player_defeated
+		if player_defeated:
+			var nm: String = bot_def.get("name", "Bot")
+			play_again_btn.icon = load(BotRoster.avatar_path(bot_def))
+			play_again_btn.text = tr("Retry") + " " + tr("with") + " " + nm
 	var q := Quotes.for_outcome(quote_key)
 	result_quote.text = "“%s”\n%s" % [tr(q["text"]), q["author"]]
 	result_overlay.visible = true
@@ -1198,6 +1211,26 @@ func _setup_review_buttons() -> void:
 	review_next.add_theme_constant_override("icon_max_width", 40)
 	review_line.add_theme_constant_override("icon_max_width", 30)
 	review_line.add_theme_constant_override("h_separation", 10)
+	# Capture the bright "off" look and build a darker, pressed-in "on" look so the toggle reads its
+	# state (best-replies exploration active or not). Same margins/corners (duplicated), so it never
+	# resizes when toggling.
+	_line_style_off = review_line.get_theme_stylebox("normal")
+	var on_sb := (_line_style_off as StyleBoxFlat).duplicate() as StyleBoxFlat
+	on_sb.bg_color = on_sb.bg_color.darkened(0.34)
+	on_sb.set_border_width_all(0)
+	on_sb.border_width_top = 4               # darker top edge = an inner-shadow "pressed" hint
+	on_sb.border_color = Color(0, 0, 0, 0.35)
+	_line_style_on = on_sb
+
+
+## Swap the "Best replies" button between its bright (off) and pressed-in dark (on) styles.
+func _set_line_btn_active(on: bool) -> void:
+	if _line_style_on == null:
+		return
+	var sb: StyleBox = _line_style_on if on else _line_style_off
+	review_line.add_theme_stylebox_override("normal", sb)
+	review_line.add_theme_stylebox_override("hover", sb)
+	review_line.add_theme_stylebox_override("pressed", sb)
 
 
 ## Entry point from the result dialog's "Understand your moves" button (in-app, replacing the old
@@ -1552,6 +1585,7 @@ func _play_best_line() -> void:
 	_line_hl_active = -2
 	board.clear_options()  # once: the line frames never add option arrows
 	board.set_scrub_enabled(true)
+	_set_line_btn_active(true)  # show the toggle as "on" (pressed-in)
 	_render_line_frame()
 
 
@@ -1621,6 +1655,7 @@ func _exit_line() -> void:
 	_scrub_rate = 0.0
 	_line_rate = 0.0
 	board.set_scrub_enabled(false)
+	_set_line_btn_active(false)  # back to the bright "off" look
 
 
 # A finger on the board sets the playback rate: centre = paused, left = rewind, right = forward,
