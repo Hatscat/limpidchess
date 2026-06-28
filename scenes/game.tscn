@@ -789,6 +789,51 @@ theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 theme_override_styles/disabled = SubResource("sb_btn")
 
+[node name="LineRewind" type="Button" parent="ReviewOverlay/Nav" unique_id=770020017]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+
+[node name="LinePlayPause" type="Button" parent="ReviewOverlay/Nav" unique_id=770020018]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.5
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn_primary")
+theme_override_styles/pressed = SubResource("sb_btn_primary")
+theme_override_styles/hover = SubResource("sb_btn_primary")
+
+[node name="LineForward" type="Button" parent="ReviewOverlay/Nav" unique_id=770020019]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+
+[node name="LineStop" type="Button" parent="ReviewOverlay/Nav" unique_id=770020020]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+
 [node name="ReviewDone" type="Button" parent="ReviewOverlay" unique_id=770020011]
 unique_name_in_owner = true
 layout_mode = 1

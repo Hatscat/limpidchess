@@ -47,12 +47,11 @@ const REVIEW_STEP_FAST := 0.18
 ## explain the position regardless of device speed).
 const REVIEW_LINE_DEPTH := 14
 const REVIEW_MIN_LINE := 6
-## Best-replies playback is a scrubbable timeline: position runs 0 .. ply-count, integer part = the
-## move index, fraction = that move's slide progress. Rate is in moves/sec.
-const LINE_AUTO_RATE := 1.1        ## auto-play speed when "Best replies" is tapped
-const LINE_MIN_RATE := 0.4         ## slowest shuttle speed (finger just off centre)
-const LINE_MAX_RATE := 4.0         ## fastest shuttle speed (finger at the edge)
-const LINE_SCRUB_DEADZONE := 0.10  ## |x| below this = paused (centre)
+## Best-replies playback is a timeline: position runs 0 .. ply-count, integer part = the move index,
+## fraction = that move's slide progress. Rate is in moves/sec, signed (negative = rewind), driven by
+## the media-control buttons (play/pause/rewind/fast-forward).
+const LINE_PLAY_RATE := 1.1        ## normal play speed (forward)
+const LINE_MAX_RATE := 8.0         ## speed cap when rewinding / fast-forwarding (each tap ×2)
 const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in the best-replies line (base is 20)
 
 @onready var board: Control = %Board
@@ -96,6 +95,10 @@ const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in
 @onready var review_prev: Button = %ReviewPrev
 @onready var review_next: Button = %ReviewNext
 @onready var review_line: Button = %ReviewLine
+@onready var line_rewind: Button = %LineRewind
+@onready var line_play: Button = %LinePlayPause
+@onready var line_forward: Button = %LineForward
+@onready var line_stop: Button = %LineStop
 @onready var review_done: Button = %ReviewDone
 
 var rules: ChessRules
@@ -161,12 +164,10 @@ var _line_moves_arr: Array = []  ## the k line moves (packed ints)
 var _line_san := PackedStringArray()  ## SAN of each line move, for the header highlight
 var _line_total := 0
 var _line_pos := 0.0             ## playback position in [0, k]
-var _line_rate := 0.0            ## auto-play rate (moves/sec; 0 = paused)
+var _line_rate := 0.0            ## signed play rate (moves/sec; 0 = paused, <0 = rewind)
 var _line_hl_active := -2        ## last move index highlighted in the header (avoids rebuilding it every frame)
-var _line_style_off: StyleBox = null  ## "Best replies" button look when OFF (plain primary) ...
-var _line_style_on: StyleBox = null   ## ... vs ON (same fill + a bright outline), so the toggle shows its state
-var _scrubbing := false          ## a finger is currently on the board
-var _scrub_rate := 0.0           ## rate dictated by the finger while scrubbing
+var _scan_style_off: StyleBox = null  ## rewind/fast-forward button look when OFF (dark) ...
+var _scan_style_on: StyleBox = null   ## ... vs ON (reversed: light fill + dark icon)
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
 
 # Bot-reply prefetch: the reveal of the player's pick (slide + hold ~1.5s) is idle
@@ -205,8 +206,6 @@ func _ready() -> void:
 
 	board.set_rules(rules)
 	board.option_chosen.connect(_on_option_chosen)
-	board.scrub_rate.connect(_on_scrub_rate)        # best-replies finger scrub (review)
-	board.scrub_released.connect(_on_scrub_released)
 
 	# Captured-pieces strips: keep them right after the board so the result /
 	# confirm overlays (later siblings) still draw on top.
@@ -1208,24 +1207,58 @@ func _setup_review_buttons() -> void:
 	review_next.add_theme_constant_override("icon_max_width", 40)
 	review_line.add_theme_constant_override("icon_max_width", 30)
 	review_line.add_theme_constant_override("h_separation", 10)
-	# Capture the bright "off" look and build a darker, pressed-in "on" look so the toggle reads its
-	# state (best-replies exploration active or not). Same margins/corners (duplicated), so it never
-	# resizes when toggling.
-	_line_style_off = review_line.get_theme_stylebox("normal")
-	var on_sb := (_line_style_off as StyleBoxFlat).duplicate() as StyleBoxFlat
-	on_sb.set_border_width_all(3)            # a bright outline marks "on" (keeps the same fill, not darkened)
-	on_sb.border_color = Color(1, 1, 1, 0.9)
-	_line_style_on = on_sb
+	# The 4 media controls shown while the line plays (rewind · play/pause · fast-forward · stop):
+	# icon-only, centred, equal width.
+	line_rewind.icon = load("res://assets/icons/rewind.svg")
+	line_play.icon = load("res://assets/icons/play.svg")
+	line_forward.icon = load("res://assets/icons/forward.svg")
+	line_stop.icon = load("res://assets/icons/stop.svg")
+	for b: Button in [line_rewind, line_play, line_forward, line_stop]:
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.add_theme_constant_override("icon_max_width", 36)
+	# line_play.add_theme_constant_override("icon_max_width", 48)  # the primary control: bigger icon
+	line_rewind.pressed.connect(_on_line_rewind)
+	line_play.pressed.connect(_on_line_play_pause)
+	line_forward.pressed.connect(_on_line_forward)
+	line_stop.pressed.connect(_on_line_stop)
+	# Rewind / fast-forward are toggles: an "on" look that reverses the colours (light fill + dark
+	# icon) when that direction is active.
+	_scan_style_off = line_rewind.get_theme_stylebox("normal")
+	var on_sb := (_scan_style_off as StyleBoxFlat).duplicate() as StyleBoxFlat
+	on_sb.bg_color = Color(0.9, 0.91, 0.93)
+	_scan_style_on = on_sb
 
 
-## Swap the "Best replies" button between its plain (off) and outlined (on) styles.
-func _set_line_btn_active(on: bool) -> void:
-	if _line_style_on == null:
-		return
-	var sb: StyleBox = _line_style_on if on else _line_style_off
-	review_line.add_theme_stylebox_override("normal", sb)
-	review_line.add_theme_stylebox_override("hover", sb)
-	review_line.add_theme_stylebox_override("pressed", sb)
+## Light a scan button (rewind / fast-forward) when its direction is active, reversing its colours.
+func _set_scan_active(btn: Button, on: bool) -> void:
+	var sb: StyleBox = _scan_style_on if on else _scan_style_off
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	btn.add_theme_stylebox_override("pressed", sb)
+	var ic := Color(0.13, 0.14, 0.17) if on else Color(1, 1, 1)  # dark icon on light, white on dark
+	btn.add_theme_color_override("icon_normal_color", ic)
+	btn.add_theme_color_override("icon_pressed_color", ic)
+	btn.add_theme_color_override("icon_hover_color", ic)
+
+
+## Show the 4 line-playback controls in the nav (and hide Prev/Best-replies/Next), or vice versa.
+func _set_line_controls(on: bool) -> void:
+	review_prev.visible = not on
+	review_line.visible = not on
+	review_next.visible = not on
+	line_rewind.visible = on
+	line_play.visible = on
+	line_forward.visible = on
+	line_stop.visible = on
+
+
+## Refresh the media controls from the current rate: play/pause icon + the rewind/fast-forward
+## "on" highlight (rewind active when going backward, fast-forward when faster than normal play).
+func _update_line_buttons() -> void:
+	var playing := _line_active and _line_rate != 0.0
+	line_play.icon = load("res://assets/icons/pause.svg" if playing else "res://assets/icons/play.svg")
+	_set_scan_active(line_rewind, _line_active and _line_rate < 0.0)
+	_set_scan_active(line_forward, _line_active and _line_rate > LINE_PLAY_RATE)
 
 
 ## Entry point from the result dialog's "Understand your moves" button (in-app, replacing the old
@@ -1546,10 +1579,7 @@ func _quality_from_label(label: String) -> String:
 ## pause / fast-forward) at any time. It's a toggle: re-tapping leaves the line and restores the
 ## played + best-move arrows on the same move.
 func _play_best_line() -> void:
-	if _undo_stack.is_empty():
-		return
-	if _line_active:  # toggle OFF: leave exploration, back to the played + best arrows on this same move
-		_show_review_ply(_review_ply, false)
+	if _undo_stack.is_empty() or _line_active:  # button is hidden while active; exit is via Stop
 		return
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 	if rv.is_empty():
@@ -1574,26 +1604,24 @@ func _play_best_line() -> void:
 	_line_active = true
 	_review_playing = true      # keep existing "line busy" guards satisfied
 	_line_pos = 0.0
-	_line_rate = LINE_AUTO_RATE
-	_scrubbing = false
-	_scrub_rate = 0.0
+	_line_rate = LINE_PLAY_RATE  # auto-play forward on enter (so it's obviously animating)
 	_line_hl_active = -2
 	board.clear_options()  # once: the line frames never add option arrows
-	board.set_scrub_enabled(true)
-	_set_line_btn_active(true)  # show the toggle as "on" (pressed-in)
+	board.set_line_mode(true)
+	_set_line_controls(true)    # swap nav to the media controls
+	_update_line_buttons()
 	_render_line_frame()
 
 
 func _process(delta: float) -> void:
-	if not _line_active:
+	if not _line_active or _line_rate == 0.0:
 		return
-	var rate: float = _scrub_rate if _scrubbing else _line_rate
-	if rate == 0.0:
-		return
-	_line_pos = clampf(_line_pos + rate * delta, 0.0, float(_line_total))
+	_line_pos = clampf(_line_pos + _line_rate * delta, 0.0, float(_line_total))
 	_render_line_frame()
-	if not _scrubbing and rate > 0.0 and _line_pos >= float(_line_total):
-		_line_rate = 0.0  # auto-play reached the end; rest there
+	# Auto-pause at either end (so the play button reappears when it runs out).
+	if (_line_rate > 0.0 and _line_pos >= float(_line_total)) or (_line_rate < 0.0 and _line_pos <= 0.0):
+		_line_rate = 0.0
+		_update_line_buttons()
 
 
 ## Draw the timeline at _line_pos: base position after floor(pos) moves, the current move sliding at
@@ -1640,37 +1668,51 @@ func _dup_rules(r: ChessRules) -> ChessRules:
 	return c
 
 
-## Leave best-replies mode (stop scrubbing, re-enable normal stepping).
+## Leave best-replies mode (restore the Prev/Best-replies/Next nav + the live frame).
 func _exit_line() -> void:
 	if not _line_active:
 		return
 	_line_active = false
 	_review_playing = false
-	_scrubbing = false
-	_scrub_rate = 0.0
 	_line_rate = 0.0
-	board.set_scrub_enabled(false)
-	_set_line_btn_active(false)  # back to the bright "off" look
+	board.set_line_mode(false)
+	_set_line_controls(false)
 
 
-# A finger on the board sets the playback rate: centre = paused, left = rewind, right = forward,
-# faster the further from centre. Releasing pauses where it left off.
-func _on_scrub_rate(x: float) -> void:
+# --- Best-replies media controls (shown only while the line plays) ---
+
+## Stop: leave the line and restore the played + best-move arrows on the same move.
+func _on_line_stop() -> void:
+	_show_review_ply(_review_ply, false)  # calls _exit_line, then renders the arrows view
+
+
+## Play/Pause: toggle playback. Tapping play from the end replays from the start.
+func _on_line_play_pause() -> void:
 	if not _line_active:
 		return
-	_scrubbing = true
-	var ax := absf(x)
-	if ax < LINE_SCRUB_DEADZONE:
-		_scrub_rate = 0.0
+	if _line_rate != 0.0:
+		_line_rate = 0.0
 	else:
-		var s := (ax - LINE_SCRUB_DEADZONE) / (1.0 - LINE_SCRUB_DEADZONE)
-		_scrub_rate = signf(x) * (LINE_MIN_RATE + s * (LINE_MAX_RATE - LINE_MIN_RATE))
+		if _line_pos >= float(_line_total):
+			_line_pos = 0.0
+		_line_rate = LINE_PLAY_RATE
+	_update_line_buttons()
 
 
-func _on_scrub_released() -> void:
-	_scrubbing = false
-	_scrub_rate = 0.0
-	_line_rate = 0.0
+## Rewind: play backward; each tap doubles the rewind speed (capped).
+func _on_line_rewind() -> void:
+	if not _line_active:
+		return
+	_line_rate = maxf(minf(_line_rate, -LINE_PLAY_RATE) * 2.0, -LINE_MAX_RATE)
+	_update_line_buttons()
+
+
+## Fast-forward: play forward faster; each tap doubles the speed (capped, ×2 the spec).
+func _on_line_forward() -> void:
+	if not _line_active:
+		return
+	_line_rate = minf(maxf(_line_rate, LINE_PLAY_RATE) * 2.0, LINE_MAX_RATE)
+	_update_line_buttons()
 
 
 ## "Best replies: m0 m1 …" as centred BBCode, the active move bold + accent-coloured (active < 0 =

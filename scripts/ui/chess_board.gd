@@ -10,10 +10,6 @@ extends Control
 ## readable without relying on colour (colour-blind friendly).
 
 signal option_chosen(option: Dictionary)
-## Best-replies scrub (review): a touch/drag reports its horizontal position in [-1, 1] (0 = centre);
-## scrub_released fires on lift. game.gd maps these to the line-playback rate.
-signal scrub_rate(rate: float)
-signal scrub_released()
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
 const BADGE_FONT := preload("res://assets/fonts/OpenDyslexic-Bold.otf")
@@ -56,12 +52,10 @@ var _explode_t := 0.0
 var _cell := 0.0
 var _origin := Vector2.ZERO
 
-# Best-replies scrub: when on, a touch/drag reports its horizontal position to game.gd instead of
-# selecting an option (the board is non-interactive during review anyway).
-var _scrub_enabled := false
-var _scrub_dragging := false
-const SCRUB_FRAME_W := 6.0       ## accent frame drawn around the board while scrub mode is on
-var _scrub_frame: StyleBoxFlat = null
+# Best-replies "line mode": a cue (accent frame) that the board is replaying the engine's line.
+var _in_line_mode := false
+const LINE_FRAME_W := 6.0       ## accent frame drawn around the board while the line is showing
+var _line_frame: StyleBoxFlat = null
 
 # Cached coordinate labels (a1..h8 numbers/letters), shaped once into TextLines and
 # rebuilt only when the cell size or board orientation changes (see _ensure_coords).
@@ -135,61 +129,25 @@ func reveal() -> void:
 	queue_redraw()
 
 
-## Enable/disable the best-replies scrub (review). While on, board touches drive playback rate
-## (via the scrub_rate / scrub_released signals) rather than picking an option.
-func set_scrub_enabled(on: bool) -> void:
-	_scrub_enabled = on
-	_scrub_dragging = false
+## Turn the best-replies "line mode" frame on/off (review). Just a visual cue that the board is
+## replaying the engine's line, the playback is driven by game.gd's media-control buttons.
+func set_line_mode(on: bool) -> void:
+	_in_line_mode = on
 	queue_redraw()  # show/hide the accent frame around the board
 
 
-## A rounded accent border framing the board while best-replies scrub is active, so the player knows
-## the position is interactive (touch left/right to rewind / pause / fast-forward) even when paused.
-func _draw_scrub_frame() -> void:
-	if _scrub_frame == null:
-		_scrub_frame = StyleBoxFlat.new()
-		_scrub_frame.bg_color = Color(0, 0, 0, 0)  # frame only, no fill
-		_scrub_frame.set_border_width_all(int(SCRUB_FRAME_W))
-		_scrub_frame.border_color = UI.ACCENT
-		_scrub_frame.set_corner_radius_all(16)
+## A rounded accent border framing the board while the best-replies line is showing, so it's clear
+## the board is a replay of the engine's line rather than the live position.
+func _draw_line_frame() -> void:
+	if _line_frame == null:
+		_line_frame = StyleBoxFlat.new()
+		_line_frame.bg_color = Color(0, 0, 0, 0)  # frame only, no fill
+		_line_frame.set_border_width_all(int(LINE_FRAME_W))
+		_line_frame.border_color = UI.ACCENT
+		_line_frame.set_corner_radius_all(16)
 	var used := _cell * 8.0
-	var g := SCRUB_FRAME_W * 0.5  # straddle the board edge (half in, half out)
-	draw_style_box(_scrub_frame, Rect2(_origin - Vector2(g, g), Vector2(used + 2.0 * g, used + 2.0 * g)))
-
-
-func _handle_scrub(event: InputEvent) -> void:
-	var down := false
-	var up := false
-	var moved := false
-	var pos := Vector2.ZERO
-	if event is InputEventScreenTouch:
-		down = event.pressed
-		up = not event.pressed
-		pos = event.position
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		down = event.pressed
-		up = not event.pressed
-		pos = event.position
-	elif event is InputEventScreenDrag:
-		moved = true
-		pos = event.position
-	elif event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
-		moved = true
-		pos = event.position
-	if down:
-		_scrub_dragging = true
-		scrub_rate.emit(_scrub_x(pos))
-	elif up and _scrub_dragging:
-		_scrub_dragging = false
-		scrub_released.emit()
-	elif moved and _scrub_dragging:
-		scrub_rate.emit(_scrub_x(pos))
-
-
-func _scrub_x(pos: Vector2) -> float:
-	if size.x <= 0.0:
-		return 0.0
-	return clampf((pos.x - size.x * 0.5) / (size.x * 0.5), -1.0, 1.0)
+	var g := LINE_FRAME_W * 0.5  # straddle the board edge (half in, half out)
+	draw_style_box(_line_frame, Rect2(_origin - Vector2(g, g), Vector2(used + 2.0 * g, used + 2.0 * g)))
 
 
 ## Slide the piece of `move` from its origin to its target over `duration` secs.
@@ -228,7 +186,10 @@ func show_move_frame(move: int, progress: float) -> void:
 		_anim_tween.kill()
 	_setup_slide_targets(move)
 	_anim_active = true
-	_anim_progress = clampf(progress, 0.0, 1.0)
+	# Ease in/out (sine) so each move accelerates then decelerates, like the live-play slide, rather
+	# than the constant-speed slide the linear timeline would otherwise give.
+	var p := clampf(progress, 0.0, 1.0)
+	_anim_progress = 0.5 - 0.5 * cos(p * PI)
 	queue_redraw()
 
 
@@ -307,8 +268,8 @@ func _draw() -> void:
 	_draw_pieces()
 	_draw_coords()
 	_draw_options()
-	if _scrub_enabled:
-		_draw_scrub_frame()  # signal "best-replies exploration mode: touch the board to control it"
+	if _in_line_mode:
+		_draw_line_frame()  # cue that the board is replaying the best-replies line
 	if _explode_active:
 		_draw_explosion()
 
@@ -413,7 +374,7 @@ func _draw_pieces() -> void:
 			_draw_slider(_anim2_piece, _anim2_from, _anim2_to)
 
 
-## Draw a piece partway from `from_sq` to `to_sq` at the shared slide progress.
+## Draw a piece partway from `from_sq` to `to_sq` at the shared (eased) slide progress.
 func _draw_slider(piece: int, from_sq: int, to_sq: int) -> void:
 	var tex: Texture2D = _tex.get(piece)
 	if tex == null:
@@ -598,9 +559,6 @@ func _point_to_square(pos: Vector2) -> int:
 # --- Input ---
 
 func _gui_input(event: InputEvent) -> void:
-	if _scrub_enabled:
-		_handle_scrub(event)
-		return
 	if not _interactive or _options.is_empty():
 		return
 	var pressed := false
