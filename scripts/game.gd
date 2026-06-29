@@ -241,6 +241,8 @@ func _notification(what: int) -> void:
 	# decides explicitly (Cancel game / Give up / …). Only leave once the game is over.
 	if daily_limit.visible:
 		daily_limit.close()   # dismiss the daily-limit dialog, back to the result
+	elif _line_active:
+		_on_line_stop()       # exit best-replies first (peel one layer), staying in the review
 	elif review_overlay.visible:
 		_close_review()       # back from the review to the result dialog
 	elif confirm_overlay.visible:
@@ -1212,7 +1214,7 @@ func _setup_review_buttons() -> void:
 	line_rewind.icon = load("res://assets/icons/rewind.svg")
 	line_play.icon = load("res://assets/icons/play.svg")
 	line_forward.icon = load("res://assets/icons/forward.svg")
-	line_stop.icon = load("res://assets/icons/stop.svg")
+	line_stop.icon = load("res://assets/icons/close.png")  # ✕ = leave the line, back to the move
 	for b: Button in [line_rewind, line_play, line_forward, line_stop]:
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		b.add_theme_constant_override("icon_max_width", 36)
@@ -1250,6 +1252,9 @@ func _set_line_controls(on: bool) -> void:
 	line_play.visible = on
 	line_forward.visible = on
 	line_stop.visible = on
+	# Hide the top "close analysis" ✕ while in the line, so the only ✕ is the line's own exit: the
+	# player leaves best-replies first, then can close the review.
+	review_done.visible = not on
 
 
 ## Refresh the media controls from the current rate: play/pause icon + the rewind/fast-forward
