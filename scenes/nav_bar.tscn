@@ -1,8 +1,8 @@
 [gd_scene load_steps=8 format=3 uid="uid://limpidnavbar01"]
 
 [ext_resource type="Script" path="res://scripts/nav_bar.gd" id="1_navbar"]
-[ext_resource type="Texture2D" path="res://assets/icons/pawn_white.svg" id="2_play"]
-[ext_resource type="Texture2D" path="res://assets/icons/robot.png" id="3_bots"]
+[ext_resource type="Texture2D" path="res://assets/pieces/w_pawn.png" id="2_play"]
+[ext_resource type="Texture2D" path="res://assets/icons/swords.png" id="3_bots"]
 [ext_resource type="Texture2D" path="res://assets/icons/crown.png" id="4_premium"]
 [ext_resource type="Texture2D" path="res://assets/icons/info_round.svg" id="5_about"]
 
@@ -143,7 +143,7 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
-text = "Bots"
+text = "Rivals"
 horizontal_alignment = 1
 
 [node name="PremiumTab" type="Button" parent="Background/Tabs"]
