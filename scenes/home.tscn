@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://dr03fdrxbna2q" path="res://assets/icons/gear.svg" id="7_gear"]
 [ext_resource type="Texture2D" uid="uid://ovf8opbnaxrt" path="res://assets/icons/close.png" id="8_close"]
 [ext_resource type="PackedScene" uid="uid://limpiddailydlg1" path="res://scenes/daily_limit_dialog.tscn" id="9_daily"]
+[ext_resource type="Texture2D" uid="uid://crie3v2ergwva" path="res://assets/icons/target.png" id="10_target"]
 
 [sub_resource type="StyleBoxFlat" id="sb_pill"]
 content_margin_left = 14.0
@@ -271,6 +272,55 @@ theme_override_font_sizes/font_size = 24
 text = "Biscuit"
 vertical_alignment = 1
 
+[node name="PuzzleRush" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(480, 144)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_styles/normal = SubResource("sb_ghost_shadow")
+theme_override_styles/pressed = SubResource("sb_ghost_shadow")
+theme_override_styles/hover = SubResource("sb_ghost_shadow")
+
+[node name="Row" type="HBoxContainer" parent="Center/VBox/PuzzleRush"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Center/VBox/PuzzleRush/Row"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("10_target")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Text" type="VBoxContainer" parent="Center/VBox/PuzzleRush/Row"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Center/VBox/PuzzleRush/Row/Text"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Puzzle Rush"
+horizontal_alignment = 1
+
+[node name="PuzzleBest" type="Label" parent="Center/VBox/PuzzleRush/Row/Text"]
+unique_name_in_owner = true
+modulate = Color(0.98, 0.8, 0.34, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Best: 0"
+horizontal_alignment = 1
+
 [node name="PassPlay" type="Button" parent="Center/VBox" unique_id=769550615]
 custom_minimum_size = Vector2(480, 144)
 layout_mode = 2
@@ -427,6 +477,7 @@ visible = false
 [connection signal="gui_input" from="TopBar/GamesPill" to="." method="_on_games_input"]
 [connection signal="pressed" from="TopBar/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="Center/VBox/PlayCard" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="Center/VBox/PuzzleRush" to="." method="_on_puzzle_pressed"]
 [connection signal="pressed" from="Center/VBox/PassPlay" to="." method="_on_pass_play_pressed"]
 [connection signal="gui_input" from="SettingsOverlay/Dim" to="." method="_on_dim_input"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/SoundToggle" to="." method="_on_sound_pressed"]

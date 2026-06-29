@@ -1,0 +1,308 @@
+[gd_scene format=3 uid="uid://bsy1g1gcxu5su"]
+
+[ext_resource type="Script" path="res://scripts/puzzle_rush.gd" id="1_pz"]
+[ext_resource type="Script" path="res://scripts/ui/chess_board.gd" id="2_board"]
+[ext_resource type="Texture2D" path="res://assets/icons/close.png" id="3_close"]
+[ext_resource type="Texture2D" path="res://assets/icons/party.png" id="4_party"]
+[ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="5_daily"]
+
+[sub_resource type="StyleBoxEmpty" id="sb_empty"]
+
+[sub_resource type="StyleBoxFlat" id="sb_card"]
+content_margin_left = 30.0
+content_margin_top = 30.0
+content_margin_right = 30.0
+content_margin_bottom = 30.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="sb_btn"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.13, 0.14, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_primary"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.28, 0.58, 0.7, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="PuzzleRush" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_pz")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09, 0.1, 0.12, 1)
+
+[node name="ExitBtn" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 1
+anchors_preset = 0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 68.0
+offset_bottom = 68.0
+focus_mode = 0
+theme_override_constants/icon_max_width = 30
+theme_override_styles/normal = SubResource("sb_empty")
+theme_override_styles/pressed = SubResource("sb_empty")
+theme_override_styles/hover = SubResource("sb_empty")
+icon = ExtResource("3_close")
+
+[node name="Header" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = 132.0
+grow_horizontal = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="DiffCol" type="VBoxContainer" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Caption" type="Label" parent="Header/DiffCol"]
+modulate = Color(1, 1, 1, 0.45)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Difficulty"
+horizontal_alignment = 1
+
+[node name="DiffValue" type="Label" parent="Header/DiffCol"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StreakCol" type="VBoxContainer" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Caption" type="Label" parent="Header/StreakCol"]
+modulate = Color(1, 1, 1, 0.45)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Streak"
+horizontal_alignment = 1
+
+[node name="StreakValue" type="Label" parent="Header/StreakCol"]
+unique_name_in_owner = true
+modulate = Color(0.4, 0.74, 0.85, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "0"
+horizontal_alignment = 1
+
+[node name="BestCol" type="VBoxContainer" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Caption" type="Label" parent="Header/BestCol"]
+modulate = Color(1, 1, 1, 0.45)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Best"
+horizontal_alignment = 1
+
+[node name="BestRow" type="HBoxContainer" parent="Header/BestCol"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Celebrate" type="TextureRect" parent="Header/BestCol/BestRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_party")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BestValue" type="Label" parent="Header/BestCol/BestRow"]
+unique_name_in_owner = true
+modulate = Color(0.98, 0.8, 0.34, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "0"
+
+[node name="Status" type="Label" parent="."]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.65)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 150.0
+offset_right = -20.0
+offset_bottom = 192.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "Find the best move!"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Board" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 205.0
+offset_right = -8.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_board")
+
+[node name="ResultOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="ResultOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Card" type="PanelContainer" parent="ResultOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -220.0
+offset_right = 300.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_card")
+
+[node name="VBox" type="VBoxContainer" parent="ResultOverlay/Card"]
+layout_mode = 2
+theme_override_constants/separation = 22
+alignment = 1
+
+[node name="ResultCelebrate" type="TextureRect" parent="ResultOverlay/Card/VBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("4_party")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ResultTitle" type="Label" parent="ResultOverlay/Card/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Run over"
+horizontal_alignment = 1
+
+[node name="ResultStats" type="Label" parent="ResultOverlay/Card/VBox"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.75)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Streak: 0"
+horizontal_alignment = 1
+
+[node name="Buttons" type="VBoxContainer" parent="ResultOverlay/Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="RetryBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 40
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn_primary")
+theme_override_styles/pressed = SubResource("sb_btn_primary")
+theme_override_styles/hover = SubResource("sb_btn_primary")
+text = "Play again"
+alignment = 0
+
+[node name="ContinueBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 40
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+text = "Continue"
+alignment = 0
+
+[node name="DailyLimit" parent="." instance=ExtResource("5_daily")]
+unique_name_in_owner = true
+visible = false

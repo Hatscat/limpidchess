@@ -7,6 +7,7 @@ extends Control
 @onready var games_label: Label = %GamesLabel
 @onready var bot_avatar: TextureRect = %BotAvatar
 @onready var bot_name: Label = %BotName
+@onready var puzzle_best: Label = %PuzzleBest
 @onready var settings_overlay: Control = %SettingsOverlay
 @onready var lang_list: VBoxContainer = %LangList
 @onready var sound_toggle: Button = %SoundToggle
@@ -25,6 +26,7 @@ func _ready() -> void:
 	bot_name.text = bot.get("name", "a bot")
 
 	_refresh_games()
+	puzzle_best.text = tr("Best: %d") % GameManager.puzzle_highscore
 	# Calm moment after a positive game: ask for a Play rating (gated to once, 2nd+ game).
 	if GameManager.pending_review_check:
 		GameManager.pending_review_check = false
@@ -70,6 +72,15 @@ func _on_play_pressed() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST and daily_limit.visible:
 		daily_limit.close()
+
+
+## Puzzle Rush: free players get one run a day (premium unlimited). Out of runs routes to the same
+## daily-limit dialog (with the puzzle wording), which offers Premium.
+func _on_puzzle_pressed() -> void:
+	if GameManager.can_puzzle_today():
+		GameManager.start_puzzle_rush()
+	else:
+		daily_limit.open("puzzle")
 
 
 func _on_pass_play_pressed() -> void:

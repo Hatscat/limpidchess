@@ -136,6 +136,10 @@ OpenDyslexic: a free, dyslexia-friendly font.
 [b]Chess engine[/b]
 Stockfish (GPL-3.0).
 
+[b]Puzzles[/b]
+Lichess Open Database (CC0).
+[url=https://database.lichess.org]database.lichess.org[/url]
+
 [b]Built with[/b]
 Godot Engine (MIT). [url=https://godotengine.org]godotengine.org[/url]
 

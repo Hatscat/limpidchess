@@ -26,9 +26,10 @@ const LANGUAGES := [
 ]
 
 const FREE_GAMES_PER_DAY := 3
-## A free player can open the moves review once a day; premium is unlimited. (Daily puzzles will
-## get a similar cap once that mode exists.)
+## A free player can open the moves review once a day, and start one Puzzle Rush run a day; premium
+## is unlimited for both.
 const FREE_REVIEWS_PER_DAY := 1
+const FREE_PUZZLE_RUNS_PER_DAY := 1
 ## Sentinel "remaining games" for premium players (any value > 0 unlocks play).
 const UNLIMITED_GAMES := 999
 
@@ -41,6 +42,7 @@ var review_done := false           ## player engaged with rating once → stops 
 var last_bot_id := ""        ## id of the last bot played, so Home offers it again
 var games_today := 0
 var reviews_today := 0       ## moves reviews opened today (free players are capped, see can_review_today)
+var puzzles_today := 0       ## Puzzle Rush runs started today (free players are capped, see can_puzzle_today)
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
 
 # Lifetime career stats (for the About surface). NOT spendable currency.
@@ -51,6 +53,7 @@ var losses := 0
 var best_moves_found := 0     ## total best moves found across all games
 var blunders_made := 0        ## total blunders chosen across all games
 var bot_wins: Dictionary = {} ## bot id (String) -> times the human has beaten that bot (int)
+var puzzle_highscore := 0     ## longest Puzzle Rush streak ever reached (saved)
 
 # --- Current game context (set before entering the Game scene; not persisted) ---
 var current_bot: Dictionary = {}     ## a BotRoster entry, or {} for pass-and-play
@@ -113,6 +116,7 @@ func reset_save() -> void:
 	review_done = false
 	games_today = 0
 	reviews_today = 0
+	puzzles_today = 0
 	last_play_date = ""
 	games_played = 0
 	wins = 0
@@ -121,6 +125,7 @@ func reset_save() -> void:
 	best_moves_found = 0
 	blunders_made = 0
 	bot_wins.clear()
+	puzzle_highscore = 0
 	current_bot = {}
 	last_bot_id = ""
 	_apply_locale()
@@ -162,6 +167,17 @@ func start_pass_and_play() -> void:
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
 
 
+func go_to_puzzles() -> void:
+	get_tree().change_scene_to_file("res://scenes/puzzle_rush.tscn")
+
+
+## Begin a Puzzle Rush run. Consumes the day's free run for non-premium (callers gate on
+## can_puzzle_today() and show the daily-limit dialog otherwise).
+func start_puzzle_rush() -> void:
+	count_puzzle()
+	get_tree().change_scene_to_file("res://scenes/puzzle_rush.tscn")
+
+
 # --- Daily free-game gate ---
 
 ## Whether the player may start another bot game right now.
@@ -193,6 +209,23 @@ func count_review() -> void:
 	_save()
 
 
+## A free player can start FREE_PUZZLE_RUNS_PER_DAY Puzzle Rush runs a day; premium is unlimited.
+func can_puzzle_today() -> bool:
+	if is_premium:
+		return true
+	_roll_day()
+	return puzzles_today < FREE_PUZZLE_RUNS_PER_DAY
+
+
+## Count one Puzzle Rush run against the day's free allowance (no-op accounting for premium).
+func count_puzzle() -> void:
+	if is_premium:
+		return
+	_roll_day()
+	puzzles_today += 1
+	_save()
+
+
 func _count_game() -> void:
 	games_played += 1
 	if not is_premium:
@@ -216,6 +249,7 @@ func _roll_day() -> void:
 		last_play_date = today
 		games_today = 0
 		reviews_today = 0
+		puzzles_today = 0
 
 
 # --- Stats ---
@@ -244,6 +278,13 @@ func record_result(result: String) -> void:
 ## How many times the human has beaten this bot (for the Bots screen badge).
 func wins_against(bot_id: String) -> int:
 	return int(bot_wins.get(bot_id, 0))
+
+
+## Record a finished Puzzle Rush run; keep the longest streak ever as the highscore.
+func record_puzzle_score(streak: int) -> void:
+	if streak > puzzle_highscore:
+		puzzle_highscore = streak
+		_save()
 
 
 ## Undo the start-time count for a game abandoned before it really began (player
@@ -294,6 +335,7 @@ func _save() -> void:
 	cfg.set_value("player", "last_bot_id", last_bot_id)
 	cfg.set_value("daily", "games_today", games_today)
 	cfg.set_value("daily", "reviews_today", reviews_today)
+	cfg.set_value("daily", "puzzles_today", puzzles_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
 	cfg.set_value("stats", "wins", wins)
@@ -301,6 +343,7 @@ func _save() -> void:
 	cfg.set_value("stats", "losses", losses)
 	cfg.set_value("stats", "best_moves_found", best_moves_found)
 	cfg.set_value("stats", "blunders_made", blunders_made)
+	cfg.set_value("stats", "puzzle_highscore", puzzle_highscore)
 	for bot_id: String in bot_wins:  # ConfigFile has no nested values: one key per bot
 		cfg.set_value("bot_wins", bot_id, bot_wins[bot_id])
 	cfg.save(SAVE_PATH)
@@ -321,6 +364,7 @@ func _load() -> void:
 		current_bot = BotRoster.get_by_id(last_bot_id)  # Home offers the last opponent
 	games_today = int(cfg.get_value("daily", "games_today", 0))
 	reviews_today = int(cfg.get_value("daily", "reviews_today", 0))
+	puzzles_today = int(cfg.get_value("daily", "puzzles_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))
 	wins = int(cfg.get_value("stats", "wins", 0))
@@ -328,6 +372,7 @@ func _load() -> void:
 	losses = int(cfg.get_value("stats", "losses", 0))
 	best_moves_found = int(cfg.get_value("stats", "best_moves_found", 0))
 	blunders_made = int(cfg.get_value("stats", "blunders_made", 0))
+	puzzle_highscore = int(cfg.get_value("stats", "puzzle_highscore", 0))
 	bot_wins.clear()
 	if cfg.has_section("bot_wins"):
 		for bot_id: String in cfg.get_section_keys("bot_wins"):

@@ -98,6 +98,10 @@ text = "✓   Unlimited games every day"
 layout_mode = 2
 text = "✓   Unlimited game reviews"
 
+[node name="BPuzzles" type="Label" parent="Content/Benefits" unique_id=796322873]
+layout_mode = 2
+text = "✓   Unlimited puzzles"
+
 [node name="BBots" type="Label" parent="Content/Benefits" unique_id=1434491657]
 layout_mode = 2
 text = "✓   Unlock all bots"
@@ -109,10 +113,6 @@ text = "✓   Pass & Play on one device"
 [node name="B3" type="Label" parent="Content/Benefits" unique_id=920840148]
 layout_mode = 2
 text = "✓   No ads. Not now, not ever"
-
-[node name="B4" type="Label" parent="Content/Benefits" unique_id=1165011767]
-layout_mode = 2
-text = "✓   Support a solo indie dev"
 
 [node name="PriceLabel" type="Label" parent="Content" unique_id=16852018]
 unique_name_in_owner = true

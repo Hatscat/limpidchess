@@ -15,13 +15,16 @@ func _ready() -> void:
 	visible = false
 
 
-## Open the dialog, explaining which daily free limit was hit. reason: "games" (default) or
-## "review" (the moves-review cap). Texts are set in English; auto-translate localises them.
-## (A "puzzles" reason will slot in here once that mode exists.)
+## Open the dialog, explaining which daily free limit was hit. reason: "games" (default),
+## "review" (the moves-review cap), or "puzzle" (the Puzzle Rush cap). Texts are set in English;
+## auto-translate localises them.
 func open(reason := "games") -> void:
 	if reason == "review":
 		_title.text = "Out of free reviews today"
 		_message.text = "Free players get 1 game review a day. It comes back tomorrow!"
+	elif reason == "puzzle":
+		_title.text = "Out of free puzzles today"
+		_message.text = "Free players get 1 Puzzle Rush a day. It comes back tomorrow!"
 	else:
 		_title.text = "Out of free games today"
 		_message.text = "Your free games come back tomorrow and every day."
