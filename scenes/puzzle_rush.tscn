@@ -73,15 +73,18 @@ color = Color(0.09, 0.1, 0.12, 1)
 
 [node name="ExitBtn" type="Button" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(72, 72)
 layout_mode = 1
-anchors_preset = 0
-offset_left = 12.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -84.0
 offset_top = 12.0
-offset_right = 68.0
-offset_bottom = 68.0
+offset_right = -12.0
+offset_bottom = 84.0
+grow_horizontal = 0
 focus_mode = 0
-theme_override_constants/icon_max_width = 30
+theme_override_constants/icon_max_width = 48
 theme_override_styles/normal = SubResource("sb_empty")
 theme_override_styles/pressed = SubResource("sb_empty")
 theme_override_styles/hover = SubResource("sb_empty")
@@ -115,8 +118,8 @@ horizontal_alignment = 1
 [node name="DiffValue" type="Label" parent="Header/DiffCol"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
-text = "—"
+theme_override_font_sizes/font_size = 32
+text = "-"
 horizontal_alignment = 1
 
 [node name="StreakCol" type="VBoxContainer" parent="Header"]
@@ -136,7 +139,7 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 modulate = Color(0.4, 0.74, 0.85, 1)
 layout_mode = 2
-theme_override_font_sizes/font_size = 38
+theme_override_font_sizes/font_size = 32
 text = "0"
 horizontal_alignment = 1
 
@@ -162,7 +165,7 @@ alignment = 1
 [node name="Celebrate" type="TextureRect" parent="Header/BestCol/BestRow"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("4_party")
@@ -173,7 +176,7 @@ stretch_mode = 5
 unique_name_in_owner = true
 modulate = Color(0.98, 0.8, 0.34, 1)
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 32
 text = "0"
 
 [node name="Status" type="Label" parent="."]

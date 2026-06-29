@@ -1,10 +1,11 @@
 class_name Puzzles
 
 ## Bundled Lichess puzzle set (CC0), used by Puzzle Rush. The CSV is `FEN,Moves,Rating` per line,
-## sampled across rating bands 600-2600 (see assets/puzzles.txt). Lichess convention: Moves[0] is the
-## setup move to apply to the FEN, then the side to move must find Moves[1] (the solution's first
-## move). Loaded once, lazily, and indexed by 100-point rating band so we can pick a puzzle near a
-## target difficulty for the rising streak.
+## sampled across rating bands 400-2699, ~240 per band (see assets/puzzles.txt). Lichess convention:
+## Moves[0] is the setup move to apply to the FEN, then the side to move plays Moves[1], the opponent
+## replies Moves[2], the player plays Moves[3], and so on (the player solves the odd indices; the last
+## move is always the player's). Loaded once, lazily, and indexed by 100-point rating band so we can
+## pick a puzzle near a target difficulty for the rising streak.
 
 const PATH := "res://assets/puzzles.txt"  # plain text (not .csv: avoids Godot's CSV-translation import)
 
@@ -45,17 +46,22 @@ static func pick(target_rating: int, used: Dictionary) -> Dictionary:
 	_ensure_loaded()
 	if _all.is_empty():
 		return {}
-	var target := clampi(target_rating, 600, 2600)
+	var target := clampi(target_rating, 400, 2600)
 	var tb := int(target / 100)
-	for d in range(0, 25):  # widen the band search outward until we find an unused puzzle
+	for d in range(0, 25):  # widen the band search outward until a band has an unused puzzle
 		for band: int in ([tb] if d == 0 else [tb - d, tb + d]):
 			if not _by_band.has(band):
 				continue
+			# A RANDOM unused puzzle from this band, so a streak isn't the exact same list every run.
+			var pool: Array = []
 			for idx: int in _by_band[band]:
 				if not used.has(idx):
-					used[idx] = true
-					var p: Dictionary = _all[idx]
-					return {"index": idx, "fen": p["fen"], "moves": p["moves"], "rating": p["rating"]}
+					pool.append(idx)
+			if not pool.is_empty():
+				var idx: int = pool[randi() % pool.size()]
+				used[idx] = true
+				var p: Dictionary = _all[idx]
+				return {"index": idx, "fen": p["fen"], "moves": p["moves"], "rating": p["rating"]}
 	return {}  # exhausted (only on absurdly long streaks); caller can reset `used`
 
 

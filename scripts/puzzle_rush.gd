@@ -9,13 +9,15 @@ extends Control
 const ChessRules := preload("res://scripts/chess/chess_rules.gd")
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
 
-const START_RATING := 600    ## difficulty of the first puzzle
+const START_RATING := 400    ## difficulty of the first puzzle (beginner / kid friendly)
 const RATING_STEP := 70       ## +rating per solved puzzle
-const MAX_RATING := 2600      ## hardest band we sampled
-const SETUP_SLIDE := 0.28     ## opponent's setup move slides in
-const MOVE_SLIDE := 0.28      ## the player's chosen move slides
-const CORRECT_HOLD := 0.45    ## beat after a correct move before the next puzzle
+const MAX_RATING := 2600      ## the difficulty climb caps here (the data goes to 2699)
+const SETUP_SLIDE := 0.28     ## the opponent's setup move slides in
+const MOVE_SLIDE := 0.28      ## a played move slides
+const REPLY_HOLD := 0.35      ## beat between the player's move and the opponent's reply (multi-move)
+const CORRECT_HOLD := 0.5     ## beat after fully solving a puzzle before the next one
 const WRONG_HOLD := 1.35      ## let the red/green reveal sink in before the result
+const RANK_DEPTH := 1         ## 1-ply ranker for the 2 distractors: ~instant, and greedy = tempting traps
 
 @onready var board: Control = %Board
 @onready var diff_value: Label = %DiffValue
@@ -41,7 +43,9 @@ var _streak := 0
 var _best_at_start := 0       ## highscore to beat (captured at run start)
 var _max_solved := 0          ## hardest puzzle rating solved this run
 var _cur_rating := 0
-var _solution := -1           ## the correct move (packed int) for the current puzzle
+var _solution := -1           ## the correct move (packed int) the player must find right now
+var _moves: PackedStringArray = PackedStringArray()  ## the current puzzle's full move list (UCI)
+var _move_idx := 0            ## index into _moves of the player's move to solve now (odd indices)
 var _used: Dictionary = {}    ## puzzle indices used this run (no repeats)
 
 
@@ -67,9 +71,17 @@ func _ready() -> void:
 
 func _layout() -> void:
 	var safe: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
-	$Header.offset_top = safe + 8.0
+	var top: float = safe + 8.0
+	# Slide the whole top strip down by the safe area (like game.gd's _position_review_ui) so a tall
+	# notch never squeezes the header into the status line: the header keeps a fixed height and the
+	# status + board follow below it.
+	$Header.offset_top = top
+	$Header.offset_bottom = top + 116.0
+	status_label.offset_top = top + 124.0
+	status_label.offset_bottom = top + 166.0
+	board.offset_top = top + 174.0
 	exit_btn.offset_top = safe + 6.0
-	exit_btn.offset_bottom = safe + 62.0
+	exit_btn.offset_bottom = safe + 78.0
 
 
 func _begin() -> void:
@@ -94,52 +106,71 @@ func _next_puzzle() -> void:
 		_end_run()
 		return
 	_cur_rating = int(pz["rating"])
-	var moves: PackedStringArray = pz["moves"]
+	_moves = pz["moves"]
 	rules.set_fen(String(pz["fen"]))
 	board.clear_options()
 	board.clear_last_moves()
 	board.set_check_square(-1)
-	# Lichess: moves[0] is the setup move (opponent); the player then solves moves[1]. The player is
-	# the side to move AFTER the setup, so orient the board to them.
+	# Lichess: moves[0] is the opponent's setup move; the player then solves the odd indices after it
+	# (moves[1], moves[3], ...). The player is the side to move AFTER the setup, so orient to them.
 	board.flipped = rules.side_to_move == ChessRules.WHITE
 	board.set_rules(rules)
 	board.end_animation()
 	_update_header()
 	status_label.modulate = Color(1, 1, 1, 0.65)
 	status_label.text = tr("Find the best move!")
-	var setup := rules.move_from_uci(moves[0])
+	var setup := rules.move_from_uci(_moves[0])
 	if setup >= 0:
+		var mover := rules.side_to_move
 		await board.animate_move(setup, SETUP_SLIDE)
 		if g != _gen:
 			return
-		var mover := rules.side_to_move
 		rules.make_move(setup)
 		board.set_rules(rules)
 		board.set_last_move(setup, mover)
 		_set_check()
 		board.end_animation()
-	_solution = rules.move_from_uci(moves[1])
+	_move_idx = 1
+	await _present_move(g)
+
+
+## Show the 3 options for the player's current move (_moves[_move_idx]). The two frame yields let the
+## clean post-move board (a piece the previous move just captured is gone) actually DRAW and present
+## before the synchronous ranker briefly blocks the main thread: the first frame submits the clean
+## board, the second resumes after it has been presented. The ranker is 1-ply so the block is tiny.
+func _present_move(g: int) -> void:
+	_solution = rules.move_from_uci(_moves[_move_idx])
 	if _solution < 0:
-		_next_puzzle()  # malformed entry, skip
+		_next_puzzle()  # malformed entry, skip to a fresh puzzle
+		return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if g != _gen:
 		return
 	board.set_options(_build_options(), true)
 	_busy = false
 
 
-## The 3 options: the solution (correct) + the ranker's two best non-solution moves (tempting wrong
-## picks). Falls back to any legal moves if the ranker is short.
+## The 3 options: the solution + the ranker's two best non-solution moves, all with DISTINCT target
+## squares (the board hit-tests a tap by its destination, so two options must never share a target).
+## The shallow depth keeps it fast and tends to pick greedy, beginner-tempting wrong moves.
 func _build_options() -> Array:
-	var ranked: Array = bot.rank_moves(rules, ChessBotScript.ANALYSIS_DEPTH)
+	var ranked: Array = bot.rank_moves(rules, RANK_DEPTH)
+	var used_targets := {ChessRules.move_to(_solution): true}
 	var wrong: Array = []
 	for e: Dictionary in ranked:
 		var m := int(e["move"])
-		if m != _solution and not wrong.has(m):
+		var t := ChessRules.move_to(m)
+		if m != _solution and not used_targets.has(t):
+			used_targets[t] = true
 			wrong.append(m)
 			if wrong.size() == 2:
 				break
-	if wrong.size() < 2:
+	if wrong.size() < 2:  # quiet/forced position: backfill from any legal move with a free target
 		for m: int in rules.generate_legal_moves():
-			if m != _solution and not wrong.has(m):
+			var t := ChessRules.move_to(m)
+			if m != _solution and not used_targets.has(t):
+				used_targets[t] = true
 				wrong.append(m)
 				if wrong.size() == 2:
 					break
@@ -157,27 +188,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	var g := _gen
 	var move := int(opt["move"])
 	board.reveal()  # solution turns green, distractors red
-	if move == _solution:
-		Audio.play("best")
-		status_label.modulate = _quality_color("best")
-		status_label.text = tr("Correct!")
-		_streak += 1
-		_max_solved = maxi(_max_solved, _cur_rating)
-		_update_header()
-		await board.animate_move(_solution, MOVE_SLIDE)
-		if g != _gen:
-			return
-		var mover := rules.side_to_move
-		rules.make_move(_solution)
-		board.set_rules(rules)
-		board.set_last_move(_solution, mover)
-		_set_check()
-		board.end_animation()
-		await get_tree().create_timer(CORRECT_HOLD).timeout
-		if g != _gen:
-			return
-		_next_puzzle()
-	else:
+	if move != _solution:
 		Audio.play("blunder")
 		status_label.modulate = _quality_color("blunder")
 		status_label.text = tr("Wrong move!")
@@ -185,6 +196,58 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		if g != _gen:
 			return
 		_end_run()
+		return
+	# Correct: play the move, then either finish the puzzle or let the opponent reply and continue.
+	Audio.play("best")
+	status_label.modulate = _quality_color("best")
+	status_label.text = tr("Correct!")
+	var mover := rules.side_to_move
+	await board.animate_move(_solution, MOVE_SLIDE)
+	if g != _gen:
+		return
+	rules.make_move(_solution)
+	board.set_rules(rules)
+	board.set_last_move(_solution, mover)
+	_set_check()
+	board.end_animation()
+	var nxt := _move_idx + 1
+	if nxt >= _moves.size():
+		_puzzle_solved(g)  # that was the puzzle's final move
+		return
+	# The opponent's forced reply (_moves[nxt]).
+	await get_tree().create_timer(REPLY_HOLD).timeout
+	if g != _gen:
+		return
+	var reply := rules.move_from_uci(_moves[nxt])
+	if reply >= 0:
+		board.clear_options()  # drop the revealed arrows before the reply slides in
+		var rmover := rules.side_to_move
+		await board.animate_move(reply, MOVE_SLIDE)
+		if g != _gen:
+			return
+		rules.make_move(reply)
+		board.set_rules(rules)
+		board.set_last_move(reply, rmover)
+		_set_check()
+		board.end_animation()
+	_move_idx = nxt + 1
+	if _move_idx >= _moves.size():
+		_puzzle_solved(g)  # defensive: Lichess lines normally end on the player's move
+		return
+	status_label.modulate = Color(1, 1, 1, 0.65)
+	status_label.text = tr("Find the best move!")
+	await _present_move(g)
+
+
+## A full puzzle is solved: bump the streak, advance the difficulty, beat, then the next puzzle.
+func _puzzle_solved(g: int) -> void:
+	_streak += 1
+	_max_solved = maxi(_max_solved, _cur_rating)
+	_update_header()
+	await get_tree().create_timer(CORRECT_HOLD).timeout
+	if g != _gen:
+		return
+	_next_puzzle()
 
 
 func _set_check() -> void:
@@ -202,7 +265,7 @@ func _quality_color(quality: String) -> Color:
 
 
 func _update_header() -> void:
-	diff_value.text = str(_cur_rating) if _cur_rating > 0 else "—"
+	diff_value.text = str(_cur_rating) if _cur_rating > 0 else "-"
 	streak_value.text = str(_streak)
 	best_value.text = str(_best_at_start)
 	# Celebrate live once they pass a real previous record (not on a first-ever run).
@@ -237,8 +300,11 @@ func _on_retry() -> void:
 
 
 ## Leave to Home, banking the streak so far (record_puzzle_score only lifts the highscore if higher,
-## so calling it after _end_run already did is harmless).
+## so calling it after _end_run already did is harmless). Invalidate any in-flight puzzle coroutine
+## first (set _over + bump _gen, like _end_run) so a mid-line exit can't resume on the freed scene.
 func _quit_to_home() -> void:
+	_over = true
+	_gen += 1
 	GameManager.record_puzzle_score(_streak)
 	GameManager.go_to_home()
 
