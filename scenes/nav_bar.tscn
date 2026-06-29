@@ -143,7 +143,7 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
-text = "Rivals"
+text = "Duels"
 horizontal_alignment = 1
 
 [node name="PremiumTab" type="Button" parent="Background/Tabs"]

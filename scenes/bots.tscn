@@ -36,7 +36,7 @@ theme_override_constants/separation = 2
 [node name="Title" type="Label" parent="Header"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
-text = "Rivals"
+text = "Duels"
 
 [node name="Subtitle" type="Label" parent="Header"]
 modulate = Color(1, 1, 1, 0.6)
