@@ -1308,6 +1308,9 @@ func _enter_puzzle_review() -> void:
 	_puzzle_review_mode = true
 	GameManager.pass_and_play = false  # the puzzle review owns the "You"/"Opponent" framing, not P&P
 	_game_over = true
+	_use_sf = stockfish.start()  # _begin is skipped here, so start the engine ourselves: the review
+	# needs Stockfish for a fast, accurate analysis with a full best-line PV (the fallback ranker is
+	# slow and returns no continuation, so the "best replies" line would be a single move).
 	_review_startpos = String(payload["fen"])
 	player_color = ChessRules.WHITE if bool(payload["player_white"]) else ChessRules.BLACK
 	board.flipped = player_color == ChessRules.BLACK  # show the puzzle from the side the player solved
