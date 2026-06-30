@@ -1,7 +1,9 @@
 class_name Puzzles
 
-## Bundled Lichess puzzle set (CC0), used by Puzzle Rush. The CSV is `FEN,Moves,Rating` per line,
-## sampled across rating bands 400-2699, ~240 per band (see assets/puzzles.txt). Lichess convention:
+## Bundled Lichess puzzle set (CC0), used by the Puzzles mode. The CSV is `FEN,Moves,Rating` per line
+## (rating bands 400-2699), SKEWED toward easy: the player restarts from easy every run, so the lowest
+## band has the most puzzles (~1200) tapering to ~130 in the hardest, for variety where it's needed.
+## Regenerate the set with scripts/dev/sample_puzzles.py (see its header). Lichess convention:
 ## Moves[0] is the setup move to apply to the FEN, then the side to move plays Moves[1], the opponent
 ## replies Moves[2], the player plays Moves[3], and so on (the player solves the odd indices; the last
 ## move is always the player's). Loaded once, lazily, and indexed by 100-point rating band so we can

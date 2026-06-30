@@ -91,6 +91,7 @@ Gives lots of gifts.,Gives lots of gifts.,Offre plein de cadeaux.,Regala muchas 
 Master,Master,Maître,Maestro
 Menu,Menu,Menu,Menú
 Leave,Leave,Quitter,Salir
+Quit,Quit,Quitter,Salir
 Keep playing,Keep playing,Continuer à jouer,Seguir jugando
 Leave Puzzles?,Leave Puzzles?,Quitter les puzzles ?,¿Salir de los puzzles?
 This run won't count today.,This run won't count today.,Cette série ne comptera pas aujourd'hui.,Esta racha no contará hoy.
@@ -291,6 +292,7 @@ Run over,Run over,Série terminée,Racha terminada
 A new personal best!,A new personal best!,Ton meilleur score !,¡Tu mejor marca!
 Even the best miss one!,Even the best miss one!,Personne n'est parfait !,¡Nadie es perfecto!
 You solved %d in a row!,You solved %d in a row!,%d d'affilée !,¡%d seguidas!
+Let's do better!,Let's do better!,On fait mieux !,¡A mejorar!
 Hardest solved,Hardest solved,Plus dur résolu,Más difícil resuelto
 Best: %d,Best: %d,Record : %d,Récord: %d
 Best puzzle streak: %d,Best puzzle streak: %d,Meilleure série de puzzles : %d,Mejor racha de puzzles: %d
