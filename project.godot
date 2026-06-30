@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Limpid Chess"
 config/description="A smooth chess game for beginners. Three guided move options each turn, find the best one."
-config/version="1.4.0"
+config/version="1.4.1"
 run/main_scene="res://scenes/home.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
