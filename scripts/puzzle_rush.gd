@@ -20,6 +20,7 @@ const CORRECT_HOLD := 0.5     ## beat after fully solving a puzzle before the ne
 const WRONG_HOLD := 1.35      ## let the red/green reveal sink in before the result
 const RANK_DEPTH := 1         ## 1-ply ranker for the 2 distractors: ~instant, and greedy = tempting traps
 const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter plays (matches game.gd)
+const MIN_STREAK_TO_COUNT := 3 ## leaving before solving this many puzzles refunds the daily run (a "cancel")
 
 @onready var board: Control = %Board
 @onready var diff_pips: DifficultyPips = %DiffPips
@@ -29,7 +30,10 @@ const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter p
 @onready var status_label: Label = %Status
 @onready var result_overlay: Control = %ResultOverlay
 @onready var result_title: Label = %ResultTitle
-@onready var result_stats: Label = %ResultStats
+@onready var streak_stat: Label = %StreakStat
+@onready var best_stat: Label = %BestStat
+@onready var hardest_stat: Label = %HardestStat
+@onready var hardest_row: Control = %HardestRow
 @onready var result_celebrate: TextureRect = %ResultCelebrate
 @onready var retry_btn: Button = %RetryBtn
 @onready var continue_btn: Button = %ContinueBtn
@@ -37,6 +41,10 @@ const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter p
 @onready var menu_overlay: Control = %MenuOverlay
 @onready var leave_btn: Button = %LeaveBtn
 @onready var keep_btn: Button = %KeepPlayingBtn
+@onready var confirm_overlay: Control = %ConfirmOverlay
+@onready var confirm_message: Label = %ConfirmMessage
+@onready var confirm_leave_btn: Button = %ConfirmLeaveBtn
+@onready var cancel_btn: Button = %CancelBtn
 @onready var daily_limit: DailyLimitDialog = %DailyLimit
 
 var rules: ChessRules
@@ -63,16 +71,20 @@ func _ready() -> void:
 	celebrate.visible = false
 	result_celebrate.visible = false
 	retry_btn.icon = load("res://assets/icons/restart.png")
-	continue_btn.icon = load("res://assets/icons/home.png")
+	continue_btn.icon = load("res://assets/icons/check.png")  # "Continue" uses the check, like the bot-game result
 	menu_btn.icon = load("res://assets/icons/menu.png")
-	leave_btn.icon = load("res://assets/icons/home.png")
+	leave_btn.icon = load("res://assets/icons/exit.png")  # the white door = leave
 	keep_btn.icon = load("res://assets/icons/close.png")
+	confirm_leave_btn.icon = load("res://assets/icons/exit.png")
 	menu_overlay.visible = false
+	confirm_overlay.visible = false
 	retry_btn.pressed.connect(_on_retry)
 	continue_btn.pressed.connect(_quit_to_home)
 	menu_btn.pressed.connect(_open_menu)
-	leave_btn.pressed.connect(_quit_to_home)
+	leave_btn.pressed.connect(_confirm_leave)
 	keep_btn.pressed.connect(_close_menu)
+	confirm_leave_btn.pressed.connect(_on_leave)
+	cancel_btn.pressed.connect(_close_confirm)
 	_best_at_start = GameManager.puzzle_highscore
 	_layout()
 	get_viewport().size_changed.connect(_layout)
@@ -307,7 +319,8 @@ func _end_run() -> void:
 	_over = true
 	_busy = true
 	_gen += 1
-	menu_overlay.visible = false  # the result dialog owns the screen; never leave the menu stacked under it
+	menu_overlay.visible = false  # the result dialog owns the screen; never leave a dialog stacked under it
+	confirm_overlay.visible = false
 	board.clear_options()
 	GameManager.record_puzzle_score(_streak)
 	var beaten := _streak > _best_at_start
@@ -315,12 +328,10 @@ func _end_run() -> void:
 		Audio.play("win")
 	result_title.text = tr("New best!") if beaten else tr("Run over")
 	result_celebrate.visible = beaten
-	var lines: PackedStringArray = []
-	lines.append("%s: %d" % [tr("Streak"), _streak])
-	lines.append("%s: %d" % [tr("Best"), GameManager.puzzle_highscore])
-	if _max_solved > 0:
-		lines.append("%s: %d" % [tr("Hardest solved"), _max_solved])
-	result_stats.text = "\n".join(lines)
+	streak_stat.text = "%s: %d" % [tr("Streak"), _streak]
+	best_stat.text = "%s: %d" % [tr("Best"), GameManager.puzzle_highscore]
+	hardest_stat.text = "%s: %d" % [tr("Hardest solved"), _max_solved]
+	hardest_row.visible = _max_solved > 0  # nothing solved this run: hide the hardest line
 	result_overlay.visible = true
 
 
@@ -331,8 +342,9 @@ func _on_retry() -> void:
 		daily_limit.open("puzzle")
 
 
-## The menu (top-left, like the bot game / Pass & Play): a Leave / Keep-playing choice. Leaving banks
-## the streak so far. The run keeps going underneath the dim, so the player loses nothing by peeking.
+## The menu (top-left, like the bot game / Pass & Play) doubles as the leave confirmation: Leave /
+## Keep-playing, with a message making the consequence clear. The run keeps going underneath the dim,
+## so the player loses nothing by peeking. Leaving banks the streak either way.
 func _open_menu() -> void:
 	if _over:
 		return  # the result overlay is already up
@@ -341,6 +353,33 @@ func _open_menu() -> void:
 
 func _close_menu() -> void:
 	menu_overlay.visible = false
+
+
+## Step 2 of leaving (the menu's Leave opens this): a confirmation, matching the chess game's
+## Cancel/Give-up confirm. The message states the consequence: leaving before the 4th puzzle won't
+## burn the daily run.
+func _confirm_leave() -> void:
+	menu_overlay.visible = false
+	if _streak < MIN_STREAK_TO_COUNT and not GameManager.is_premium:
+		confirm_message.text = tr("This run won't count today.")
+	else:
+		confirm_message.text = tr("Your best streak is saved.")
+	confirm_overlay.visible = true
+
+
+func _close_confirm() -> void:
+	confirm_overlay.visible = false
+
+
+## Confirmed leave. Before the 4th puzzle a free player's daily run is refunded (a barely-played
+## "cancel", like the chess game's Cancel game); from the 4th on it counts. The streak is saved.
+func _on_leave() -> void:
+	if _over:
+		return  # re-entry guard: a double-tap must not refund twice (mirrors game.gd _do_cancel_game)
+	_over = true
+	if _streak < MIN_STREAK_TO_COUNT:
+		GameManager.cancel_puzzle()  # no-op for premium
+	_quit_to_home()
 
 
 ## Leave to Home, banking the streak so far (record_puzzle_score only lifts the highscore if higher,
@@ -358,6 +397,8 @@ func _notification(what: int) -> void:
 		return
 	if daily_limit.visible:
 		daily_limit.close()
+	elif confirm_overlay.visible:
+		_close_confirm()
 	elif menu_overlay.visible:
 		_close_menu()
 	elif result_overlay.visible:

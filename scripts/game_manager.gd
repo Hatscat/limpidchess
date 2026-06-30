@@ -226,6 +226,14 @@ func count_puzzle() -> void:
 	_save()
 
 
+## Undo the start-time count for a run the player left before the 4th puzzle (barely played), so it
+## doesn't burn the daily free run, mirroring cancel_game(). The streak is still saved on leave.
+func cancel_puzzle() -> void:
+	if not is_premium:
+		puzzles_today = max(0, puzzles_today - 1)
+	_save()
+
+
 func _count_game() -> void:
 	games_played += 1
 	if not is_premium:
