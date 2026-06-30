@@ -524,7 +524,7 @@ theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
-text = "Let's do better!"
+text = "Do better!"
 alignment = 0
 
 [node name="ContinueBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=1117111832]
@@ -538,7 +538,7 @@ theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
-text = "Quit"
+text = "Leave"
 alignment = 0
 
 [node name="DailyLimit" parent="." unique_id=1510489499 instance=ExtResource("5_daily")]
