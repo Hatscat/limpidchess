@@ -133,6 +133,11 @@ Single source of truth:
 
 Rules:
 - **Don't invent colours or font sizes** — pick from `UI`.
+- **Every button carries an icon** (left of its label, from `assets/icons`) so actions
+  read at a glance. Reuse the shared set: `check.png` for a confirm / continue / "yes"
+  action, `close.png` for cancel / dismiss / "back". The two confirmation dialogs (bot
+  game + Puzzle Rush) must stay identical: a `[Cancel ✕] [Confirm ✓]` pair, same text
+  and icons — never a mode-specific verb like "Leave" on the confirm button.
 - Body labels need no size override (theme default is 20). Override only for
   hierarchy.
 - Scenes hosting the nav bar (home, bots, premium, about) leave **136px**

@@ -32,8 +32,6 @@ const MIN_STREAK_TO_COUNT := 3 ## leaving before solving this many puzzles refun
 @onready var result_title: Label = %ResultTitle
 @onready var streak_stat: Label = %StreakStat
 @onready var best_stat: Label = %BestStat
-@onready var hardest_stat: Label = %HardestStat
-@onready var hardest_row: Control = %HardestRow
 @onready var result_celebrate: TextureRect = %ResultCelebrate
 @onready var retry_btn: Button = %RetryBtn
 @onready var continue_btn: Button = %ContinueBtn
@@ -54,7 +52,6 @@ var _busy := false
 var _over := false
 var _streak := 0
 var _best_at_start := 0       ## highscore to beat (captured at run start)
-var _max_solved := 0          ## hardest puzzle rating solved this run
 var _cur_rating := 0
 var _solution := -1           ## the correct move (packed int) the player must find right now
 var _moves: PackedStringArray = PackedStringArray()  ## the current puzzle's full move list (UCI)
@@ -75,7 +72,8 @@ func _ready() -> void:
 	menu_btn.icon = load("res://assets/icons/menu.png")
 	leave_btn.icon = load("res://assets/icons/exit.png")  # the white door = leave
 	keep_btn.icon = load("res://assets/icons/close.png")
-	confirm_leave_btn.icon = load("res://assets/icons/exit.png")
+	cancel_btn.icon = load("res://assets/icons/close.png")  # confirm dialog: [Cancel x] [Confirm v], like the bot game
+	confirm_leave_btn.icon = load("res://assets/icons/check.png")
 	menu_overlay.visible = false
 	confirm_overlay.visible = false
 	retry_btn.pressed.connect(_on_retry)
@@ -111,7 +109,6 @@ func _layout() -> void:
 
 func _begin() -> void:
 	_streak = 0
-	_max_solved = 0
 	_over = false
 	_used.clear()
 	_update_header()
@@ -147,6 +144,7 @@ func _next_puzzle() -> void:
 	var setup := rules.move_from_uci(_moves[0])
 	if setup >= 0:
 		var mover := rules.side_to_move
+		_play_move_sound(setup)  # the opponent's setup move should sound like a real move
 		await board.animate_move(setup, SETUP_SLIDE)
 		if g != _gen:
 			return
@@ -253,6 +251,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	if reply >= 0:
 		board.clear_options()  # drop the revealed arrows before the reply slides in
 		var rmover := rules.side_to_move
+		_play_move_sound(reply)
 		await board.animate_move(reply, MOVE_SLIDE)
 		if g != _gen:
 			return
@@ -273,7 +272,6 @@ func _on_option_chosen(opt: Dictionary) -> void:
 ## A full puzzle is solved: bump the streak, advance the difficulty, beat, then the next puzzle.
 func _puzzle_solved(g: int) -> void:
 	_streak += 1
-	_max_solved = maxi(_max_solved, _cur_rating)
 	_update_header()
 	await get_tree().create_timer(CORRECT_HOLD).timeout
 	if g != _gen:
@@ -286,6 +284,13 @@ func _set_check() -> void:
 		board.set_check_square(rules.king_square(rules.side_to_move))
 	else:
 		board.set_check_square(-1)
+
+
+## Move / capture sound for an opponent move (the setup move + forced replies), matching game.gd's
+## cue. Call BEFORE make_move so the destination square still holds the piece being captured.
+func _play_move_sound(move: int) -> void:
+	var captured := rules.board[ChessRules.move_to(move)] != 0 or ChessRules.move_flag(move) == ChessRules.F_EP
+	Audio.play("capture" if captured else "move")
 
 
 func _quality_color(quality: String) -> Color:
@@ -330,8 +335,6 @@ func _end_run() -> void:
 	result_celebrate.visible = beaten
 	streak_stat.text = "%s: %d" % [tr("Streak"), _streak]
 	best_stat.text = "%s: %d" % [tr("Best"), GameManager.puzzle_highscore]
-	hardest_stat.text = "%s: %d" % [tr("Hardest solved"), _max_solved]
-	hardest_row.visible = _max_solved > 0  # nothing solved this run: hide the hardest line
 	result_overlay.visible = true
 
 

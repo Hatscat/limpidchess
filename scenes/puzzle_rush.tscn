@@ -7,7 +7,6 @@
 [ext_resource type="Script" uid="uid://b3rr0vao8f1by" path="res://scripts/ui/difficulty_pips.gd" id="6_pips"]
 [ext_resource type="Texture2D" uid="uid://bi3n22ngccymk" path="res://assets/icons/trophy.png" id="7_trophy"]
 [ext_resource type="Texture2D" uid="uid://d21lip45s1xf4" path="res://assets/icons/sparkles.png" id="8_sparkles"]
-[ext_resource type="Texture2D" uid="uid://crie3v2ergwva" path="res://assets/icons/target.png" id="9_target"]
 
 [sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
@@ -297,7 +296,7 @@ theme_override_styles/hover = SubResource("sb_btn_primary")
 text = "Keep playing"
 alignment = 0
 
-[node name="ConfirmOverlay" type="Control" parent="."]
+[node name="ConfirmOverlay" type="Control" parent="." unique_id=1969671519]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -307,7 +306,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="ConfirmOverlay"]
+[node name="Dim" type="ColorRect" parent="ConfirmOverlay" unique_id=134400664]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -316,7 +315,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Card" type="PanelContainer" parent="ConfirmOverlay"]
+[node name="Card" type="PanelContainer" parent="ConfirmOverlay" unique_id=571613396]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -331,18 +330,18 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="VBox" type="VBoxContainer" parent="ConfirmOverlay/Card"]
+[node name="VBox" type="VBoxContainer" parent="ConfirmOverlay/Card" unique_id=882427641]
 layout_mode = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="ConfirmTitle" type="Label" parent="ConfirmOverlay/Card/VBox"]
+[node name="ConfirmTitle" type="Label" parent="ConfirmOverlay/Card/VBox" unique_id=325550052]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Leave Puzzle Rush?"
 horizontal_alignment = 1
 
-[node name="ConfirmMessage" type="Label" parent="ConfirmOverlay/Card/VBox"]
+[node name="ConfirmMessage" type="Label" parent="ConfirmOverlay/Card/VBox" unique_id=80724855]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
@@ -351,24 +350,27 @@ text = "Your best streak is saved."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="ConfirmOverlay/Card/VBox"]
+[node name="Buttons" type="HBoxContainer" parent="ConfirmOverlay/Card/VBox" unique_id=1310538185]
 layout_mode = 2
 theme_override_constants/separation = 14
 alignment = 1
 
-[node name="CancelBtn" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons"]
+[node name="CancelBtn" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons" unique_id=1111980459]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
+theme_override_constants/h_separation = 12
+theme_override_constants/icon_max_width = 36
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 text = "Cancel"
+alignment = 0
 
-[node name="ConfirmLeaveBtn" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons"]
+[node name="ConfirmLeaveBtn" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons" unique_id=506259797]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
@@ -380,8 +382,8 @@ theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")
 theme_override_styles/hover = SubResource("sb_btn_primary")
-text = "Leave"
-alignment = 1
+text = "Confirm"
+alignment = 0
 
 [node name="ResultOverlay" type="Control" parent="." unique_id=76719541]
 unique_name_in_owner = true
@@ -480,25 +482,6 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Best: 0"
-
-[node name="HardestRow" type="HBoxContainer" parent="ResultOverlay/Card/VBox/StatsBox" unique_id=1059577370]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="Icon" type="TextureRect" parent="ResultOverlay/Card/VBox/StatsBox/HardestRow" unique_id=201164135]
-custom_minimum_size = Vector2(30, 30)
-layout_mode = 2
-size_flags_vertical = 4
-texture = ExtResource("9_target")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="HardestStat" type="Label" parent="ResultOverlay/Card/VBox/StatsBox/HardestRow" unique_id=971259457]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Hardest solved: 0"
 
 [node name="Buttons" type="VBoxContainer" parent="ResultOverlay/Card/VBox" unique_id=448145688]
 layout_mode = 2
