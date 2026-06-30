@@ -18,7 +18,7 @@ const MOVE_SLIDE := 0.28      ## a played move slides
 const REPLY_HOLD := 0.35      ## beat between the player's move and the opponent's reply (multi-move)
 const CORRECT_HOLD := 0.5     ## beat after fully solving a puzzle before the next one
 const WRONG_HOLD := 1.35      ## let the red/green reveal sink in before the result
-const RANK_DEPTH := 1         ## 1-ply ranker for the 2 distractors: ~instant, and greedy = tempting traps
+const RANK_DEPTH := 2         ## 2-ply ranker for the distractors: believable (won't pick a move that instantly hangs)
 const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter plays (matches game.gd)
 const MIN_STREAK_TO_COUNT := 3 ## leaving before solving this many puzzles refunds the daily run (a "cancel")
 
@@ -159,8 +159,8 @@ func _next_puzzle() -> void:
 
 ## Show the 3 options for the player's current move (_moves[_move_idx]). The two frame yields let the
 ## clean post-move board (a piece the previous move just captured is gone) actually DRAW and present
-## before the synchronous ranker briefly blocks the main thread: the first frame submits the clean
-## board, the second resumes after it has been presented. The ranker is 1-ply so the block is tiny.
+## before the synchronous ranker blocks the main thread: the first frame submits the clean board, the
+## second resumes after it has been presented. The 2-ply ranker can take tens of ms, so this matters.
 func _present_move(g: int) -> void:
 	_solution = rules.move_from_uci(_moves[_move_idx])
 	if _solution < 0:
@@ -174,34 +174,60 @@ func _present_move(g: int) -> void:
 	_busy = false
 
 
-## The 3 options: the solution + the ranker's two best non-solution moves, all with DISTINCT target
-## squares (the board hit-tests a tap by its destination, so two options must never share a target).
-## The shallow depth keeps it fast and tends to pick greedy, beginner-tempting wrong moves.
+## The 3 options: the solution + 2 distractors. We bias the distractors toward "tempting" moves a
+## beginner is drawn to (captures and checks), taking the most believable ones first via the 2-ply
+## rank (so a distractor never instantly hands material back). All three land on DISTINCT target
+## squares (the board hit-tests a tap by its destination). Falls back to the best remaining moves,
+## then any legal move, when a position has no tempting wrong move.
 func _build_options() -> Array:
 	var ranked: Array = bot.rank_moves(rules, RANK_DEPTH)
 	var used_targets := {ChessRules.move_to(_solution): true}
 	var wrong: Array = []
-	for e: Dictionary in ranked:
-		var m := int(e["move"])
-		var t := ChessRules.move_to(m)
-		if m != _solution and not used_targets.has(t):
-			used_targets[t] = true
-			wrong.append(m)
-			if wrong.size() == 2:
-				break
+	_take_distractors(ranked, used_targets, wrong, true)    # captures / checks first (most tempting)
+	_take_distractors(ranked, used_targets, wrong, false)   # then the best remaining non-solution moves
 	if wrong.size() < 2:  # quiet/forced position: backfill from any legal move with a free target
 		for m: int in rules.generate_legal_moves():
+			if wrong.size() >= 2:
+				break
 			var t := ChessRules.move_to(m)
 			if m != _solution and not used_targets.has(t):
 				used_targets[t] = true
 				wrong.append(m)
-				if wrong.size() == 2:
-					break
 	var opts: Array = [{"move": _solution, "quality": "best"}]
 	for m: int in wrong:
 		opts.append({"move": m, "quality": "blunder"})
 	opts.shuffle()
 	return opts
+
+
+## Append distractors from `ranked` (each {move:int,...}) into `wrong` (up to 2 total), in rank order,
+## skipping the solution and target squares already taken. When `tempting_only`, take only captures or
+## checking moves: the wrong picks a beginner is most drawn to.
+func _take_distractors(ranked: Array, used_targets: Dictionary, wrong: Array, tempting_only: bool) -> void:
+	for e: Dictionary in ranked:
+		if wrong.size() >= 2:
+			return
+		var m := int(e["move"])
+		if m == _solution:
+			continue
+		var t := ChessRules.move_to(m)
+		if used_targets.has(t):
+			continue
+		if tempting_only and not _is_tempting(m):
+			continue
+		used_targets[t] = true
+		wrong.append(m)
+
+
+## A move a beginner is drawn to: a capture (incl. en passant) or a move that gives check. The
+## check test is a transient make / is_in_check / undo on the live rules (fully restored).
+func _is_tempting(move: int) -> bool:
+	if rules.board[ChessRules.move_to(move)] != 0 or ChessRules.move_flag(move) == ChessRules.F_EP:
+		return true
+	var undo := rules.make_move(move)
+	var checks := rules.is_in_check()  # after the move the side to move is the opponent
+	rules.undo_move(move, undo)
+	return checks
 
 
 func _on_option_chosen(opt: Dictionary) -> void:
