@@ -403,7 +403,7 @@ func _show_result_dialog(beaten: bool) -> void:
 func _result_subtitle(beaten: bool) -> String:
 	if beaten:
 		return tr("A new personal best!")
-	if _streak <= 0:
+	if _streak <= 1:
 		return tr("Even the best miss one!")
 	return tr("You solved %d in a row!") % _streak
 

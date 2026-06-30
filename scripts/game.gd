@@ -168,6 +168,7 @@ var _line_total := 0
 var _line_pos := 0.0             ## playback position in [0, k]
 var _line_rate := 0.0            ## signed play rate (moves/sec; 0 = paused, <0 = rewind)
 var _line_hl_active := -2        ## last move index highlighted in the header (avoids rebuilding it every frame)
+var _line_mate_exploded := false ## the best line's mate shatter has played (once per arrival at the end)
 var _scan_style_off: StyleBox = null  ## rewind/fast-forward button look when OFF (dark) ...
 var _scan_style_on: StyleBox = null   ## ... vs ON (reversed: light fill + dark icon)
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
@@ -1386,8 +1387,12 @@ func _position_review_ui() -> void:
 	if info != null:
 		info.offset_top = safe_top + 8.0
 		info.offset_bottom = maxf(info.offset_top + 132.0, bar_top - 8.0)
-	review_done.offset_top = safe_top + 6.0
-	review_done.offset_bottom = safe_top + 62.0
+	# Match the menu button (80x80, vertically centred in the top bar) but on the RIGHT, so quitting the
+	# review is as big and easy to hit as opening the menu (the small button was hard for kids to tap).
+	review_done.offset_top = safe_top + (_BAR_H - 80.0) * 0.5
+	review_done.offset_bottom = review_done.offset_top + 80.0
+	review_done.offset_left = -96.0
+	review_done.offset_right = -16.0
 
 
 ## Step the review to ply `i`. A single-step transition gets a quick slide (forward for Next, in
@@ -1653,6 +1658,7 @@ func _play_best_line() -> void:
 	_review_gen += 1            # cancel any step animation in flight
 	_line_active = true
 	_review_playing = true      # keep existing "line busy" guards satisfied
+	_line_mate_exploded = false
 	_line_pos = 0.0
 	_line_rate = LINE_PLAY_RATE  # auto-play forward on enter (so it's obviously animating)
 	_line_hl_active = -2
@@ -1667,11 +1673,31 @@ func _process(delta: float) -> void:
 	if not _line_active or _line_rate == 0.0:
 		return
 	_line_pos = clampf(_line_pos + _line_rate * delta, 0.0, float(_line_total))
+	if _line_pos < float(_line_total) and _line_mate_exploded:
+		board.clear_explosion()  # scrubbed back off the mate: the king reappears
+		_line_mate_exploded = false
 	_render_line_frame()
 	# Auto-pause at either end (so the play button reappears when it runs out).
-	if (_line_rate > 0.0 and _line_pos >= float(_line_total)) or (_line_rate < 0.0 and _line_pos <= 0.0):
+	if _line_rate > 0.0 and _line_pos >= float(_line_total):
 		_line_rate = 0.0
 		_update_line_buttons()
+		_maybe_explode_line_mate()  # the line ends in mate: shatter the king so it reads as mate, not check
+	elif _line_rate < 0.0 and _line_pos <= 0.0:
+		_line_rate = 0.0
+		_update_line_buttons()
+
+
+## If the best line ends in checkmate, shatter the mated king (like the live game / a solved mate
+## puzzle) so a viewer sees it is mate, not just check. Fire-and-forget: the line is paused at the end
+## here, so the per-frame render won't redraw over it. Guarded so it plays once per arrival at the end.
+func _maybe_explode_line_mate() -> void:
+	if _line_mate_exploded or _line_total <= 0:
+		return
+	var final_state: ChessRules = _line_states[_line_total]
+	if not final_state.is_checkmate():
+		return
+	_line_mate_exploded = true
+	board.explode_piece(final_state.king_square(final_state.side_to_move), MATE_EXPLODE_SEC)
 
 
 ## Draw the timeline at _line_pos: base position after floor(pos) moves, the current move sliding at
@@ -1725,6 +1751,9 @@ func _exit_line() -> void:
 	_line_active = false
 	_review_playing = false
 	_line_rate = 0.0
+	if _line_mate_exploded:
+		board.clear_explosion()  # don't leave a shattered king on the restored ply view
+		_line_mate_exploded = false
 	board.set_line_mode(false)
 	_set_line_controls(false)
 

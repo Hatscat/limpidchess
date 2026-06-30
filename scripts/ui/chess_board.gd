@@ -130,6 +130,16 @@ func reveal() -> void:
 	queue_redraw()
 
 
+## Cancel a parked piece explosion (the shattered king reappears). Used when the best-replies line is
+## scrubbed back off a checkmate end, or the line is left, so the mate shatter isn't stuck on screen.
+func clear_explosion() -> void:
+	if not _explode_active:
+		return
+	_explode_active = false
+	_explode_sq = -1
+	queue_redraw()
+
+
 ## Turn the best-replies "line mode" frame on/off (review). Just a visual cue that the board is
 ## replaying the engine's line, the playback is driven by game.gd's media-control buttons.
 func set_line_mode(on: bool) -> void:
