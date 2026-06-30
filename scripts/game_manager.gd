@@ -182,6 +182,10 @@ func start_puzzle_rush() -> void:
 ## their mistake"). {} = none; consumed by game.gd on entry. Transient, not saved.
 var puzzle_review: Dictionary = {}
 
+## A Puzzle Rush game-over snapshot kept across the mistake review, so closing the review returns to
+## the result dialog (like the bot game) instead of Home. {} = none; consumed by puzzle_rush on entry.
+var puzzle_result: Dictionary = {}
+
 
 ## Open the game scene's moves-review on a failed puzzle: its start FEN, the played line (UCI, ending
 ## on the wrong move), and the player's colour. The game scene enters review directly (no live game).

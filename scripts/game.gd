@@ -1323,6 +1323,7 @@ func _enter_puzzle_review() -> void:
 		_undo_stack.append({"move": m, "undo": undo, "captured": int(undo.get("captured_piece", 0)), "mover": mover})
 		_review.append({})  # graded on demand inside the review
 	if _undo_stack.is_empty():
+		GameManager.puzzle_result = {}  # don't leave a stale result snapshot to hijack the next run
 		GameManager.go_to_home()
 		return
 	rules.set_fen(r.get_fen())  # the final position, so the review's close-restore stays consistent
@@ -1342,7 +1343,7 @@ func _open_review(start_ply := 0) -> void:
 
 func _close_review() -> void:
 	if _puzzle_review_mode:
-		GameManager.go_to_home()  # a puzzle review has no game result to return to
+		GameManager.go_to_puzzles()  # back to the Puzzle Rush result dialog (restored from puzzle_result)
 		return
 	_exit_line()
 	_review_gen += 1        # abort any best-line playback in flight

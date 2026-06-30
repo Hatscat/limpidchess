@@ -30,6 +30,7 @@ const MIN_STREAK_TO_COUNT := 3 ## leaving before solving this many puzzles refun
 @onready var status_label: Label = %Status
 @onready var result_overlay: Control = %ResultOverlay
 @onready var result_title: Label = %ResultTitle
+@onready var result_subtitle: Label = %ResultSubtitle
 @onready var streak_stat: Label = %StreakStat
 @onready var best_stat: Label = %BestStat
 @onready var result_celebrate: TextureRect = %ResultCelebrate
@@ -94,7 +95,10 @@ func _ready() -> void:
 	_best_at_start = GameManager.puzzle_highscore
 	_layout()
 	get_viewport().size_changed.connect(_layout)
-	_begin()
+	if not GameManager.puzzle_result.is_empty():
+		_restore_result(GameManager.puzzle_result)  # returned from a mistake review: re-show the result
+	else:
+		_begin()
 
 
 func _layout() -> void:
@@ -370,12 +374,27 @@ func _end_run() -> void:
 	var beaten := _streak > _best_at_start
 	if beaten:
 		Audio.play("win")
+	_show_result_dialog(beaten)
+
+
+## Populate + show the result dialog (shared by a fresh end and the restore after a mistake review).
+func _show_result_dialog(beaten: bool) -> void:
 	result_title.text = tr("New best!") if beaten else tr("Run over")
+	result_subtitle.text = _result_subtitle(beaten)
 	result_celebrate.visible = beaten
 	streak_stat.text = "%s: %d" % [tr("Streak"), _streak]
 	best_stat.text = "%s: %d" % [tr("Best"), GameManager.puzzle_highscore]
 	understand_btn.visible = not _fail_moves.is_empty()  # only when the run ended on a wrong move
 	result_overlay.visible = true
+
+
+## One encouraging line under the title, qualifying the run (calm, never scolding).
+func _result_subtitle(beaten: bool) -> String:
+	if beaten:
+		return tr("A new personal best!")
+	if _streak <= 0:
+		return tr("Even the best miss one!")
+	return tr("You solved %d in a row!") % _streak
 
 
 func _on_retry() -> void:
@@ -399,8 +418,40 @@ func _capture_mistake(wrong_move: int) -> void:
 
 ## Open the bot game's moves-review on the failed puzzle (the wrong move vs the solution + analysis).
 func _on_understand() -> void:
-	if not _fail_moves.is_empty():
-		GameManager.review_puzzle_mistake(_fail_fen, _fail_moves, _fail_player_white)
+	if _fail_moves.is_empty():
+		return
+	# Stash the result so closing the review returns to this dialog (like the bot game), not Home.
+	GameManager.puzzle_result = {
+		"streak": _streak, "best_at_start": _best_at_start,
+		"fail_fen": _fail_fen, "fail_moves": _fail_moves, "fail_player_white": _fail_player_white,
+	}
+	GameManager.review_puzzle_mistake(_fail_fen, _fail_moves, _fail_player_white)
+
+
+## Re-show the game-over dialog after returning from a mistake review (so closing the review lands
+## back here, consistent with the bot game) instead of starting a fresh run.
+func _restore_result(snap: Dictionary) -> void:
+	GameManager.puzzle_result = {}  # consume
+	_over = true
+	_streak = int(snap["streak"])
+	_best_at_start = int(snap["best_at_start"])
+	_fail_fen = String(snap["fail_fen"])
+	_fail_moves = snap["fail_moves"]
+	_fail_player_white = bool(snap["fail_player_white"])
+	# Put the failed position behind the dialog, matching the board shown when the run first ended.
+	rules.set_fen(_fail_fen)
+	for uci: String in _fail_moves:
+		var m := rules.move_from_uci(uci)
+		if m < 0:
+			break
+		rules.make_move(m)
+	board.flipped = not _fail_player_white
+	board.set_rules(rules)
+	board.clear_options()
+	board.clear_last_moves()
+	board.end_animation()
+	_update_header()
+	_show_result_dialog(_streak > _best_at_start)
 
 
 ## The menu (top-left, like the bot game / Pass & Play) doubles as the leave confirmation: Leave /
