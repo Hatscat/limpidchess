@@ -33,6 +33,7 @@ static func _ensure_loaded() -> void:
 		var rating := int(parts[2])
 		var idx := _all.size()
 		_all.append({"fen": parts[0], "moves": moves, "rating": rating})
+		@warning_ignore("integer_division")
 		var band := int(rating / 100)
 		if not _by_band.has(band):
 			_by_band[band] = []
@@ -47,6 +48,7 @@ static func pick(target_rating: int, used: Dictionary) -> Dictionary:
 	if _all.is_empty():
 		return {}
 	var target := clampi(target_rating, 400, 2600)
+	@warning_ignore("integer_division")
 	var tb := int(target / 100)
 	for d in range(0, 25):  # widen the band search outward until a band has an unused puzzle
 		for band: int in ([tb] if d == 0 else [tb - d, tb + d]):

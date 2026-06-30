@@ -387,7 +387,7 @@ horizontal_alignment = 1
 
 [node name="Buttons" type="VBoxContainer" parent="ResultOverlay/Card/VBox" unique_id=983117511]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 24
 
 [node name="AnalyseBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=414004910]
 custom_minimum_size = Vector2(0, 64)
@@ -503,7 +503,7 @@ autowrap_mode = 2
 
 [node name="Buttons" type="HBoxContainer" parent="ConfirmOverlay/Card/VBox" unique_id=611092182]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 24
 alignment = 1
 
 [node name="ConfirmCancel" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons" unique_id=209270788]
@@ -572,7 +572,7 @@ theme_override_styles/panel = SubResource("sb_card")
 
 [node name="VBox" type="VBoxContainer" parent="MenuOverlay/Card" unique_id=325347946]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 24
 alignment = 1
 
 [node name="MenuTitle" type="Label" parent="MenuOverlay/Card/VBox" unique_id=1151334373]

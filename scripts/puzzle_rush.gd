@@ -6,9 +6,9 @@ extends Control
 ## Difficulty (puzzle rating) climbs with the streak; the highscore is the longest streak (saved).
 ## No eval bar. The daily-run cap (free) is enforced by callers (Home / Retry) via can_puzzle_today().
 
-const ChessRules := preload("res://scripts/chess/chess_rules.gd")
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
 const DifficultyPips := preload("res://scripts/ui/difficulty_pips.gd")
+# ChessRules is a global class (class_name in chess_rules.gd) — use it directly, no preload const.
 
 const START_RATING := 400    ## difficulty of the first puzzle (beginner / kid friendly)
 const RATING_STEP := 70       ## +rating per solved puzzle
@@ -316,6 +316,7 @@ func _update_header() -> void:
 func _difficulty_level(rating: int) -> int:
 	if rating <= 0:
 		return 0
+	@warning_ignore("integer_division")
 	var lvl: int = (rating - START_RATING) * 6 / maxi(MAX_RATING - START_RATING, 1) + 1
 	return clampi(lvl, 1, 6)
 

@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="5_daily"]
 [ext_resource type="Script" uid="uid://b3rr0vao8f1by" path="res://scripts/ui/difficulty_pips.gd" id="6_pips"]
 [ext_resource type="Texture2D" uid="uid://bi3n22ngccymk" path="res://assets/icons/trophy.png" id="7_trophy"]
-[ext_resource type="Texture2D" uid="uid://d21lip45s1xf4" path="res://assets/icons/sparkles.png" id="8_sparkles"]
+[ext_resource type="Texture2D" uid="uid://dk5ixea8nri3p" path="res://assets/icons/fire.png" id="8_fire"]
 
 [sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
@@ -259,7 +259,7 @@ theme_override_styles/panel = SubResource("sb_card")
 
 [node name="VBox" type="VBoxContainer" parent="MenuOverlay/Card" unique_id=935592872]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 24
 alignment = 1
 
 [node name="MenuTitle" type="Label" parent="MenuOverlay/Card/VBox" unique_id=103722660]
@@ -352,7 +352,7 @@ autowrap_mode = 2
 
 [node name="Buttons" type="HBoxContainer" parent="ConfirmOverlay/Card/VBox" unique_id=1310538185]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 24
 alignment = 1
 
 [node name="CancelBtn" type="Button" parent="ConfirmOverlay/Card/VBox/Buttons" unique_id=1111980459]
@@ -455,7 +455,7 @@ theme_override_constants/separation = 12
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
-texture = ExtResource("8_sparkles")
+texture = ExtResource("8_fire")
 expand_mode = 1
 stretch_mode = 5
 
@@ -485,7 +485,7 @@ text = "Best: 0"
 
 [node name="Buttons" type="VBoxContainer" parent="ResultOverlay/Card/VBox" unique_id=448145688]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 24
 
 [node name="RetryBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=1888747495]
 unique_name_in_owner = true

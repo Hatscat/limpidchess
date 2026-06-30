@@ -105,7 +105,7 @@ autowrap_mode = 2
 
 [node name="Buttons" type="VBoxContainer" parent="Card/VBox" unique_id=1084455574]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 24
 
 [node name="DailyPremiumBtn" type="Button" parent="Card/VBox/Buttons" unique_id=297540597]
 unique_name_in_owner = true
