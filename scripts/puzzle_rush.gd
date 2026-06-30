@@ -20,7 +20,7 @@ const CORRECT_HOLD := 0.5     ## beat after fully solving a puzzle before the ne
 const WRONG_HOLD := 1.35      ## let the red/green reveal sink in before the result
 const RANK_DEPTH := 2         ## 2-ply ranker for the distractors: believable (won't pick a move that instantly hangs)
 const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter plays (matches game.gd)
-const MIN_STREAK_TO_COUNT := 3 ## leaving before solving this many puzzles refunds the daily run (a "cancel")
+const MIN_STREAK_TO_COUNT := 3 ## failing OR leaving before solving this many puzzles refunds the daily run (a free retry)
 
 @onready var board: Control = %Board
 @onready var diff_pips: DifficultyPips = %DiffPips
@@ -120,6 +120,13 @@ func _layout() -> void:
 
 
 func _begin() -> void:
+	if Puzzles.count() == 0:
+		# Puzzle data failed to load (e.g. assets/puzzles.txt missing from the build). Refund the run
+		# they never got to play and bail to Home, rather than faking a "Run over" + burning the daily.
+		GameManager.cancel_puzzle()  # no-op for premium
+		push_warning("Puzzles: data unavailable (assets/puzzles.txt not loaded); returning Home")
+		GameManager.go_to_home()
+		return
 	_streak = 0
 	_over = false
 	_fail_moves = PackedStringArray()  # no mistake captured yet this run
@@ -370,6 +377,10 @@ func _end_run() -> void:
 	menu_overlay.visible = false  # the result dialog owns the screen; never leave a dialog stacked under it
 	confirm_overlay.visible = false
 	board.clear_options()
+	# A free player who fails before the 4th puzzle gets the day's run back (an early stumble isn't
+	# punished, mirroring the leave-before-4th refund), so they can retry. From the 4th on it counts.
+	if _streak < MIN_STREAK_TO_COUNT:
+		GameManager.cancel_puzzle()  # no-op for premium
 	GameManager.record_puzzle_score(_streak)
 	var beaten := _streak > _best_at_start
 	if beaten:

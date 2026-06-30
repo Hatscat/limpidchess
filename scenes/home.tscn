@@ -108,7 +108,7 @@ offset_top = 16.0
 offset_right = -24.0
 offset_bottom = 84.0
 grow_horizontal = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 28
 
 [node name="TitleVBox" type="VBoxContainer" parent="TopBar" unique_id=1192052563]
 layout_mode = 2

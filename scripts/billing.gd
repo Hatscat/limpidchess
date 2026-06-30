@@ -60,6 +60,11 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_RESUMED and available and _client != null and connected:
 		_client.query_purchases(BillingClient.ProductType.INAPP)
+		if not store_ready:
+			# Catalog never loaded (a transient product-details miss, e.g. Play propagation lag just
+			# after publishing): re-fetch it so a configured build self-heals to purchasable without an
+			# app restart, instead of "Purchases aren't available" lingering.
+			_client.query_product_details(PackedStringArray([PRODUCT_ID]), BillingClient.ProductType.INAPP)
 
 
 # --- Public API (used by the Premium screen) ---
@@ -76,7 +81,10 @@ func buy() -> void:
 		if code == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED:
 			_client.query_purchases(BillingClient.ProductType.INAPP)  # reconcile + grant
 		elif code != BillingClient.BillingResponseCode.OK:
-			purchase_failed.emit(tr("The purchase could not be completed."))
+			if OS.is_debug_build():
+				_grant()  # dev build: Play declined (e.g. unconfigured product) → unlock locally to test
+			else:
+				purchase_failed.emit(tr("The purchase could not be completed."))
 		return  # OK: wait for on_purchase_updated
 	if OS.is_debug_build():
 		_grant()  # no Play on desktop → grant locally so the UI can be tested
@@ -162,17 +170,22 @@ func _on_connect_error(_code: int, _msg := "") -> void:
 # --- Plugin responses ---
 
 func _on_product_details(response: Dictionary) -> void:
+	var found_product := false
 	for p in response.get("product_details", []):
 		if typeof(p) != TYPE_DICTIONARY:
 			continue
 		var pid := str(p.get("product_id", PRODUCT_ID))
 		if pid != PRODUCT_ID:
 			continue
+		found_product = true
 		var price := _extract_price(p)
 		if price != "":
 			price_text = price
 			price_updated.emit(price_text)
-	store_ready = true
+	# "Ready to buy" ONLY if Play actually returned our product. Otherwise launching the purchase flow
+	# would hit an unknown product and Play shows an error dialog; instead buy() falls through to the
+	# debug-build local grant (a sideloaded dev build has no live Play product).
+	store_ready = found_product
 
 
 ## Result of a buy: success carries the purchase(s); USER_CANCELED is a silent no-op.
@@ -182,6 +195,8 @@ func _on_purchase_updated(response: Dictionary) -> void:
 		_handle_purchases(response)
 	elif code == BillingClient.BillingResponseCode.USER_CANCELED:
 		purchase_failed.emit("")  # cancelled: just re-enable the button, no error shown
+	elif OS.is_debug_build():
+		_grant()  # dev build: any Play error unlocks locally so Premium stays testable without a live product
 	else:
 		purchase_failed.emit(tr("The purchase could not be completed."))
 
