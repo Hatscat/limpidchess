@@ -8,6 +8,7 @@ extends Control
 
 const ChessRules := preload("res://scripts/chess/chess_rules.gd")
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
+const DifficultyPips := preload("res://scripts/ui/difficulty_pips.gd")
 
 const START_RATING := 400    ## difficulty of the first puzzle (beginner / kid friendly)
 const RATING_STEP := 70       ## +rating per solved puzzle
@@ -21,7 +22,7 @@ const RANK_DEPTH := 1         ## 1-ply ranker for the 2 distractors: ~instant, a
 const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter plays (matches game.gd)
 
 @onready var board: Control = %Board
-@onready var diff_value: Label = %DiffValue
+@onready var diff_pips: DifficultyPips = %DiffPips
 @onready var streak_value: Label = %StreakValue
 @onready var best_value: Label = %BestValue
 @onready var celebrate: TextureRect = %Celebrate
@@ -80,17 +81,20 @@ func _ready() -> void:
 
 func _layout() -> void:
 	var safe: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
-	var top: float = safe + 8.0
-	# Slide the whole top strip down by the safe area (like game.gd's _position_review_ui) so a tall
-	# notch never squeezes the header into the status line: the header keeps a fixed height and the
-	# status + board follow below it.
-	$Header.offset_top = top
-	$Header.offset_bottom = top + 116.0
-	status_label.offset_top = top + 124.0
-	status_label.offset_bottom = top + 166.0
-	board.offset_top = top + 174.0
-	menu_btn.offset_top = safe + 6.0
-	menu_btn.offset_bottom = safe + 86.0
+	var top: float = safe + 6.0
+	# Top bar: the menu button (left) and the "Puzzle Rush" title beside it.
+	menu_btn.offset_top = top
+	menu_btn.offset_bottom = top + 80.0
+	$Title.offset_top = top
+	$Title.offset_bottom = top + 80.0
+	# The header (difficulty / streak / best) sits BELOW the top bar so it never overlaps the menu
+	# button (an overlapping header would swallow its taps). Status + board follow; all track the safe area.
+	var hy: float = top + 92.0
+	$Header.offset_top = hy
+	$Header.offset_bottom = hy + 88.0
+	status_label.offset_top = hy + 96.0
+	status_label.offset_bottom = hy + 138.0
+	board.offset_top = hy + 148.0
 
 
 func _begin() -> void:
@@ -280,11 +284,23 @@ func _quality_color(quality: String) -> Color:
 
 
 func _update_header() -> void:
-	diff_value.text = str(_cur_rating) if _cur_rating > 0 else "-"
 	streak_value.text = str(_streak)
 	best_value.text = str(_best_at_start)
+	diff_pips.set_level(_difficulty_level(_cur_rating))
+	# Make the dots row exactly as tall as a number row so all three captions share a baseline (the
+	# 32px label's real line box is ~59px, not 32 - track it from the actual label, not a magic number).
+	diff_pips.custom_minimum_size.y = maxf(streak_value.get_combined_minimum_size().y, 42.0)
 	# Celebrate live once they pass a real previous record (not on a first-ever run).
 	celebrate.visible = _best_at_start > 0 and _streak > _best_at_start
+
+
+## Map a puzzle rating (400..2600) onto 1-6 dots (like the Bots screen) so difficulty reads at a
+## glance for beginners instead of an opaque Elo number. 0 (no filled dots) before the first puzzle.
+func _difficulty_level(rating: int) -> int:
+	if rating <= 0:
+		return 0
+	var lvl: int = (rating - START_RATING) * 6 / maxi(MAX_RATING - START_RATING, 1) + 1
+	return clampi(lvl, 1, 6)
 
 
 func _end_run() -> void:

@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://bsy1g1gcxu5su"]
 
-[ext_resource type="Script" path="res://scripts/puzzle_rush.gd" id="1_pz"]
-[ext_resource type="Script" path="res://scripts/ui/chess_board.gd" id="2_board"]
-[ext_resource type="Texture2D" path="res://assets/icons/party.png" id="4_party"]
+[ext_resource type="Script" uid="uid://sv4hstsakn40" path="res://scripts/puzzle_rush.gd" id="1_pz"]
+[ext_resource type="Script" uid="uid://dsbi4m5efbwas" path="res://scripts/ui/chess_board.gd" id="2_board"]
+[ext_resource type="Texture2D" uid="uid://c52qaa1q2wkua" path="res://assets/icons/party.png" id="4_party"]
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="5_daily"]
+[ext_resource type="Script" uid="uid://b3rr0vao8f1by" path="res://scripts/ui/difficulty_pips.gd" id="6_pips"]
 
 [sub_resource type="StyleBoxEmpty" id="sb_empty"]
 
@@ -52,7 +53,7 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
-[node name="PuzzleRush" type="Control"]
+[node name="PuzzleRush" type="Control" unique_id=684990960]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -61,7 +62,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_pz")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=328727819]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -70,11 +71,10 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.1, 0.12, 1)
 
-[node name="MenuBtn" type="Button" parent="."]
+[node name="MenuBtn" type="Button" parent="." unique_id=1617523960]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 1
-anchors_preset = 0
 offset_left = 12.0
 offset_top = 12.0
 offset_right = 92.0
@@ -85,7 +85,20 @@ theme_override_styles/pressed = SubResource("sb_empty")
 theme_override_styles/hover = SubResource("sb_empty")
 expand_icon = true
 
-[node name="Header" type="HBoxContainer" parent="."]
+[node name="Title" type="Label" parent="." unique_id=441083087]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 104.0
+offset_top = 16.0
+offset_right = -12.0
+offset_bottom = 92.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 28
+text = "Puzzle Rush"
+vertical_alignment = 1
+
+[node name="Header" type="HBoxContainer" parent="." unique_id=504203621]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -94,43 +107,46 @@ offset_top = 16.0
 offset_right = -20.0
 offset_bottom = 132.0
 grow_horizontal = 2
+mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="DiffCol" type="VBoxContainer" parent="Header"]
+[node name="DiffCol" type="VBoxContainer" parent="Header" unique_id=416322770]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="Caption" type="Label" parent="Header/DiffCol"]
+[node name="Caption" type="Label" parent="Header/DiffCol" unique_id=146187833]
 modulate = Color(1, 1, 1, 0.45)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Difficulty"
 horizontal_alignment = 1
 
-[node name="DiffValue" type="Label" parent="Header/DiffCol"]
+[node name="DiffPips" type="Control" parent="Header/DiffCol" unique_id=1198055053]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 42)
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "-"
-horizontal_alignment = 1
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("6_pips")
 
-[node name="StreakCol" type="VBoxContainer" parent="Header"]
+[node name="StreakCol" type="VBoxContainer" parent="Header" unique_id=1262124393]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="Caption" type="Label" parent="Header/StreakCol"]
+[node name="Caption" type="Label" parent="Header/StreakCol" unique_id=859002129]
 modulate = Color(1, 1, 1, 0.45)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Streak"
 horizontal_alignment = 1
 
-[node name="StreakValue" type="Label" parent="Header/StreakCol"]
+[node name="StreakValue" type="Label" parent="Header/StreakCol" unique_id=698310931]
 unique_name_in_owner = true
 modulate = Color(0.4, 0.74, 0.85, 1)
 layout_mode = 2
@@ -138,26 +154,26 @@ theme_override_font_sizes/font_size = 32
 text = "0"
 horizontal_alignment = 1
 
-[node name="BestCol" type="VBoxContainer" parent="Header"]
+[node name="BestCol" type="VBoxContainer" parent="Header" unique_id=1012071524]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="Caption" type="Label" parent="Header/BestCol"]
+[node name="Caption" type="Label" parent="Header/BestCol" unique_id=1511074274]
 modulate = Color(1, 1, 1, 0.45)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Best"
 horizontal_alignment = 1
 
-[node name="BestRow" type="HBoxContainer" parent="Header/BestCol"]
+[node name="BestRow" type="HBoxContainer" parent="Header/BestCol" unique_id=405724874]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="Celebrate" type="TextureRect" parent="Header/BestCol/BestRow"]
+[node name="Celebrate" type="TextureRect" parent="Header/BestCol/BestRow" unique_id=1838122280]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(30, 30)
@@ -167,14 +183,14 @@ texture = ExtResource("4_party")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BestValue" type="Label" parent="Header/BestCol/BestRow"]
+[node name="BestValue" type="Label" parent="Header/BestCol/BestRow" unique_id=873284608]
 unique_name_in_owner = true
 modulate = Color(0.98, 0.8, 0.34, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "0"
 
-[node name="Status" type="Label" parent="."]
+[node name="Status" type="Label" parent="." unique_id=2141006220]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.65)
 layout_mode = 1
@@ -191,7 +207,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="Board" type="Control" parent="."]
+[node name="Board" type="Control" parent="." unique_id=1754889753]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -205,7 +221,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_board")
 
-[node name="MenuOverlay" type="Control" parent="."]
+[node name="MenuOverlay" type="Control" parent="." unique_id=42983252]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -215,7 +231,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="MenuOverlay"]
+[node name="Dim" type="ColorRect" parent="MenuOverlay" unique_id=72717413]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -224,7 +240,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Card" type="PanelContainer" parent="MenuOverlay"]
+[node name="Card" type="PanelContainer" parent="MenuOverlay" unique_id=2101155971]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -239,18 +255,18 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="VBox" type="VBoxContainer" parent="MenuOverlay/Card"]
+[node name="VBox" type="VBoxContainer" parent="MenuOverlay/Card" unique_id=935592872]
 layout_mode = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="MenuTitle" type="Label" parent="MenuOverlay/Card/VBox"]
+[node name="MenuTitle" type="Label" parent="MenuOverlay/Card/VBox" unique_id=103722660]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Menu"
 horizontal_alignment = 1
 
-[node name="LeaveBtn" type="Button" parent="MenuOverlay/Card/VBox"]
+[node name="LeaveBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=509655577]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
@@ -264,7 +280,7 @@ theme_override_styles/hover = SubResource("sb_btn")
 text = "Leave"
 alignment = 0
 
-[node name="KeepPlayingBtn" type="Button" parent="MenuOverlay/Card/VBox"]
+[node name="KeepPlayingBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=1890290211]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
@@ -278,7 +294,7 @@ theme_override_styles/hover = SubResource("sb_btn_primary")
 text = "Keep playing"
 alignment = 0
 
-[node name="ResultOverlay" type="Control" parent="."]
+[node name="ResultOverlay" type="Control" parent="." unique_id=76719541]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -288,7 +304,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="ResultOverlay"]
+[node name="Dim" type="ColorRect" parent="ResultOverlay" unique_id=1931126177]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -297,7 +313,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Card" type="PanelContainer" parent="ResultOverlay"]
+[node name="Card" type="PanelContainer" parent="ResultOverlay" unique_id=1893318189]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -312,12 +328,12 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
 
-[node name="VBox" type="VBoxContainer" parent="ResultOverlay/Card"]
+[node name="VBox" type="VBoxContainer" parent="ResultOverlay/Card" unique_id=460883614]
 layout_mode = 2
 theme_override_constants/separation = 22
 alignment = 1
 
-[node name="ResultCelebrate" type="TextureRect" parent="ResultOverlay/Card/VBox"]
+[node name="ResultCelebrate" type="TextureRect" parent="ResultOverlay/Card/VBox" unique_id=1167633298]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(72, 72)
@@ -327,14 +343,14 @@ texture = ExtResource("4_party")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ResultTitle" type="Label" parent="ResultOverlay/Card/VBox"]
+[node name="ResultTitle" type="Label" parent="ResultOverlay/Card/VBox" unique_id=150032743]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "Run over"
 horizontal_alignment = 1
 
-[node name="ResultStats" type="Label" parent="ResultOverlay/Card/VBox"]
+[node name="ResultStats" type="Label" parent="ResultOverlay/Card/VBox" unique_id=1449908608]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.75)
 layout_mode = 2
@@ -342,11 +358,11 @@ theme_override_font_sizes/font_size = 24
 text = "Streak: 0"
 horizontal_alignment = 1
 
-[node name="Buttons" type="VBoxContainer" parent="ResultOverlay/Card/VBox"]
+[node name="Buttons" type="VBoxContainer" parent="ResultOverlay/Card/VBox" unique_id=448145688]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="RetryBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+[node name="RetryBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=1888747495]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
@@ -360,7 +376,7 @@ theme_override_styles/hover = SubResource("sb_btn_primary")
 text = "Play again"
 alignment = 0
 
-[node name="ContinueBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons"]
+[node name="ContinueBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=1117111832]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
@@ -374,6 +390,7 @@ theme_override_styles/hover = SubResource("sb_btn")
 text = "Continue"
 alignment = 0
 
-[node name="DailyLimit" parent="." instance=ExtResource("5_daily")]
+[node name="DailyLimit" parent="." unique_id=1510489499 instance=ExtResource("5_daily")]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
