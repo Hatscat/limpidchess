@@ -18,6 +18,7 @@ const REPLY_HOLD := 0.35      ## beat between the player's move and the opponent
 const CORRECT_HOLD := 0.5     ## beat after fully solving a puzzle before the next one
 const WRONG_HOLD := 1.35      ## let the red/green reveal sink in before the result
 const RANK_DEPTH := 1         ## 1-ply ranker for the 2 distractors: ~instant, and greedy = tempting traps
+const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter plays (matches game.gd)
 
 @onready var board: Control = %Board
 @onready var diff_value: Label = %DiffValue
@@ -31,7 +32,10 @@ const RANK_DEPTH := 1         ## 1-ply ranker for the 2 distractors: ~instant, a
 @onready var result_celebrate: TextureRect = %ResultCelebrate
 @onready var retry_btn: Button = %RetryBtn
 @onready var continue_btn: Button = %ContinueBtn
-@onready var exit_btn: Button = %ExitBtn
+@onready var menu_btn: Button = %MenuBtn
+@onready var menu_overlay: Control = %MenuOverlay
+@onready var leave_btn: Button = %LeaveBtn
+@onready var keep_btn: Button = %KeepPlayingBtn
 @onready var daily_limit: DailyLimitDialog = %DailyLimit
 
 var rules: ChessRules
@@ -59,10 +63,15 @@ func _ready() -> void:
 	result_celebrate.visible = false
 	retry_btn.icon = load("res://assets/icons/restart.png")
 	continue_btn.icon = load("res://assets/icons/home.png")
-	exit_btn.icon = load("res://assets/icons/close.png")
+	menu_btn.icon = load("res://assets/icons/menu.png")
+	leave_btn.icon = load("res://assets/icons/home.png")
+	keep_btn.icon = load("res://assets/icons/close.png")
+	menu_overlay.visible = false
 	retry_btn.pressed.connect(_on_retry)
 	continue_btn.pressed.connect(_quit_to_home)
-	exit_btn.pressed.connect(_quit_to_home)
+	menu_btn.pressed.connect(_open_menu)
+	leave_btn.pressed.connect(_quit_to_home)
+	keep_btn.pressed.connect(_close_menu)
 	_best_at_start = GameManager.puzzle_highscore
 	_layout()
 	get_viewport().size_changed.connect(_layout)
@@ -80,8 +89,8 @@ func _layout() -> void:
 	status_label.offset_top = top + 124.0
 	status_label.offset_bottom = top + 166.0
 	board.offset_top = top + 174.0
-	exit_btn.offset_top = safe + 6.0
-	exit_btn.offset_bottom = safe + 78.0
+	menu_btn.offset_top = safe + 6.0
+	menu_btn.offset_bottom = safe + 86.0
 
 
 func _begin() -> void:
@@ -212,7 +221,13 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	board.end_animation()
 	var nxt := _move_idx + 1
 	if nxt >= _moves.size():
-		_puzzle_solved(g)  # that was the puzzle's final move
+		# Final move solved. If it is checkmate, shatter the losing king first (our mate flourish).
+		if rules.is_checkmate():
+			Audio.play("win")
+			await board.explode_piece(rules.king_square(rules.side_to_move), MATE_EXPLODE_SEC)
+			if g != _gen:
+				return
+		_puzzle_solved(g)
 		return
 	# The opponent's forced reply (_moves[nxt]).
 	await get_tree().create_timer(REPLY_HOLD).timeout
@@ -276,6 +291,7 @@ func _end_run() -> void:
 	_over = true
 	_busy = true
 	_gen += 1
+	menu_overlay.visible = false  # the result dialog owns the screen; never leave the menu stacked under it
 	board.clear_options()
 	GameManager.record_puzzle_score(_streak)
 	var beaten := _streak > _best_at_start
@@ -299,6 +315,18 @@ func _on_retry() -> void:
 		daily_limit.open("puzzle")
 
 
+## The menu (top-left, like the bot game / Pass & Play): a Leave / Keep-playing choice. Leaving banks
+## the streak so far. The run keeps going underneath the dim, so the player loses nothing by peeking.
+func _open_menu() -> void:
+	if _over:
+		return  # the result overlay is already up
+	menu_overlay.visible = true
+
+
+func _close_menu() -> void:
+	menu_overlay.visible = false
+
+
 ## Leave to Home, banking the streak so far (record_puzzle_score only lifts the highscore if higher,
 ## so calling it after _end_run already did is harmless). Invalidate any in-flight puzzle coroutine
 ## first (set _over + bump _gen, like _end_run) so a mid-line exit can't resume on the freed scene.
@@ -314,5 +342,9 @@ func _notification(what: int) -> void:
 		return
 	if daily_limit.visible:
 		daily_limit.close()
+	elif menu_overlay.visible:
+		_close_menu()
+	elif result_overlay.visible:
+		_quit_to_home()  # game over: leaving is fine
 	else:
-		_quit_to_home()
+		_open_menu()  # mid-run: open the menu (Leave from there) rather than quitting straight away

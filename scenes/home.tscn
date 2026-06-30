@@ -286,11 +286,12 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 48.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 32
-alignment = 1
+alignment = 0
 
 [node name="Icon" type="TextureRect" parent="Center/VBox/PuzzleRush/Row"]
 custom_minimum_size = Vector2(80, 80)
@@ -335,11 +336,12 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 48.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 32
-alignment = 1
+alignment = 0
 
 [node name="Hand" type="TextureRect" parent="Center/VBox/PassPlay/Row" unique_id=1917458741]
 custom_minimum_size = Vector2(80, 80)
