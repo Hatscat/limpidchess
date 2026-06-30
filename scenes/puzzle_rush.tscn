@@ -97,7 +97,7 @@ offset_right = -12.0
 offset_bottom = 92.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 28
-text = "Puzzle Rush"
+text = "Puzzles"
 vertical_alignment = 1
 
 [node name="Header" type="HBoxContainer" parent="." unique_id=504203621]
@@ -338,7 +338,7 @@ alignment = 1
 [node name="ConfirmTitle" type="Label" parent="ConfirmOverlay/Card/VBox" unique_id=325550052]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
-text = "Leave Puzzle Rush?"
+text = "Leave Puzzles?"
 horizontal_alignment = 1
 
 [node name="ConfirmMessage" type="Label" parent="ConfirmOverlay/Card/VBox" unique_id=80724855]

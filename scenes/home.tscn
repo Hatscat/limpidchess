@@ -311,7 +311,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="Center/VBox/PuzzleRush/Row/Text"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Puzzle Rush"
+text = "Puzzles"
 horizontal_alignment = 1
 
 [node name="PuzzleBest" type="Label" parent="Center/VBox/PuzzleRush/Row/Text"]

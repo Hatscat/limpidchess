@@ -24,7 +24,7 @@ func open(reason := "games") -> void:
 		_message.text = "Free players get 1 game review a day. It comes back tomorrow!"
 	elif reason == "puzzle":
 		_title.text = "Out of free puzzles today"
-		_message.text = "Free players get 1 Puzzle Rush a day. It comes back tomorrow!"
+		_message.text = "Free players get 1 puzzle run a day. It comes back tomorrow!"
 	else:
 		_title.text = "Out of free games today"
 		_message.text = "Your free games come back tomorrow and every day."
