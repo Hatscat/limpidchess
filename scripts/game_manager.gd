@@ -178,6 +178,18 @@ func start_puzzle_rush() -> void:
 	get_tree().change_scene_to_file("res://scenes/puzzle_rush.tscn")
 
 
+## A failed Puzzle Rush puzzle handed to the game scene's moves-review (so the player can "understand
+## their mistake"). {} = none; consumed by game.gd on entry. Transient, not saved.
+var puzzle_review: Dictionary = {}
+
+
+## Open the game scene's moves-review on a failed puzzle: its start FEN, the played line (UCI, ending
+## on the wrong move), and the player's colour. The game scene enters review directly (no live game).
+func review_puzzle_mistake(fen: String, moves: PackedStringArray, player_white: bool) -> void:
+	puzzle_review = {"fen": fen, "moves": moves, "player_white": player_white}
+	get_tree().change_scene_to_file("res://scenes/game.tscn")
+
+
 # --- Daily free-game gate ---
 
 ## Whether the player may start another bot game right now.

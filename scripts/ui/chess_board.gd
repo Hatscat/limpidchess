@@ -13,6 +13,7 @@ signal option_chosen(option: Dictionary)
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
 const BADGE_FONT := preload("res://assets/fonts/OpenDyslexic-Bold.otf")
+const HOURGLASS := preload("res://assets/icons/hourglass.png")  ## drawn on a move arrow while its review analysis loads
 
 var _tex := {}
 
@@ -526,6 +527,9 @@ func _draw_quality_symbol(c: Vector2, quality: String) -> void:
 		"blunder":  # cross
 			draw_line(c + Vector2(-s, -s), c + Vector2(s, s), white, w, true)
 			draw_line(c + Vector2(-s, s), c + Vector2(s, -s), white, w, true)
+		"loading":  # analysis in flight: an hourglass, so it reads without the "Analysing…" text
+			var hs := _cell * 0.25
+			draw_texture_rect(HOURGLASS, Rect2(c - Vector2(hs, hs), Vector2(hs * 2.0, hs * 2.0)), false)
 
 
 # --- Geometry ---

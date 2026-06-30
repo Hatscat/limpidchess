@@ -35,6 +35,7 @@ const MIN_STREAK_TO_COUNT := 3 ## leaving before solving this many puzzles refun
 @onready var result_celebrate: TextureRect = %ResultCelebrate
 @onready var retry_btn: Button = %RetryBtn
 @onready var continue_btn: Button = %ContinueBtn
+@onready var understand_btn: Button = %UnderstandBtn
 @onready var menu_btn: Button = %MenuBtn
 @onready var menu_overlay: Control = %MenuOverlay
 @onready var leave_btn: Button = %LeaveBtn
@@ -57,6 +58,11 @@ var _solution := -1           ## the correct move (packed int) the player must f
 var _moves: PackedStringArray = PackedStringArray()  ## the current puzzle's full move list (UCI)
 var _move_idx := 0            ## index into _moves of the player's move to solve now (odd indices)
 var _used: Dictionary = {}    ## puzzle indices used this run (no repeats)
+var _cur_fen := ""            ## current puzzle's start FEN, captured for the mistake review
+var _cur_player_white := true ## the player's colour this puzzle
+var _fail_fen := ""           ## the failed puzzle (for "Understand your mistake"); _fail_moves empty = none
+var _fail_moves: PackedStringArray = PackedStringArray()
+var _fail_player_white := true
 
 
 func _ready() -> void:
@@ -69,6 +75,7 @@ func _ready() -> void:
 	result_celebrate.visible = false
 	retry_btn.icon = load("res://assets/icons/restart.png")
 	continue_btn.icon = load("res://assets/icons/check.png")  # "Continue" uses the check, like the bot-game result
+	understand_btn.icon = load("res://assets/icons/magnifier.png")  # matches the bot-game "Understand your moves"
 	menu_btn.icon = load("res://assets/icons/menu.png")
 	leave_btn.icon = load("res://assets/icons/exit.png")  # the white door = leave
 	keep_btn.icon = load("res://assets/icons/close.png")
@@ -78,6 +85,7 @@ func _ready() -> void:
 	confirm_overlay.visible = false
 	retry_btn.pressed.connect(_on_retry)
 	continue_btn.pressed.connect(_quit_to_home)
+	understand_btn.pressed.connect(_on_understand)
 	menu_btn.pressed.connect(_open_menu)
 	leave_btn.pressed.connect(_confirm_leave)
 	keep_btn.pressed.connect(_close_menu)
@@ -110,6 +118,7 @@ func _layout() -> void:
 func _begin() -> void:
 	_streak = 0
 	_over = false
+	_fail_moves = PackedStringArray()  # no mistake captured yet this run
 	_used.clear()
 	_update_header()
 	_next_puzzle()
@@ -129,7 +138,9 @@ func _next_puzzle() -> void:
 		return
 	_cur_rating = int(pz["rating"])
 	_moves = pz["moves"]
-	rules.set_fen(String(pz["fen"]))
+	_cur_fen = String(pz["fen"])
+	rules.set_fen(_cur_fen)
+	_cur_player_white = rules.side_to_move != ChessRules.WHITE  # the player is the side to move AFTER the setup
 	board.clear_options()
 	board.clear_last_moves()
 	board.set_check_square(-1)
@@ -239,6 +250,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	board.reveal()  # solution turns green, distractors red
 	if move != _solution:
 		Audio.play("blunder")
+		_capture_mistake(move)  # save the failed line for the optional "Understand your mistake" review
 		status_label.modulate = _quality_color("blunder")
 		status_label.text = tr("Wrong move!")
 		await get_tree().create_timer(WRONG_HOLD).timeout
@@ -362,6 +374,7 @@ func _end_run() -> void:
 	result_celebrate.visible = beaten
 	streak_stat.text = "%s: %d" % [tr("Streak"), _streak]
 	best_stat.text = "%s: %d" % [tr("Best"), GameManager.puzzle_highscore]
+	understand_btn.visible = not _fail_moves.is_empty()  # only when the run ended on a wrong move
 	result_overlay.visible = true
 
 
@@ -370,6 +383,24 @@ func _on_retry() -> void:
 		GameManager.start_puzzle_rush()  # counts the run (no-op for premium) + reloads the scene
 	else:
 		daily_limit.open("puzzle")
+
+
+## Save the failed puzzle for an optional "Understand your mistake" review: its start FEN, the line
+## solved so far ending on the wrong move, and the player's colour.
+func _capture_mistake(wrong_move: int) -> void:
+	_fail_fen = _cur_fen
+	_fail_player_white = _cur_player_white
+	var line := PackedStringArray()
+	for i in _move_idx:
+		line.append(_moves[i])
+	line.append(rules.move_to_uci(wrong_move))
+	_fail_moves = line
+
+
+## Open the bot game's moves-review on the failed puzzle (the wrong move vs the solution + analysis).
+func _on_understand() -> void:
+	if not _fail_moves.is_empty():
+		GameManager.review_puzzle_mistake(_fail_fen, _fail_moves, _fail_player_white)
 
 
 ## The menu (top-left, like the bot game / Pass & Play) doubles as the leave confirmation: Leave /

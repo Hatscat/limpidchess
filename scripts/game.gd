@@ -156,6 +156,8 @@ var _review_gen := 0
 var _review_playing := false
 var _review_analyzing := {}  ## ply index -> true while an on-demand engine analysis is in flight
 var _review_unlocked := false  ## this game's review was already opened (counted) this session
+var _review_startpos := ""       ## non-empty (a FEN) when reviewing an injected position (a failed puzzle)
+var _puzzle_review_mode := false  ## reviewing a failed Puzzle Rush puzzle (no bot face; close → Home)
 
 # Best-replies scrubbable timeline (see the LINE_* constants).
 var _line_active := false
@@ -229,7 +231,10 @@ func _ready() -> void:
 	_layout_for_safe_area()
 	get_viewport().size_changed.connect(_layout_for_safe_area)
 	feedback.text = ""
-	_begin()
+	if not GameManager.puzzle_review.is_empty():
+		_enter_puzzle_review()  # came from a failed Puzzle Rush puzzle: jump straight into the review
+	else:
+		_begin()
 
 
 func _notification(what: int) -> void:
@@ -1294,7 +1299,37 @@ func _set_live_chrome(vis: bool) -> void:
 	if cap_bottom: cap_bottom.visible = vis
 
 
-func _open_review() -> void:
+## Enter the moves-review for a failed Puzzle Rush puzzle (handed over via GameManager.puzzle_review):
+## replay its line into the review's undo stack, then open the review on the LAST ply (the mistake).
+## No live game is started; closing the review returns Home.
+func _enter_puzzle_review() -> void:
+	var payload: Dictionary = GameManager.puzzle_review
+	GameManager.puzzle_review = {}  # consume so a later normal game start isn't hijacked
+	_puzzle_review_mode = true
+	GameManager.pass_and_play = false  # the puzzle review owns the "You"/"Opponent" framing, not P&P
+	_game_over = true
+	_review_startpos = String(payload["fen"])
+	player_color = ChessRules.WHITE if bool(payload["player_white"]) else ChessRules.BLACK
+	board.flipped = player_color == ChessRules.BLACK  # show the puzzle from the side the player solved
+	var r := ChessRules.new()
+	r.set_fen(_review_startpos)
+	var moves: PackedStringArray = payload["moves"]
+	for uci: String in moves:
+		var m := r.move_from_uci(uci)
+		if m < 0:
+			break
+		var mover := r.side_to_move
+		var undo := r.make_move(m)
+		_undo_stack.append({"move": m, "undo": undo, "captured": int(undo.get("captured_piece", 0)), "mover": mover})
+		_review.append({})  # graded on demand inside the review
+	if _undo_stack.is_empty():
+		GameManager.go_to_home()
+		return
+	rules.set_fen(r.get_fen())  # the final position, so the review's close-restore stays consistent
+	_open_review(_undo_stack.size() - 1)  # open on the mistake (the last, wrong move)
+
+
+func _open_review(start_ply := 0) -> void:
 	_exit_line()
 	_set_live_chrome(false)  # the review owns the board and shows its own panels
 	result_overlay.visible = false
@@ -1302,10 +1337,13 @@ func _open_review() -> void:
 	_review_playing = false
 	review_overlay.visible = true
 	_position_review_ui()
-	_show_review_ply(0, false)
+	_show_review_ply(start_ply, false)
 
 
 func _close_review() -> void:
+	if _puzzle_review_mode:
+		GameManager.go_to_home()  # a puzzle review has no game result to return to
+		return
 	_exit_line()
 	_review_gen += 1        # abort any best-line playback in flight
 	_review_playing = false
@@ -1385,7 +1423,10 @@ func _render_review_view() -> void:
 		return
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 	if rv.is_empty():
-		board.set_options([{"move": played, "quality": ""}], false)  # not analysed yet
+		# Analysis in flight: show the played move with an hourglass on its arrow (so it reads without
+		# the "Analysing…" header). _analyse_review_ply redraws with the real quality when it lands.
+		board.set_options([{"move": played, "quality": "loading"}], false)
+		board.reveal()
 		return
 	var opts: Array = [{"move": played, "quality": String(rv.get("quality", ""))}]
 	var best := int(rv.get("best", -1))
@@ -1439,7 +1480,7 @@ func _update_review_panel() -> void:
 		eval_bar.set_eval(int(ev.get("eval_cp", 0)))
 	# The opponent's avatar sits beside its move (bot games only; the player's own moves and Pass &
 	# Play don't map to one opponent face).
-	var is_bot_move := not GameManager.pass_and_play and _review_ply > 0 and mover != player_color
+	var is_bot_move := not GameManager.pass_and_play and not _puzzle_review_mode and _review_ply > 0 and mover != player_color
 	review_avatar.visible = is_bot_move
 	if is_bot_move:
 		review_avatar.texture = load(BotRoster.avatar_path(bot_def))
@@ -1753,10 +1794,13 @@ func _on_review_next() -> void:
 ## in Pass & Play.
 func _review_who(mover: int) -> String:
 	if _review_ply == 0:
-		return tr("Opening")
+		# A puzzle's ply 0 is the opponent's setup move from a midgame position, not a chess opening.
+		return tr("Opponent") if _puzzle_review_mode else tr("Opening")
 	if GameManager.pass_and_play:
 		return tr("White") if mover == ChessRules.WHITE else tr("Black")
-	return tr("You") if mover == player_color else String(bot_def.get("name", "Bot"))
+	if mover == player_color:
+		return tr("You")
+	return tr("Opponent") if _puzzle_review_mode else String(bot_def.get("name", "Bot"))
 
 
 func _quality_color(quality: String) -> Color:
@@ -1770,7 +1814,10 @@ func _quality_color(quality: String) -> Color:
 ## A fresh ChessRules at the position after the first `n` plies of the played game.
 func _rules_after(n: int) -> ChessRules:
 	var r := ChessRules.new()
-	r.reset_startpos()
+	if _review_startpos.is_empty():
+		r.reset_startpos()
+	else:
+		r.set_fen(_review_startpos)  # a failed puzzle starts from its own position, not the chess start
 	for i in clampi(n, 0, _undo_stack.size()):
 		r.make_move(int(_undo_stack[i]["move"]))
 	return r

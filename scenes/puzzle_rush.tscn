@@ -487,6 +487,21 @@ text = "Best: 0"
 layout_mode = 2
 theme_override_constants/separation = 24
 
+[node name="UnderstandBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=632794081]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 14
+theme_override_constants/icon_max_width = 40
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+text = "Understand your mistake"
+alignment = 0
+
 [node name="RetryBtn" type="Button" parent="ResultOverlay/Card/VBox/Buttons" unique_id=1888747495]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
