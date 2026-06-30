@@ -39,6 +39,7 @@ func _fill_stats() -> void:
 		GameManager.games_played, GameManager.wins, GameManager.draws, GameManager.losses,
 		GameManager.best_moves_found, GameManager.blunders_made,
 	]
+	stats.text += "\n" + tr("Best puzzle streak: %d") % GameManager.puzzle_highscore
 
 
 func _find_rich_labels(node: Node) -> Array[RichTextLabel]:

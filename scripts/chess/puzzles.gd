@@ -7,7 +7,8 @@ class_name Puzzles
 ## move is always the player's). Loaded once, lazily, and indexed by 100-point rating band so we can
 ## pick a puzzle near a target difficulty for the rising streak.
 
-const PATH := "res://assets/puzzles.txt"  # plain text (not .csv: avoids Godot's CSV-translation import)
+const PATH := "res://assets/puzzles.txt"      # editable source (dev fallback; .txt avoids CSV import)
+const RES_PATH := "res://assets/puzzles.res"  # the SHIPPED data, always exported (see [PuzzleData])
 
 static var _all: Array = []            ## each: { fen:String, moves:PackedStringArray, rating:int }
 static var _by_band: Dictionary = {}   ## band (rating/100) -> Array[int] of indices into _all
@@ -16,12 +17,11 @@ static var _by_band: Dictionary = {}   ## band (rating/100) -> Array[int] of ind
 static func _ensure_loaded() -> void:
 	if not _all.is_empty():
 		return
-	var f := FileAccess.open(PATH, FileAccess.READ)
-	if f == null:
-		push_warning("Puzzles: could not open %s" % PATH)
+	var text := _read_data()
+	if text.is_empty():
+		push_warning("Puzzles: no data shipped (neither %s nor %s)" % [RES_PATH, PATH])
 		return
-	while not f.eof_reached():
-		var line := f.get_line()
+	for line: String in text.split("\n", false):
 		if line.is_empty():
 			continue
 		var parts := line.split(",")
@@ -38,6 +38,20 @@ static func _ensure_loaded() -> void:
 		if not _by_band.has(band):
 			_by_band[band] = []
 		(_by_band[band] as Array).append(idx)
+
+
+## The puzzle blob. PRELOAD (not load) the resource so it is a HARD export dependency, always bundled
+## the same way scenes are - the whole reason for shipping the data as a resource. A plain .txt (via the
+## export include_filter) and a dynamic load() both failed to reach the device. Falls back to the
+## editable .txt only if the resource is somehow empty (a dev edited the source but has not rebuilt it).
+static func _read_data() -> String:
+	var pd: PuzzleData = preload("res://assets/puzzles.res")
+	if not pd.raw.is_empty():
+		return pd.raw
+	var f := FileAccess.open(PATH, FileAccess.READ)
+	if f != null:
+		return f.get_as_text()
+	return ""
 
 
 ## Pick a puzzle whose rating is closest to `target_rating`, skipping any index already in `used`
