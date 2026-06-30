@@ -575,11 +575,20 @@ func _gui_input(event: InputEvent) -> void:
 	var sq := _point_to_square(pos)
 	if sq < 0:
 		return
-	# Options have distinct target squares (see ChessBot.select_options), so a tap
-	# on a destination unambiguously picks one.
+	# Resolve the tap by destination square. Options are built with DISTINCT targets (puzzle
+	# _build_options / ChessBot.select_options), so normally exactly one matches. Best-effort guard if
+	# two ever share a target: prefer the "best" option, so an ambiguous tap gives the player the right
+	# move instead of picking at random.
+	var hit: Dictionary = {}
 	for opt in _options:
 		if Rules.move_to(opt["move"]) == sq:
-			_chosen_move = int(opt["move"])  # so reveal() draws it on top of the others
-			option_chosen.emit(opt)
-			get_viewport().set_input_as_handled()
-			return
+			var is_best: bool = String(opt.get("quality", "")) == "best"
+			if hit.is_empty() or is_best:
+				hit = opt
+			if is_best:
+				break
+	if hit.is_empty():
+		return
+	_chosen_move = int(hit["move"])  # so reveal() draws it on top of the others
+	option_chosen.emit(hit)
+	get_viewport().set_input_as_handled()
