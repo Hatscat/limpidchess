@@ -11,7 +11,7 @@ const DifficultyPips := preload("res://scripts/ui/difficulty_pips.gd")
 # ChessRules is a global class (class_name in chess_rules.gd) — use it directly, no preload const.
 
 const START_RATING := 400    ## difficulty of the first puzzle (beginner / kid friendly)
-const RATING_STEP := 42       ## +rating per solved puzzle
+const RATING_STEP := 32       ## +rating per solved puzzle
 const MAX_RATING := 2600      ## the difficulty climb caps here (the data goes to 2699)
 const SETUP_SLIDE := 0.28     ## the opponent's setup move slides in
 const MOVE_SLIDE := 0.28      ## a played move slides
