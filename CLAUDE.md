@@ -36,6 +36,10 @@ and explain what the best move was. Errors are the lesson, not the punishment.
    turn — tune `ANALYSIS_DEPTH_SF` / MultiPV so it stays ~sub-second. The board is
    custom-drawn 2D — cheap. Don't introduce per-frame allocations.
 
+> **Headline word: "smooth."** In all user-facing / marketing copy (landing site,
+> Play listing, taglines) the word that qualifies the experience is **smooth**, not
+> "calm". Calm / kind / no-shame are real values but supporting notes; lead with smooth.
+
 ## 🧩 Architecture
 
 The **rules layer is plain GDScript**; the **brain is Stockfish** (driven over
@@ -256,4 +260,4 @@ explicitly ("layout not visually verified") rather than implying it works.
 
 A beginner opens the app, taps Play, and on every turn sees three clear moves.
 They pick one, learn instantly whether it was best, collect a coin, and slowly
-start *seeing* the good moves themselves. Calm, kind, and quietly educational.
+start *seeing* the good moves themselves. Smooth, kind, and quietly educational.
