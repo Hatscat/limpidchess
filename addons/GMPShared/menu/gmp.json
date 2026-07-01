@@ -1,5 +1,5 @@
 {
-	"version": "1.1",
+	"version": "1.2",
 	"admob": {
 		"name": "AdMob Plugin",
 		"directory": "AdmobPlugin",
@@ -41,7 +41,7 @@
 		"repository": "https://github.com/godot-mobile-plugins/godot-connection-state",
 		"versions": [
 			{
-				"version": "1.2",
+				"version": "1.2.1",
 				"min_godot": "4.7",
 				"ios": true,
 				"android": true,
