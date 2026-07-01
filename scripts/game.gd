@@ -1051,7 +1051,6 @@ func _finish_game_after_delay(title: String, text: String, quote_key: String, ma
 func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
-	GameManager.record_game_review(_best[0] + _best[1], _blunder[0] + _blunder[1])
 	# Pass & Play shows a White-vs-Black comparison; a bot game shows the single tally.
 	# Make "Play again" concrete for kids who can't read yet: show WHO you'd replay,
 	# the opponent's avatar + name (the handshake for Pass & Play).

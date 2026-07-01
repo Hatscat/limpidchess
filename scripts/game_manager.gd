@@ -45,13 +45,8 @@ var reviews_today := 0       ## moves reviews opened today (free players are cap
 var puzzles_today := 0       ## Puzzle Rush runs started today (free players are capped, see can_puzzle_today)
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
 
-# Lifetime career stats (for the About surface). NOT spendable currency.
-var games_played := 0
-var wins := 0
-var draws := 0
-var losses := 0
-var best_moves_found := 0     ## total best moves found across all games
-var blunders_made := 0        ## total blunders chosen across all games
+# Lifetime counters kept for game logic only (no stats are shown to the player).
+var games_played := 0         ## gates the review prompt + reset reminder; refunded by cancel_game
 var bot_wins: Dictionary = {} ## bot id (String) -> times the human has beaten that bot (int)
 var puzzle_highscore := 0     ## longest Puzzle Rush streak ever reached (saved)
 
@@ -119,11 +114,6 @@ func reset_save() -> void:
 	puzzles_today = 0
 	last_play_date = ""
 	games_played = 0
-	wins = 0
-	draws = 0
-	losses = 0
-	best_moves_found = 0
-	blunders_made = 0
 	bot_wins.clear()
 	puzzle_highscore = 0
 	current_bot = {}
@@ -278,25 +268,16 @@ func _roll_day() -> void:
 
 # --- Stats ---
 
-## Fold a finished game's per-game review into the lifetime career totals.
-func record_game_review(best_moves: int, blunders: int) -> void:
-	best_moves_found += best_moves
-	blunders_made += blunders
-	_save()
-
-
-## result: "win" | "loss" | "draw" from the human player's perspective.
-## Only called for bot games (game.gd guards out Pass & Play), so current_bot is the opponent.
+## Record a win against the current bot, for the Bots-screen "beaten" badge (wins_against).
+## Called on game end for bot games only (game.gd guards out Face to Face); a loss or draw
+## carries no persistent state, so those results are no-ops.
 func record_result(result: String) -> void:
-	match result:
-		"win":
-			wins += 1
-			var bot_id: String = str(current_bot.get("id", ""))
-			if bot_id != "":
-				bot_wins[bot_id] = int(bot_wins.get(bot_id, 0)) + 1
-		"loss": losses += 1
-		"draw": draws += 1
-	_save()
+	if result != "win":
+		return
+	var bot_id: String = str(current_bot.get("id", ""))
+	if bot_id != "":
+		bot_wins[bot_id] = int(bot_wins.get(bot_id, 0)) + 1
+		_save()
 
 
 ## How many times the human has beaten this bot (for the Bots screen badge).
@@ -313,7 +294,7 @@ func record_puzzle_score(streak: int) -> void:
 
 ## Undo the start-time count for a game abandoned before it really began (player
 ## started by mistake / cancelled in the opening). Refunds the daily free game and
-## the played tally; does NOT touch wins/losses (a cancel is not a defeat).
+## the played tally; does NOT touch the bot-win badge (a cancel is not a defeat).
 func cancel_game() -> void:
 	games_played = max(0, games_played - 1)
 	if not is_premium:
@@ -362,11 +343,6 @@ func _save() -> void:
 	cfg.set_value("daily", "puzzles_today", puzzles_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
-	cfg.set_value("stats", "wins", wins)
-	cfg.set_value("stats", "draws", draws)
-	cfg.set_value("stats", "losses", losses)
-	cfg.set_value("stats", "best_moves_found", best_moves_found)
-	cfg.set_value("stats", "blunders_made", blunders_made)
 	cfg.set_value("stats", "puzzle_highscore", puzzle_highscore)
 	for bot_id: String in bot_wins:  # ConfigFile has no nested values: one key per bot
 		cfg.set_value("bot_wins", bot_id, bot_wins[bot_id])
@@ -391,11 +367,6 @@ func _load() -> void:
 	puzzles_today = int(cfg.get_value("daily", "puzzles_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))
-	wins = int(cfg.get_value("stats", "wins", 0))
-	draws = int(cfg.get_value("stats", "draws", 0))
-	losses = int(cfg.get_value("stats", "losses", 0))
-	best_moves_found = int(cfg.get_value("stats", "best_moves_found", 0))
-	blunders_made = int(cfg.get_value("stats", "blunders_made", 0))
 	puzzle_highscore = int(cfg.get_value("stats", "puzzle_highscore", 0))
 	bot_wins.clear()
 	if cfg.has_section("bot_wins"):

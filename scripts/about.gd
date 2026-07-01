@@ -1,10 +1,9 @@
 extends Control
 
-## About screen: player stats, credits, and asset attributions.
+## About screen: credits, asset attributions, and the store-review link.
 ## OpenMoji's CC BY-SA 4.0 licence REQUIRES the attribution shown here — keep it.
 
 @onready var scroll: ScrollContainer = %Scroll
-@onready var stats: Label = %Stats
 @onready var version: Label = %Version
 @onready var review_button: Button = %ReviewButton
 
@@ -15,7 +14,6 @@ func _ready() -> void:
 	# Single source of truth for the version: the project setting (baked into the export and
 	# readable at runtime; export_presets.cfg is editor-only and not shipped).
 	version.text = "Limpid Chess · v%s" % ProjectSettings.get_setting("application/config/version", "")
-	_fill_stats()
 	# Always available: the Play review API never tells us whether the player actually rated, so we
 	# can't (and don't) hide this. It opens the store listing, where they can rate or change their
 	# review whenever (the in-app review card is quota-limited and can't be reliably re-shown).
@@ -32,14 +30,6 @@ func _on_review_pressed() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		GameManager.go_to_home()
-
-
-func _fill_stats() -> void:
-	stats.text = tr("Games played: %d\nWins %d · Draws %d · Losses %d\nBest moves found: %d\nBlunders: %d") % [
-		GameManager.games_played, GameManager.wins, GameManager.draws, GameManager.losses,
-		GameManager.best_moves_found, GameManager.blunders_made,
-	]
-	stats.text += "\n" + tr("Best puzzle streak: %d") % GameManager.puzzle_highscore
 
 
 func _find_rich_labels(node: Node) -> Array[RichTextLabel]:

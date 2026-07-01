@@ -59,20 +59,6 @@ Expert,Expert,Expert,Experto
 FIND · THE · BEST · MOVE,FIND · THE · BEST · MOVE,TROUVE · LE · MEILLEUR · COUP,ENCUENTRA · EL · MEJOR · MOVIMIENTO
 Fifty moves without a pawn move or capture.,Fifty moves without a pawn move or capture.,Cinquante coups sans mouvement de pion ou capture.,Cincuenta movimientos sin movimiento de peón o captura.
 First moves,First moves,Premiers pas,Primeros pasos
-"Games played: %d
-Wins %d · Draws %d · Losses %d
-Best moves found: %d
-Blunders: %d","Games played: %d
-Wins %d · Draws %d · Losses %d
-Best moves found: %d
-Blunders: %d","Parties jouées : %d
-Victoires %d · Nulles %d · Défaites %d
-Meilleurs coups trouvés : %d
-Gaffes : %d","Partidas jugadas: %d
-Victorias %d · Tablas %d · Derrotas %d
-Mejores movimientos encontrados: %d
-Errores graves: %d"
-Games played: 0,Games played: 0,Parties jouées : 0,Juegos jugados: 0
 "Buy once, keep forever","Buy once, keep forever","Un seul paiement, pas d'abonnement","Un solo pago, sin suscripción"
 Give up,Give up,Abandonner,Rendirse
 Give up?,Give up?,Abandonner ?,¿Abandonar?
@@ -296,7 +282,6 @@ You solved %d in a row!,You solved %d in a row!,%d d'affilée !,¡%d seguidas!
 Do better!,Do better!,Faire mieux !,¡A mejorar!
 Hardest solved,Hardest solved,Plus dur résolu,Más difícil resuelto
 Best: %d,Best: %d,Record : %d,Récord: %d
-Best puzzle streak: %d,Best puzzle streak: %d,Meilleure série de puzzles : %d,Mejor racha de puzzles: %d
 ✓   Unlimited puzzles,✓   Unlimited puzzles,✓   Puzzles illimités,✓   Puzzles ilimitados
 Out of free puzzles today,Out of free puzzles today,Plus de puzzles gratuits aujourd'hui,No quedan puzzles gratis hoy
 Free players get 1 puzzle run a day. It comes back tomorrow!,Free players get 1 puzzle run a day. It comes back tomorrow!,Les joueurs gratuits ont 1 partie de puzzles par jour. Elle revient demain !,Los jugadores gratis tienen 1 partida de puzzles al día. Vuelve mañana.
