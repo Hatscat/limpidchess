@@ -75,7 +75,7 @@ func _ready() -> void:
 	celebrate.visible = false
 	result_celebrate.visible = false
 	retry_btn.icon = load("res://assets/icons/muscle.png")  # 💪 encouraging, not a limp "restart"
-	continue_btn.icon = load("res://assets/icons/close.png")  # "Quit": the cross = leave to Home (action is _quit_to_home)
+	continue_btn.icon = load("res://assets/icons/exit.png")  # the white door = leave to Home (action is _quit_to_home); matches leave_btn
 	understand_btn.icon = load("res://assets/icons/magnifier.png")  # matches the bot-game "Understand your moves"
 	menu_btn.icon = load("res://assets/icons/menu.png")
 	leave_btn.icon = load("res://assets/icons/exit.png")  # the white door = leave
