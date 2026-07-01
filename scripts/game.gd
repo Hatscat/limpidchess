@@ -410,14 +410,22 @@ func _face_rotate() -> void:
 
 
 ## Set the "X to move" area for the side to move; clear the other (only one shows at a time).
-func _pp_set_turn() -> void:
-	if rules.side_to_move == ChessRules.WHITE:
-		status_label.text = tr("White to move")
+func _pp_set_turn(loading := false) -> void:
+	var white := rules.side_to_move == ChessRules.WHITE
+	var msg := ""
+	if loading:
+		msg = tr("Reading the position…")  # a hint on the mover's side while analysing (esp. the opening)
+	elif white:
+		msg = tr("White to move")
+	else:
+		msg = tr("Black to move")
+	if white:
+		status_label.text = msg
 		if _pp_top:
 			_pp_top.text = ""
 	else:
 		if _pp_top:
-			_pp_top.text = tr("Black to move")
+			_pp_top.text = msg
 		status_label.text = ""
 
 
@@ -555,7 +563,7 @@ func _present_options() -> void:
 	_busy = true
 	var g := _gen
 	if GameManager.pass_and_play:
-		_pp_set_turn()  # "X to move" on the side to move's own area, from the first frame
+		_pp_set_turn(true)  # "reading…" on the mover's side while analysing (esp. the un-prefetched opening)
 	else:
 		status_label.text = "Reading the position…"
 	_ranked = await _take_options(g)
@@ -855,6 +863,11 @@ func _take_options(g: int) -> Array:
 			return ranked
 	var fresh: Array = await _rank_position()
 	if g != _gen:
+		return fresh
+	# The opening (Face to Face move 1) is never prefetched and has no animation to hide behind, so
+	# skip the ~1.5s deep best-line search: from the start position any top move is a fine "best".
+	# Keeps the very first move snappy; every later move is prefetched during the flip (see _search_options).
+	if _undo_stack.is_empty():
 		return fresh
 	return await _deep_promote(fresh, rules, g)
 
