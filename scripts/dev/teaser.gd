@@ -10,12 +10,13 @@ extends Control
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
 const BoardScript := preload("res://scripts/ui/chess_board.gd")
-# A quiet middle-game where the three candidates fan OUT (no crossing, none on the
-# a/h edge): d4-d5 (best, centre), Nf3-g5 (decent, right), Nc3-b5 (blunder, left).
-const FEN := "r1bq1rk1/ppp2ppp/2np1n2/4p3/2PP4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 9"
-const BEST := 27 | (35 << 6)     # d4-d5
-const DECENT := 21 | (38 << 6)   # Nf3-g5
-const BLUNDER := 18 | (33 << 6)  # Nc3-b5
+# Scholar's mate (White to move), the most recognizable beginner tactic: best = Qxf7#
+# (mate, arrow lands right beside the king), OK = Nc3 (develops, misses it), blunder =
+# Qxe5 (grabs a pawn but hangs the queen to Nxe5). Near-full board, arrows fan cleanly.
+const FEN := "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4"
+const BEST := 39 | (53 << 6)     # Qh5xf7#
+const DECENT := 1 | (18 << 6)    # Nb1-c3
+const BLUNDER := 39 | (36 << 6)  # Qh5xe5
 
 var board
 var rules
