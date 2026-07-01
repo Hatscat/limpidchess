@@ -108,7 +108,7 @@ text = "✓   Unlock all bots"
 
 [node name="B2" type="Label" parent="Content/Benefits" unique_id=191500369]
 layout_mode = 2
-text = "✓   Pass & Play on one device"
+text = "✓   Face to Face on one device"
 
 [node name="B3" type="Label" parent="Content/Benefits" unique_id=920840148]
 layout_mode = 2

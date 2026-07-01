@@ -31,3 +31,6 @@ native/**/*.os
 
 # Claude local only files
 .claude/
+# Python bytecode (from scripts/dev tooling)
+__pycache__/
+*.pyc

@@ -104,7 +104,7 @@ Not enough material to checkmate.,Not enough material to checkmate.,Pas assez de
 Off,Off,Désactivé,Desactivado
 On,On,Activé,Activado
 Only one move here.,Only one move here.,Un seul coup possible.,Solo un movimiento posible.
-Pass & Play,Pass & Play,Passer et Jouer,Pasar y Jugar
+Face to Face,Face to Face,Face à face,Cara a cara
 Pick your opponent.,Pick your opponent.,Choisis ton adversaire.,Elige tu oponente.
 Play,Play,Jouer,Jugar
 Play again,Play again,Rejouer,Volver a jugar
@@ -144,6 +144,8 @@ Unlock Premium  ·  %s,Unlock Premium  ·  %s,Déverrouiller Premium  ·  %s,Des
 Unlocked,Unlocked,Déverrouillé,Desbloqueado
 "When you see a good move, look for a better one.","When you see a good move, look for a better one.","Quand vous voyez un bon coup, cherchez un meilleur.","Cuando ves un buen movimiento, busca uno mejor."
 White,White,Blancs,Blancas
+White to move,White to move,Aux blancs de jouer,Juegan las blancas
+Black to move,Black to move,Aux noirs de jouer,Juegan las negras
 You gave up,You gave up,Tu as abandonné,Abandonaste
 You win!,You win!,Tu as gagné !,¡Ganaste!
 "Your move, find the best!","Your move, find the best!","À toi, trouve le meilleur coup !","Tu turno, ¡encuentra el mejor!"
@@ -254,7 +256,7 @@ Out of free reviews today,Out of free reviews today,Plus d'analyses gratuites au
 Free players get 1 game review a day. It comes back tomorrow!,Free players get 1 game review a day. It comes back tomorrow!,Les joueurs gratuits ont 1 analyse de partie par jour. Elle revient demain !,Los jugadores gratis tienen 1 análisis de partida al día. Vuelve mañana.
 ✓   Unlimited game reviews,✓   Unlimited game reviews,✓   Analyses de partie illimitées,✓   Análisis de partidas ilimitados
 "✓   No ads. Not now, not ever","✓   No ads. Not now, not ever","✓   Jamais de pub","✓   Sin anuncios. Nunca, jamás"
-✓   Pass & Play on one device,✓   Pass & Play on one device,✓   Passe et Joue sur un appareil,✓   Pasa y Juega en un dispositivo
+✓   Face to Face on one device,✓   Face to Face on one device,✓   Face à face sur un appareil,✓   Cara a cara en un dispositivo
 ✓   Support a solo indie dev,✓   Support a solo indie dev,✓   Soutient un développeur indépendant,✓   Apoya a un desarrollador indie
 ✓   Unlimited games every day,✓   Unlimited games every day,✓   Parties illimitées tous les jours,✓   Juegos ilimitados todos los días
 ✓   Unlock all bots,✓   Unlock all bots,✓   Débloque tous les bots,✓   Desbloquea todos los bots

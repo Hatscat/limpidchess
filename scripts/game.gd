@@ -222,6 +222,17 @@ func _ready() -> void:
 	move_child(cap_bottom, board.get_index() + 2)
 	move_child(eval_bar, board.get_index() + 3)
 
+	# Face to Face: the "Black to move" area, fixed above the board at 180° (White's uses status_label).
+	_pp_top = Label.new()
+	_pp_top.add_theme_font_size_override("font_size", 20)
+	_pp_top.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_pp_top.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_pp_top.anchor_right = 1.0
+	_pp_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pp_top.visible = false
+	add_child(_pp_top)
+	move_child(_pp_top, board.get_index() + 4)
+
 	_setup_opponent_panel()
 	result_overlay.visible = false
 	confirm_overlay.visible = false
@@ -280,6 +291,11 @@ func _layout_for_safe_area() -> void:
 	if vp.x <= 0.0 or vp.y <= 0.0:
 		return  # size not established yet; size_changed will call us again
 	var top: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
+	if GameManager.pass_and_play and (review_overlay == null or not review_overlay.visible):
+		_layout_face_to_face(vp, top)  # live Face to Face: board perfectly centred; pieces flip, chrome fixed
+		return
+	# Bot games AND the Face to Face review use the normal (biased-down) layout below, so the review's
+	# top panels (move / quality / best replies) have room above the board instead of overlapping it.
 	$TopBar.offset_top = top
 	$TopBar.offset_bottom = top + _BAR_H
 
@@ -334,13 +350,101 @@ func _layout_for_safe_area() -> void:
 		_position_review_ui()
 
 
+# --- Face to Face (Pass & Play): board fixed + centred. Only the pieces + coordinate labels flip to the
+# side to move; everything else is FIXED per side — two "X to move" areas (White below, upright; Black
+# above, 180°) and the captured strips (each side's captures on that side, oriented for that player). ---
+
+const _FACE_SPIN_SEC := 0.35
+const _PP_MSG_H := 30.0        ## height of the small "X to move" area
+var _face_turn := 0            ## accumulated half-turns; parity (even = White-up, odd = Black-up)
+var _pp_top: Label = null      ## "Black to move" area, fixed above the board at 180° (White's uses status_label)
+
+
+## Layout for Face to Face: the board is PERFECTLY centred. Below it (White's side, upright): "White to
+## move" then White's captured (black) pieces. Above it (Black's side, 180°): Black's captured (white)
+## pieces then "Black to move". Only the menu button remains in the header (OpponentChip hidden).
+func _layout_face_to_face(vp: Vector2, top: float) -> void:
+	$TopBar.offset_top = top
+	$TopBar.offset_bottom = top + _BAR_H
+	var side_reserve: float = _CAP_TOP_GAP + _PP_MSG_H + _CAP_GAP + _CAP_STRIP_H + 8.0  # label + strip, one side
+	var pad: float = maxf(top + _BAR_H, top + side_reserve)  # keep the menu button clear of the board too
+	var board_size: float = minf(vp.x - 16.0, vp.y - 2.0 * pad)
+	board_size = maxf(board_size, 0.0)
+	var bx: float = (vp.x - board_size) * 0.5
+	var board_top: float = (vp.y - board_size) * 0.5  # screen-centred
+	board.offset_left = bx
+	board.offset_right = -bx
+	board.offset_top = board_top
+	board.offset_bottom = (board_top + board_size) - vp.y
+	var b_bot: float = board_top + board_size
+	# White (below the board, upright): "White to move" then White's captured (black) pieces.
+	status_label.rotation = 0.0
+	status_label.offset_top = b_bot + _CAP_TOP_GAP
+	status_label.offset_bottom = status_label.offset_top + _PP_MSG_H
+	cap_bottom.rotation = 0.0
+	cap_bottom.position = Vector2(bx, status_label.offset_bottom + _CAP_GAP)
+	cap_bottom.size = Vector2(board_size, _CAP_STRIP_H)
+	# Black (above the board, fixed 180°): captures then "Black to move", each spun about its own centre.
+	if _pp_top:
+		_pp_top.offset_left = bx
+		_pp_top.offset_right = -bx
+		_pp_top.offset_top = board_top - _CAP_TOP_GAP - _PP_MSG_H
+		_pp_top.offset_bottom = _pp_top.offset_top + _PP_MSG_H
+		_pp_top.pivot_offset = Vector2(board_size * 0.5, _PP_MSG_H * 0.5)
+		_pp_top.rotation = PI
+	cap_top.position = Vector2(bx, board_top - _CAP_TOP_GAP - _PP_MSG_H - _CAP_GAP - _CAP_STRIP_H)
+	cap_top.size = Vector2(board_size, _CAP_STRIP_H)
+	cap_top.pivot_offset = Vector2(board_size * 0.5, _CAP_STRIP_H * 0.5)
+	cap_top.rotation = PI
+
+
+## Flip only the pieces + coordinate labels to face the side now to move (the chrome is fixed per side).
+func _face_rotate() -> void:
+	if not GameManager.pass_and_play:
+		return
+	var from: float = PI * float(_face_turn & 1)
+	_face_turn += 1
+	board.face_pieces(from + PI, _FACE_SPIN_SEC)
+	await get_tree().create_timer(_FACE_SPIN_SEC).timeout
+	board.face_pieces(PI * float(_face_turn & 1), 0.0)  # normalise to 0 / PI
+
+
+## Set the "X to move" area for the side to move; clear the other (only one shows at a time).
+func _pp_set_turn() -> void:
+	if rules.side_to_move == ChessRules.WHITE:
+		status_label.text = tr("White to move")
+		if _pp_top:
+			_pp_top.text = ""
+	else:
+		if _pp_top:
+			_pp_top.text = tr("Black to move")
+		status_label.text = ""
+
+
+## Flip to face the side to move, unless the board already faces them (the opening, or an undo back to
+## the same side). No-op outside Face to Face.
+func _face_to_side() -> void:
+	if not GameManager.pass_and_play:
+		return
+	var target: int = 0 if rules.side_to_move == ChessRules.WHITE else 1
+	if (_face_turn & 1) == target:
+		return
+	await _face_rotate()
+
+
 func _setup_opponent_panel() -> void:
 	if GameManager.pass_and_play:
-		opponent_name.text = "Pass & Play"
-		opponent_avatar.texture = load("res://assets/icons/handshake.png")
+		# Face to Face: only the menu button in the header; the two "X to move" areas carry the turn.
+		$TopBar/OpponentChip.visible = false
+		feedback.visible = false
+		status_label.add_theme_font_size_override("font_size", 20)  # small "White to move"
+		if _pp_top:
+			_pp_top.visible = true
 	else:
 		opponent_name.text = bot_def.get("name", "Bot")
 		opponent_avatar.texture = load(BotRoster.avatar_path(bot_def))
+		if _pp_top:
+			_pp_top.visible = false
 
 
 # --- Game lifecycle ---
@@ -388,7 +492,13 @@ func _new_game() -> void:
 	eval_bar.visible = not GameManager.pass_and_play
 	eval_bar.set_eval(0)
 	_record_position()
-	_play_random_opening()
+	if GameManager.pass_and_play:
+		# Face to Face: White (a human) plays the opening too — no auto-move. Start facing White.
+		_face_turn = 0
+		board.face_pieces(0.0, 0.0)
+		_advance()  # presents White's first options at parity 0 (no flip: already facing White)
+	else:
+		_play_random_opening()
 
 
 # --- Turn flow ---
@@ -397,6 +507,13 @@ func _advance() -> void:
 	_update_check_highlight()
 	if _check_game_over():
 		return
+	# Face to Face: spin pieces + chrome to the player now to move BEFORE showing their options (no-op
+	# when already facing them, e.g. the opening). A mate is handled above, so it never triggers a flip.
+	if GameManager.pass_and_play:
+		var g := _gen
+		await _face_to_side()
+		if g != _gen:
+			return
 	if _is_human_turn():
 		_present_options()
 	else:
@@ -437,7 +554,10 @@ func _pick_random_good(ranked: Array) -> int:
 func _present_options() -> void:
 	_busy = true
 	var g := _gen
-	status_label.text = "Reading the position…"
+	if GameManager.pass_and_play:
+		_pp_set_turn()  # "X to move" on the side to move's own area, from the first frame
+	else:
+		status_label.text = "Reading the position…"
 	_ranked = await _take_options(g)
 	if g != _gen:
 		return  # a new game / undo / game-end happened during analysis
@@ -454,11 +574,10 @@ func _present_options() -> void:
 	options.shuffle()
 	board.set_options(options, true)
 
-	if options.size() == 1:
+	if GameManager.pass_and_play:
+		_pp_set_turn()  # keep the side-to-move caption (no "find the best!" clutter)
+	elif options.size() == 1:
 		status_label.text = "Only one move here."
-	elif GameManager.pass_and_play:
-		var mover := tr("White") if rules.side_to_move == ChessRules.WHITE else tr("Black")
-		status_label.text = tr("%s to move, find the best!") % mover
 	else:
 		status_label.text = "Your move, find the best!"
 	_busy = false
@@ -574,6 +693,8 @@ func _on_option_chosen(opt: Dictionary) -> void:
 			feedback.text = tr("%s. Best was %s.") % [tr(grade["label"]), best_san]
 			Audio.play("decent")
 	status_label.text = ""
+	if GameManager.pass_and_play and _pp_top:
+		_pp_top.text = ""  # clear both "X to move" areas once a move is picked (board colours show quality)
 
 	# Reveal the qualities, then slow-slide the chosen piece (bullet time). While the
 	# reveal plays (~1.5s of idle CPU), search the bot's reply in the background.
@@ -1044,10 +1165,16 @@ func _undo_plies() -> int:
 	return 1 if GameManager.pass_and_play else 2
 
 
-## Can we undo? Only while it's a human turn (not mid-think / not over) and there are
-## enough plies above the auto-opening to rewind without popping it.
+## Plies to keep beneath an undo: a bot game keeps its auto-opening (ply 0) so undo can't pop it; Face
+## to Face has NO auto-opening (White plays it), so undo may rewind all the way back to the start.
+func _undo_keep_floor() -> int:
+	return 0 if GameManager.pass_and_play else 1
+
+
+## Can we undo? Only while it's a human turn (not mid-think / not over) and there are enough plies
+## above the keep-floor to rewind.
 func _can_undo() -> bool:
-	return not _busy and not _game_over and _undo_stack.size() >= _undo_plies() + 1
+	return not _busy and not _game_over and _undo_stack.size() >= _undo_plies() + _undo_keep_floor()
 
 
 ## Rewind one undo's worth of plies, keeping the opening, then re-offer options for the
@@ -1065,7 +1192,7 @@ func _undo_last() -> void:
 	board.end_animation()
 	var plies := 0
 	var to_rewind := _undo_plies()
-	while plies < to_rewind and _undo_stack.size() > 1:  # never pop the opening
+	while plies < to_rewind and _undo_stack.size() > _undo_keep_floor():  # never pop a bot game's opening
 		var e: Dictionary = _undo_stack.pop_back()
 		if not _review.is_empty():
 			_review.pop_back()  # keep the review log in lockstep with the move stack
@@ -1298,6 +1425,7 @@ func _set_live_chrome(vis: bool) -> void:
 	if eval_bar: eval_bar.visible = vis and not GameManager.pass_and_play
 	if cap_top: cap_top.visible = vis
 	if cap_bottom: cap_bottom.visible = vis
+	if _pp_top: _pp_top.visible = vis and GameManager.pass_and_play  # Face to Face "Black to move" area
 
 
 ## Enter the moves-review for a failed Puzzle Rush puzzle (handed over via GameManager.puzzle_review):
@@ -1337,11 +1465,12 @@ func _enter_puzzle_review() -> void:
 func _open_review(start_ply := 0) -> void:
 	_exit_line()
 	_set_live_chrome(false)  # the review owns the board and shows its own panels
+	board.face_pieces(0.0, 0.0)  # the review is shown upright even after a Face to Face game
 	result_overlay.visible = false
 	_review_gen += 1
 	_review_playing = false
 	review_overlay.visible = true
-	_position_review_ui()
+	_layout_for_safe_area()  # review open → board drops to the normal (lower) position; panels get room above
 	_show_review_ply(start_ply, false)
 
 

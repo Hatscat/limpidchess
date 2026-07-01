@@ -50,6 +50,14 @@ var _explode_sq := -1
 var _explode_piece := 0
 var _explode_t := 0.0
 
+# Face to Face (Pass & Play): a cosmetic 180° rotation so the board reads for the side to move, like
+# turning a real board to the other player. The PIECES animate their flip (pieces_angle, tweened); the
+# COORDINATE labels flip INSTANTLY (coords_angle) since a spinning digit reads oddly. The square grid,
+# highlights and guidance arrows never rotate, and hit-testing is untouched. Both are 0 or PI.
+var pieces_angle := 0.0
+var coords_angle := 0.0
+var _pieces_tween: Tween = null
+
 var _cell := 0.0
 var _origin := Vector2.ZERO
 
@@ -137,6 +145,28 @@ func clear_explosion() -> void:
 		return
 	_explode_active = false
 	_explode_sq = -1
+	queue_redraw()
+
+
+## Face the board to the player now to move (Face to Face): the pieces spin to `angle` (0 or PI) over
+## `duration` secs, while the coordinate labels SNAP there instantly. Cosmetic only: squares + hit-testing
+## never move.
+func face_pieces(angle: float, duration: float) -> void:
+	if _pieces_tween != null and _pieces_tween.is_valid():
+		_pieces_tween.kill()
+	coords_angle = angle  # coords flip instantly (a spinning digit reads oddly); only the pieces animate
+	if duration <= 0.0:
+		pieces_angle = angle
+		queue_redraw()
+		return
+	_pieces_tween = create_tween()
+	_pieces_tween.tween_method(_set_pieces_angle, pieces_angle, angle, duration) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	queue_redraw()  # show the snapped coords immediately, don't wait for the first tween tick
+
+
+func _set_pieces_angle(v: float) -> void:
+	pieces_angle = v
 	queue_redraw()
 
 
@@ -312,7 +342,16 @@ func _draw_coords() -> void:
 		var tl: TextLine = e["tl"]
 		var off: Vector2 = e["off"]
 		var col: Color = e["color"]
-		tl.draw(ci, _origin + off, col)
+		var pos: Vector2 = _origin + off
+		if coords_angle == 0.0:
+			tl.draw(ci, pos, col)
+		else:
+			# Flip the label about its OWN centre (it stays in its cell) so the digit/letter reads for
+			# the current player. Instant (coords_angle snaps), unlike the animated pieces.
+			var c := pos + tl.get_size() * 0.5
+			draw_set_transform(c, coords_angle, Vector2.ONE)
+			tl.draw(ci, -tl.get_size() * 0.5, col)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _ensure_coords() -> void:
@@ -338,17 +377,17 @@ func _ensure_coords() -> void:
 			"off": Vector2(m, v * _cell + m),
 			"color": UI.BOARD_DARK if rlight else UI.BOARD_LIGHT,
 		})
-		# File letter in the bottom-right of the bottom-row square.
+		# File letter in the bottom-right of the bottom-row square. Kept GLYPH-SIZED (not a full-cell
+		# right-aligned line) so a 180° flip about its own centre stays inside the cell (else the letter
+		# would slide over the neighbouring square and lose its shade contrast).
 		var file := v if not flipped else 7 - v
 		var frank := 0 if not flipped else 7
 		var flight := ((file + frank) % 2) == 1
 		var ftl := TextLine.new()
 		ftl.add_string(String.chr(97 + file), BADGE_FONT, fs)
-		ftl.width = _cell - 2.0 * m
-		ftl.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		_coord_cache.append({
 			"tl": ftl,
-			"off": Vector2(v * _cell + m, 8.0 * _cell - ftl.get_size().y - m),
+			"off": Vector2((v + 1.0) * _cell - m - ftl.get_size().x, 8.0 * _cell - ftl.get_size().y - m),
 			"color": UI.BOARD_DARK if flight else UI.BOARD_LIGHT,
 		})
 
@@ -378,11 +417,22 @@ func _draw_pieces() -> void:
 			continue
 		var tex: Texture2D = _tex.get(p)
 		if tex:
-			draw_texture_rect(tex, _square_rect(sq), false)
+			_draw_piece_tex(tex, _square_rect(sq))
 	if _anim_active:
 		_draw_slider(_anim_piece, _anim_from, _anim_to)
 		if _anim2_from >= 0:
 			_draw_slider(_anim2_piece, _anim2_from, _anim2_to)
+
+
+## Draw a piece texture filling `rect`, rotated by pieces_angle about the square centre (Face to Face).
+func _draw_piece_tex(tex: Texture2D, rect: Rect2) -> void:
+	if pieces_angle == 0.0:
+		draw_texture_rect(tex, rect, false)
+		return
+	var c := rect.position + rect.size * 0.5
+	draw_set_transform(c, pieces_angle, Vector2.ONE)
+	draw_texture_rect(tex, Rect2(-rect.size * 0.5, rect.size), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## Draw a piece partway from `from_sq` to `to_sq` at the shared (eased) slide progress.
@@ -391,7 +441,7 @@ func _draw_slider(piece: int, from_sq: int, to_sq: int) -> void:
 	if tex == null:
 		return
 	var pos := _square_rect(from_sq).position.lerp(_square_rect(to_sq).position, _anim_progress)
-	draw_texture_rect(tex, Rect2(pos, Vector2(_cell, _cell)), false)
+	_draw_piece_tex(tex, Rect2(pos, Vector2(_cell, _cell)))
 
 
 ## The checkmate shatter: a quick flash + shockwave ring, then the king's sprite split into
@@ -429,7 +479,9 @@ func _draw_explosion() -> void:
 			var speed := _cell * (1.0 + 0.6 * absf(sin(fseed * 1.7)))
 			var spin := (1.0 if fseed % 2 == 0 else -1.0) * (PI * 1.5 + absf(cos(fseed)) * PI)
 			var pos := home + dir * speed * burst + Vector2(0.0, gravity * t * t * 0.5)
-			draw_set_transform(pos, spin * t, Vector2.ONE)
+			# Face to Face: orient the fragment + its trajectory to the cosmetic piece angle.
+			var rpos: Vector2 = pos if pieces_angle == 0.0 else (pos - center).rotated(pieces_angle) + center
+			draw_set_transform(rpos, spin * t + pieces_angle, Vector2.ONE)
 			draw_texture_rect_region(tex, Rect2(-frag * 0.5, frag),
 				Rect2(Vector2(j, i) * src_cell, src_cell), Color(1, 1, 1, fade))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
