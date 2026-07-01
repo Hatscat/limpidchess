@@ -7,6 +7,7 @@ extends Control
 @onready var games_label: Label = %GamesLabel
 @onready var bot_avatar: TextureRect = %BotAvatar
 @onready var bot_name: Label = %BotName
+@onready var puzzle_title: Label = %PuzzleTitle
 @onready var puzzle_best: Label = %PuzzleBest
 @onready var settings_overlay: Control = %SettingsOverlay
 @onready var lang_list: VBoxContainer = %LangList
@@ -26,7 +27,7 @@ func _ready() -> void:
 	bot_name.text = bot.get("name", "a bot")
 
 	_refresh_games()
-	puzzle_best.text = tr("Best: %d") % GameManager.puzzle_highscore
+	_refresh_puzzle_button()
 	# Calm moment after a positive game: ask for a Play rating (gated to once, 2nd+ game).
 	if GameManager.pending_review_check:
 		GameManager.pending_review_check = false
@@ -38,6 +39,20 @@ func _refresh_games() -> void:
 		games_label.text = "Premium · ∞"
 	else:
 		games_label.text = tr("%d / %d today") % [GameManager.games_remaining_today(), GameManager.FREE_GAMES_PER_DAY]
+
+
+## The Puzzles button has two states: resume a parked run (a streak left in progress) or start a new
+## one. Subtitle shows the parked streak length when resuming, else the best streak ever.
+func _refresh_puzzle_button() -> void:
+	# Composed from separate keys ("New"/"Resume" + "puzzle streak") so each word translates cleanly,
+	# with the verb on line 1 and the noun on line 2. This is set in code (not a scene auto-translate),
+	# so it must be rebuilt on a language change too, see the call in _on_language_chosen.
+	var verb: String = tr("Resume") if GameManager.has_puzzle_run() else tr("New")
+	puzzle_title.text = verb + "\n" + tr("puzzle streak")
+	if GameManager.has_puzzle_run():
+		puzzle_best.text = "%s: %d" % [tr("Streak"), GameManager.puzzle_streak]
+	else:
+		puzzle_best.text = tr("Best: %d") % GameManager.puzzle_highscore
 
 
 ## The daily-games pill is tappable: it routes to Premium (which explains the daily limit and
@@ -77,8 +92,11 @@ func _notification(what: int) -> void:
 ## Puzzle Rush: free players get one run a day (premium unlimited). Out of runs routes to the same
 ## daily-limit dialog (with the puzzle wording), which offers Premium.
 func _on_puzzle_pressed() -> void:
+	if GameManager.has_puzzle_run():
+		GameManager.start_puzzle_rush(true)  # resume a parked run: no daily gate, it was already paid
+		return
 	if GameManager.can_puzzle_today():
-		GameManager.start_puzzle_rush()
+		GameManager.start_puzzle_rush(false)
 	else:
 		daily_limit.open("puzzle")
 
@@ -193,5 +211,6 @@ func _on_language_chosen(code: String) -> void:
 	# The locale switches live: auto-translated labels update themselves, but the
 	# strings we build in code must be refreshed. We deliberately keep Settings open.
 	_refresh_games()
+	_refresh_puzzle_button()  # its title/subtitle are built in code, so retranslate them here too
 	_refresh_sound_btn()
 	_build_lang_list()  # rebuild so the selected-language highlight moves

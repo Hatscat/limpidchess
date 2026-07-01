@@ -83,6 +83,16 @@ static func pick(target_rating: int, used: Dictionary) -> Dictionary:
 	return {}  # exhausted (only on absurdly long streaks); caller can reset `used`
 
 
+## Re-fetch a puzzle by its data index (for resuming a parked run). Returns the same shape as pick(),
+## or {} if the index is out of range (e.g. the puzzle set changed since the run was parked).
+static func get_by_index(index: int) -> Dictionary:
+	_ensure_loaded()
+	if index < 0 or index >= _all.size():
+		return {}
+	var p: Dictionary = _all[index]
+	return {"index": index, "fen": p["fen"], "moves": p["moves"], "rating": p["rating"]}
+
+
 static func count() -> int:
 	_ensure_loaded()
 	return _all.size()

@@ -97,6 +97,8 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_layout)
 	if not GameManager.puzzle_result.is_empty():
 		_restore_result(GameManager.puzzle_result)  # returned from a mistake review: re-show the result
+	elif GameManager.pending_puzzle_resume and GameManager.has_puzzle_run():
+		_resume()  # Home's "Resume puzzle streak": pick up the parked run
 	else:
 		_begin()
 
@@ -135,6 +137,26 @@ func _begin() -> void:
 	_next_puzzle()
 
 
+## Resume a parked run (Home's "Resume puzzle streak"): restore the streak and reload the current
+## puzzle from move 1. The move number within a multi-move puzzle isn't saved, so it simply restarts.
+func _resume() -> void:
+	var pz: Dictionary = Puzzles.get_by_index(GameManager.puzzle_index)
+	if pz.is_empty():
+		# Puzzle set changed / bad index: drop the stale run and start a fresh one so nobody gets stuck.
+		GameManager.clear_puzzle_progress()
+		_begin()
+		return
+	_busy = true
+	_streak = GameManager.puzzle_streak
+	_cur_rating = int(pz["rating"])
+	_over = false
+	_fail_moves = PackedStringArray()
+	_used = {GameManager.puzzle_index: true}  # don't re-serve the resumed puzzle later this run
+	_update_header()
+	_gen += 1
+	_start_puzzle(pz, _gen)
+
+
 func _next_puzzle() -> void:
 	_busy = true
 	_gen += 1
@@ -147,9 +169,16 @@ func _next_puzzle() -> void:
 	if pz.is_empty():
 		_end_run()
 		return
+	_start_puzzle(pz, g)
+
+
+## Load a specific puzzle (from pick(), or from get_by_index() on resume): park it so the run survives
+## a quit, then play its setup move and present the player's first move.
+func _start_puzzle(pz: Dictionary, g: int) -> void:
 	_cur_rating = int(pz["rating"])
 	_moves = pz["moves"]
 	_cur_fen = String(pz["fen"])
+	GameManager.save_puzzle_progress(_streak, int(pz["index"]))  # park THIS puzzle at THIS streak length
 	rules.set_fen(_cur_fen)
 	_cur_player_white = rules.side_to_move != ChessRules.WHITE  # the player is the side to move AFTER the setup
 	board.clear_options()
@@ -382,6 +411,7 @@ func _end_run() -> void:
 	if _streak < MIN_STREAK_TO_COUNT:
 		GameManager.cancel_puzzle()  # no-op for premium
 	GameManager.record_puzzle_score(_streak)
+	GameManager.clear_puzzle_progress()  # the run is over (failed): nothing parked to resume
 	var beaten := _streak > _best_at_start
 	if beaten:
 		Audio.play("win")
@@ -478,15 +508,11 @@ func _close_menu() -> void:
 	menu_overlay.visible = false
 
 
-## Step 2 of leaving (the menu's Leave opens this): a confirmation, matching the chess game's
-## Cancel/Give-up confirm. The message states the consequence: leaving before the 4th puzzle won't
-## burn the daily run.
+## Step 2 of leaving (the menu's "Save and leave" opens this): a confirmation, matching the chess
+## game's Cancel/Give-up confirm. The message makes clear the run is parked and can be resumed later.
 func _confirm_leave() -> void:
 	menu_overlay.visible = false
-	if _streak < MIN_STREAK_TO_COUNT and not GameManager.is_premium:
-		confirm_message.text = tr("This run won't count today.")
-	else:
-		confirm_message.text = tr("Your best streak is saved.")
+	confirm_message.text = tr("Your streak is saved. Resume it any time.")
 	confirm_overlay.visible = true
 
 
@@ -494,14 +520,13 @@ func _close_confirm() -> void:
 	confirm_overlay.visible = false
 
 
-## Confirmed leave. Before the 4th puzzle a free player's daily run is refunded (a barely-played
-## "cancel", like the chess game's Cancel game); from the 4th on it counts. The streak is saved.
+## Confirmed leave. The run is PARKED (saved) to resume from Home, so the day's run stays spent on it,
+## no refund: a run you can finish later isn't wasted, and refunding here would let a free player farm
+## unlimited runs (start, leave, resume). _start_puzzle already saved the streak + current puzzle.
 func _on_leave() -> void:
 	if _over:
-		return  # re-entry guard: a double-tap must not refund twice (mirrors game.gd _do_cancel_game)
+		return  # re-entry guard: a double-tap must not act twice (mirrors game.gd _do_cancel_game)
 	_over = true
-	if _streak < MIN_STREAK_TO_COUNT:
-		GameManager.cancel_puzzle()  # no-op for premium
 	_quit_to_home()
 
 

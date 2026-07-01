@@ -279,7 +279,7 @@ theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
-text = "Leave"
+text = "Save and leave"
 alignment = 0
 
 [node name="KeepPlayingBtn" type="Button" parent="MenuOverlay/Card/VBox" unique_id=1890290211]

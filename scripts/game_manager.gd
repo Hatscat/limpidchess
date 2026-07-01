@@ -50,6 +50,13 @@ var games_played := 0         ## gates the review prompt + reset reminder; refun
 var bot_wins: Dictionary = {} ## bot id (String) -> times the human has beaten that bot (int)
 var puzzle_highscore := 0     ## longest Puzzle Rush streak ever reached (saved)
 
+# A parked (in-progress) puzzle run, so a player can quit and resume their streak later. We save just
+# the streak length and the CURRENT puzzle's data index (the puzzle restarts from move 1 on resume, so
+# the move number within it is not saved). puzzle_index < 0 means no run is parked.
+var puzzle_streak := 0
+var puzzle_index := -1
+var pending_puzzle_resume := false  ## transient (not saved): Home's Resume asks puzzle_rush to resume
+
 # --- Current game context (set before entering the Game scene; not persisted) ---
 var current_bot: Dictionary = {}     ## a BotRoster entry, or {} for pass-and-play
 var player_is_white := true
@@ -116,6 +123,8 @@ func reset_save() -> void:
 	games_played = 0
 	bot_wins.clear()
 	puzzle_highscore = 0
+	puzzle_streak = 0
+	puzzle_index = -1
 	current_bot = {}
 	last_bot_id = ""
 	_apply_locale()
@@ -161,11 +170,37 @@ func go_to_puzzles() -> void:
 	get_tree().change_scene_to_file("res://scenes/puzzle_rush.tscn")
 
 
-## Begin a Puzzle Rush run. Consumes the day's free run for non-premium (callers gate on
-## can_puzzle_today() and show the daily-limit dialog otherwise).
-func start_puzzle_rush() -> void:
-	count_puzzle()
+## Begin a Puzzle Rush run. A fresh run (resume == false) discards any parked run and consumes the
+## day's free run for non-premium (callers gate on can_puzzle_today()). Resuming (resume == true)
+## continues a parked run: no daily is charged (it was already paid when the run first started).
+func start_puzzle_rush(resume := false) -> void:
+	pending_puzzle_resume = resume
+	if not resume:
+		clear_puzzle_progress()  # a fresh run abandons any parked streak
+		count_puzzle()           # consume the day's free run (no-op for premium)
 	get_tree().change_scene_to_file("res://scenes/puzzle_rush.tscn")
+
+
+## True when a run is parked and can be resumed from Home.
+func has_puzzle_run() -> bool:
+	return puzzle_index >= 0
+
+
+## Park the in-progress run: the current streak length + the current puzzle's data index (so the exact
+## puzzle can be reloaded and restarted). Called each time a new puzzle is presented.
+func save_puzzle_progress(streak: int, index: int) -> void:
+	puzzle_streak = streak
+	puzzle_index = index
+	if streak > puzzle_highscore:  # bank the reached streak now, so a hard app-kill can't lose the record
+		puzzle_highscore = streak
+	_save()
+
+
+## Discard the parked run (a run ended, or a fresh run replaced it).
+func clear_puzzle_progress() -> void:
+	puzzle_streak = 0
+	puzzle_index = -1
+	_save()
 
 
 ## A failed Puzzle Rush puzzle handed to the game scene's moves-review (so the player can "understand
@@ -344,6 +379,8 @@ func _save() -> void:
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("stats", "games_played", games_played)
 	cfg.set_value("stats", "puzzle_highscore", puzzle_highscore)
+	cfg.set_value("stats", "puzzle_streak", puzzle_streak)
+	cfg.set_value("stats", "puzzle_index", puzzle_index)
 	for bot_id: String in bot_wins:  # ConfigFile has no nested values: one key per bot
 		cfg.set_value("bot_wins", bot_id, bot_wins[bot_id])
 	cfg.save(SAVE_PATH)
@@ -368,6 +405,8 @@ func _load() -> void:
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))
 	puzzle_highscore = int(cfg.get_value("stats", "puzzle_highscore", 0))
+	puzzle_streak = int(cfg.get_value("stats", "puzzle_streak", 0))
+	puzzle_index = int(cfg.get_value("stats", "puzzle_index", -1))
 	bot_wins.clear()
 	if cfg.has_section("bot_wins"):
 		for bot_id: String in cfg.get_section_keys("bot_wins"):

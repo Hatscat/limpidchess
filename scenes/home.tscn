@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://cw8pcxwr83nff" path="res://assets/pieces/b_pawn.png" id="6_bpawn"]
 [ext_resource type="Texture2D" uid="uid://dr03fdrxbna2q" path="res://assets/icons/gear.svg" id="7_gear"]
 [ext_resource type="Texture2D" uid="uid://ovf8opbnaxrt" path="res://assets/icons/close.png" id="8_close"]
-[ext_resource type="PackedScene" uid="uid://limpiddailydlg1" path="res://scenes/daily_limit_dialog.tscn" id="9_daily"]
+[ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="9_daily"]
 [ext_resource type="Texture2D" uid="uid://dx6lvqxgecy1e" path="res://assets/icons/puzzle.png" id="10_puzzle"]
 
 [sub_resource type="StyleBoxFlat" id="sb_pill"]
@@ -166,7 +166,7 @@ theme_override_constants/separation = 56
 alignment = 1
 
 [node name="PlayCard" type="Button" parent="Center/VBox" unique_id=1507789893]
-custom_minimum_size = Vector2(480, 560)
+custom_minimum_size = Vector2(520, 560)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
@@ -272,8 +272,8 @@ theme_override_font_sizes/font_size = 24
 text = "Biscuit"
 vertical_alignment = 1
 
-[node name="PuzzleRush" type="Button" parent="Center/VBox"]
-custom_minimum_size = Vector2(480, 144)
+[node name="PuzzleRush" type="Button" parent="Center/VBox" unique_id=119226942]
+custom_minimum_size = Vector2(520, 144)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
@@ -281,49 +281,53 @@ theme_override_styles/normal = SubResource("sb_ghost_shadow")
 theme_override_styles/pressed = SubResource("sb_ghost_shadow")
 theme_override_styles/hover = SubResource("sb_ghost_shadow")
 
-[node name="Row" type="HBoxContainer" parent="Center/VBox/PuzzleRush"]
+[node name="Row" type="HBoxContainer" parent="Center/VBox/PuzzleRush" unique_id=1953494391]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 48.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 32
-alignment = 0
+theme_override_constants/separation = 0
 
-[node name="Icon" type="TextureRect" parent="Center/VBox/PuzzleRush/Row"]
+[node name="IconWrap" type="CenterContainer" parent="Center/VBox/PuzzleRush/Row" unique_id=348086806]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Center/VBox/PuzzleRush/Row/IconWrap" unique_id=527566664]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
-size_flags_vertical = 4
 mouse_filter = 2
 texture = ExtResource("10_puzzle")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Text" type="VBoxContainer" parent="Center/VBox/PuzzleRush/Row"]
+[node name="Text" type="VBoxContainer" parent="Center/VBox/PuzzleRush/Row" unique_id=904620150]
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_horizontal = 3
+size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/separation = 8
+alignment = 1
 
-[node name="Title" type="Label" parent="Center/VBox/PuzzleRush/Row/Text"]
+[node name="PuzzleTitle" type="Label" parent="Center/VBox/PuzzleRush/Row/Text" unique_id=669180232]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Puzzles"
-horizontal_alignment = 1
+text = "New puzzle streak"
 
-[node name="PuzzleBest" type="Label" parent="Center/VBox/PuzzleRush/Row/Text"]
+[node name="PuzzleBest" type="Label" parent="Center/VBox/PuzzleRush/Row/Text" unique_id=236813508]
 unique_name_in_owner = true
 modulate = Color(0.98, 0.8, 0.34, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Best: 0"
-horizontal_alignment = 1
 
 [node name="PassPlay" type="Button" parent="Center/VBox" unique_id=769550615]
-custom_minimum_size = Vector2(480, 144)
+custom_minimum_size = Vector2(520, 144)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
@@ -336,17 +340,20 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 48.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 32
-alignment = 0
+theme_override_constants/separation = 0
 
-[node name="Hand" type="TextureRect" parent="Center/VBox/PassPlay/Row" unique_id=1917458741]
+[node name="IconWrap" type="CenterContainer" parent="Center/VBox/PassPlay/Row" unique_id=1682767708]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Hand" type="TextureRect" parent="Center/VBox/PassPlay/Row/IconWrap" unique_id=1917458741]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
-size_flags_vertical = 4
 mouse_filter = 2
 texture = ExtResource("4_handshake")
 expand_mode = 1
@@ -354,22 +361,22 @@ stretch_mode = 5
 
 [node name="Text" type="VBoxContainer" parent="Center/VBox/PassPlay/Row" unique_id=2063519690]
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_horizontal = 3
+size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/separation = 8
+alignment = 1
 
 [node name="Title" type="Label" parent="Center/VBox/PassPlay/Row/Text" unique_id=1561182496]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Face to Face"
-horizontal_alignment = 1
 
 [node name="Sub" type="Label" parent="Center/VBox/PassPlay/Row/Text" unique_id=1803461016]
 modulate = Color(1, 1, 1, 0.5)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "with a friend"
-horizontal_alignment = 1
 
 [node name="NavBar" parent="." unique_id=1060122150 instance=ExtResource("2_nav")]
 layout_mode = 1
@@ -472,9 +479,10 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="DailyLimit" parent="." instance=ExtResource("9_daily")]
+[node name="DailyLimit" parent="." unique_id=1995633521 instance=ExtResource("9_daily")]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
 
 [connection signal="gui_input" from="TopBar/GamesPill" to="." method="_on_games_input"]
 [connection signal="pressed" from="TopBar/Settings" to="." method="_on_settings_pressed"]

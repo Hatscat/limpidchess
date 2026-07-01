@@ -23,6 +23,8 @@ func _process(_d: float) -> bool:
 		gm.is_premium = false
 		gm.games_today = 0                       # -> "3 / 3 today"
 		gm.puzzle_highscore = 15                 # -> "Best: 15" on the Puzzles button
+		gm.puzzle_index = -1                     # no parked run -> "New puzzle streak" state
+		gm.puzzle_streak = 0
 		gm.pending_review_check = false          # never pop the rating dialog in a shot
 		gm.current_bot = BotRoster.get_by_id("reynard")  # friendly fox, matches old art
 		home = load("res://scenes/home.tscn").instantiate()
