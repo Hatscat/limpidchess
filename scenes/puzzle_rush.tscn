@@ -4,7 +4,6 @@
 [ext_resource type="Script" uid="uid://dsbi4m5efbwas" path="res://scripts/ui/chess_board.gd" id="2_board"]
 [ext_resource type="Texture2D" uid="uid://c52qaa1q2wkua" path="res://assets/icons/party.png" id="4_party"]
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="5_daily"]
-[ext_resource type="Script" uid="uid://b3rr0vao8f1by" path="res://scripts/ui/difficulty_pips.gd" id="6_pips"]
 [ext_resource type="Texture2D" uid="uid://bi3n22ngccymk" path="res://assets/icons/trophy.png" id="7_trophy"]
 [ext_resource type="Texture2D" uid="uid://dk5ixea8nri3p" path="res://assets/icons/fire.png" id="8_fire"]
 
@@ -87,7 +86,7 @@ theme_override_styles/pressed = SubResource("sb_empty")
 theme_override_styles/hover = SubResource("sb_empty")
 expand_icon = true
 
-[node name="Title" type="Label" parent="." unique_id=441083087]
+[node name="Title" type="VBoxContainer" parent="." unique_id=441083087]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -96,9 +95,22 @@ offset_top = 16.0
 offset_right = -12.0
 offset_bottom = 92.0
 grow_horizontal = 2
-theme_override_font_sizes/font_size = 28
-text = "Puzzles"
-vertical_alignment = 1
+mouse_filter = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="Name" type="Label" parent="Title" unique_id=441083088]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Puzzle streak"
+horizontal_alignment = 1
+
+[node name="Goal" type="Label" parent="Title" unique_id=441083089]
+modulate = Color(1, 1, 1, 0.5)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Go as far as you can!"
+horizontal_alignment = 1
 
 [node name="Header" type="HBoxContainer" parent="." unique_id=504203621]
 layout_mode = 1
@@ -112,28 +124,6 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
-
-[node name="DiffCol" type="VBoxContainer" parent="Header" unique_id=416322770]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 2
-alignment = 1
-
-[node name="Caption" type="Label" parent="Header/DiffCol" unique_id=146187833]
-modulate = Color(1, 1, 1, 0.45)
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Difficulty"
-horizontal_alignment = 1
-
-[node name="DiffPips" type="Control" parent="Header/DiffCol" unique_id=1198055053]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 42)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-mouse_filter = 2
-script = ExtResource("6_pips")
 
 [node name="StreakCol" type="VBoxContainer" parent="Header" unique_id=1262124393]
 layout_mode = 2

@@ -45,25 +45,25 @@ func _initialize() -> void:
 	# Left text block (OpenDyslexic is very wide, so keep it well clear of the boards at x=586).
 	_text(host, "Limpid Chess", 48, Color(0.93, 0.95, 0.97), Vector2(56, 150), 500, HORIZONTAL_ALIGNMENT_LEFT, true)
 	_text(host, "Find the best move", 32, UI.ACCENT, Vector2(58, 222), 500, HORIZONTAL_ALIGNMENT_LEFT, true)
-	_text(host, "Smooth chess that grows with you.", 20, Color(0.72, 0.77, 0.81), Vector2(58, 278), 510, HORIZONTAL_ALIGNMENT_LEFT, false)
+	_text(host, "Smooth chess that grows with you.", 18, Color(0.72, 0.77, 0.81), Vector2(58, 282), 500, HORIZONTAL_ALIGNMENT_LEFT, false)
 
-	# Two mini-boards on the right: neutral "Your move" -> revealed "The answer".
+	# Two mini-boards on the right, pushed clear of the text: neutral "Your move" -> revealed "The answer".
 	var ba := _board(false)
-	ba.position = Vector2(586, 110)
-	ba.size = Vector2(180, 180)
+	ba.position = Vector2(600, 108)
+	ba.size = Vector2(184, 184)
 	host.add_child(ba)
 	var bb := _board(true)
-	bb.position = Vector2(812, 110)
-	bb.size = Vector2(180, 180)
+	bb.position = Vector2(820, 108)
+	bb.size = Vector2(184, 184)
 	host.add_child(bb)
-	_text(host, "Your move", 20, Color(0.80, 0.84, 0.88), Vector2(586, 298), 180, HORIZONTAL_ALIGNMENT_CENTER, false)
-	_text(host, "The answer", 20, Color(0.80, 0.84, 0.88), Vector2(812, 298), 180, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_text(host, "Your move", 20, Color(0.80, 0.84, 0.88), Vector2(600, 300), 184, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_text(host, "The answer", 20, Color(0.80, 0.84, 0.88), Vector2(820, 300), 184, HORIZONTAL_ALIGNMENT_CENTER, false)
 
 	var arrow := TextureRect.new()
 	arrow.texture = load("res://assets/icons/chevron_right.svg")
 	arrow.modulate = UI.ACCENT
-	arrow.position = Vector2(770, 182)
-	arrow.size = Vector2(36, 44)
+	arrow.position = Vector2(786, 180)
+	arrow.size = Vector2(34, 44)
 	arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	arrow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	host.add_child(arrow)

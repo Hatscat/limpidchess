@@ -12,6 +12,10 @@ var setup_done := false
 func _initialize() -> void:
 	vp = SubViewport.new()
 	vp.size = Vector2i(1560, 2778)
+	# Render at the game's DESIGN scale (720x1280 + canvas_items stretch, see project.godot) but at high
+	# resolution, so the UI fills the frame exactly like on a phone instead of drawing tiny at native px.
+	vp.size_2d_override = Vector2i(720, 1280)
+	vp.size_2d_override_stretch = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(vp)
 

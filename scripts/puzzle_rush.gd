@@ -3,11 +3,11 @@ extends Control
 ## Puzzle Rush: a rising-difficulty streak of bundled Lichess puzzles (see [Puzzles]). Each puzzle
 ## offers 3 moves, the solution + 2 plausible distractors (the shallow GDScript ranker's top other
 ## moves make tempting traps), shuffled and shown neutrally. The first wrong pick ends the run.
-## Difficulty (puzzle rating) climbs with the streak; the highscore is the longest streak (saved).
+## Puzzle rating still climbs with the streak (harder puzzles) but is NOT shown: the goal is simply the
+## streak, go as far as you can. The highscore is the longest streak (saved).
 ## No eval bar. The daily-run cap (free) is enforced by callers (Home / Retry) via can_puzzle_today().
 
 const ChessBotScript := preload("res://scripts/chess/chess_bot.gd")
-const DifficultyPips := preload("res://scripts/ui/difficulty_pips.gd")
 # ChessRules is a global class (class_name in chess_rules.gd) — use it directly, no preload const.
 
 const START_RATING := 400    ## difficulty of the first puzzle (beginner / kid friendly)
@@ -23,7 +23,6 @@ const MATE_EXPLODE_SEC := 0.7 ## checkmate: how long the losing king's shatter p
 const MIN_STREAK_TO_COUNT := 3 ## failing OR leaving before solving this many puzzles refunds the daily run (a free retry)
 
 @onready var board: Control = %Board
-@onready var diff_pips: DifficultyPips = %DiffPips
 @onready var streak_value: Label = %StreakValue
 @onready var best_value: Label = %BestValue
 @onready var celebrate: TextureRect = %Celebrate
@@ -381,22 +380,8 @@ func _quality_color(quality: String) -> Color:
 func _update_header() -> void:
 	streak_value.text = str(_streak)
 	best_value.text = str(_best_at_start)
-	diff_pips.set_level(_difficulty_level(_cur_rating))
-	# Make the dots row exactly as tall as a number row so all three captions share a baseline (the
-	# 32px label's real line box is ~59px, not 32 - track it from the actual label, not a magic number).
-	diff_pips.custom_minimum_size.y = maxf(streak_value.get_combined_minimum_size().y, 42.0)
 	# Celebrate live once they pass a real previous record (not on a first-ever run).
 	celebrate.visible = _best_at_start > 0 and _streak > _best_at_start
-
-
-## Map a puzzle rating (400..2600) onto 1-6 dots (like the Bots screen) so difficulty reads at a
-## glance for beginners instead of an opaque Elo number. 0 (no filled dots) before the first puzzle.
-func _difficulty_level(rating: int) -> int:
-	if rating <= 0:
-		return 0
-	@warning_ignore("integer_division")
-	var lvl: int = (rating - START_RATING) * 6 / maxi(MAX_RATING - START_RATING, 1) + 1
-	return clampi(lvl, 1, 6)
 
 
 func _end_run() -> void:
