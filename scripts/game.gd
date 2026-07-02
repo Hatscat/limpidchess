@@ -95,7 +95,8 @@ const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in
 @onready var review_prev: Button = %ReviewPrev
 @onready var review_next: Button = %ReviewNext
 @onready var review_line_best: Button = %ReviewLineBest       ## explore the BEST move's line (green)
-@onready var review_line_played: Button = %ReviewLinePlayed   ## explore the player's OWN move's line
+@onready var review_line_played: Button = %ReviewLinePlayed   ## explore the played move's line (player's or bot's)
+var _played_mark: _LineMark                                   ## the played button's quality glyph, re-shaped per ply
 @onready var line_rewind: Button = %LineRewind
 @onready var line_play: Button = %LinePlayPause
 @onready var line_forward: Button = %LineForward
@@ -163,7 +164,8 @@ var _puzzle_review_mode := false  ## reviewing a failed Puzzle Rush puzzle (no b
 
 # Best-replies scrubbable timeline (see the LINE_* constants).
 var _line_active := false
-var _line_from_best := true       ## the line currently playing: the best move's line (true) or the player's own
+var _line_from_best := true       ## the line currently playing: the best move's line (true) or the played move's
+var _line_is_player_move := false ## when playing the played line: was that move the human's (label "Your move") or the bot's ("This move")
 var _line_states: Array = []     ## ChessRules after 0 .. k line moves (size k+1)
 var _line_moves_arr: Array = []  ## the k line moves (packed ints)
 var _line_san := PackedStringArray()  ## SAN of each line move, for the header highlight
@@ -664,12 +666,10 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		if not _line_active:
 			var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 			var is_best: bool = int(opt.get("move", -1)) == int(rv.get("best", -1))
-			var mover: int = int(_undo_stack[_review_ply].get("mover", -1)) if _review_ply < _undo_stack.size() else -1
-			var is_player: bool = _review_ply > 0 and (GameManager.pass_and_play or mover == player_color)
-			# The best-move arrow → the best line; the PLAYER's own arrow → their line; a bot's arrow has
-			# no "your line", so it opens the best line too. (Match by MOVE, not the quality label: an
+			# The best-move arrow → the best line; the other (played-move) arrow → that move's line, whether
+			# it was the player's mistake or the bot's blunder. (Match by MOVE, not the quality label: an
 			# on-demand-graded move can be quality "best" yet not be the engine's #1.)
-			_play_line(is_best or not is_player)
+			_play_line(is_best)
 		return
 	if _busy:
 		return
@@ -1362,19 +1362,16 @@ func _setup_review_buttons() -> void:
 	review_prev.icon = load("res://assets/icons/chevron_left.svg")
 	review_next.icon = load("res://assets/icons/chevron_right.svg")
 	# Prev / Next are icon-only with a centred chevron (so they stay short in every language). The two
-	# best-replies buttons fill the middle: a GREEN "Best line" (the best move's line) and, when the
-	# player didn't play it, a quality-coloured "Your line" (where their own move leads).
+	# best-replies buttons fill the middle: a GREEN one starts the best move's line, a quality-coloured
+	# one starts the played move's line (the player's mistake OR the bot's blunder). Both are text-free
+	# (no wrapping in any language): a magnifier (starts an analysis-style walk-through) beside the mark (✓ / ✗).
 	review_prev.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	review_next.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	review_prev.add_theme_constant_override("icon_max_width", 40)
 	review_next.add_theme_constant_override("icon_max_width", 40)
-	review_line_best.icon = load("res://assets/icons/check.png")     # ✓ = the best line
-	review_line_played.icon = load("res://assets/icons/close.png")   # ✗ = your own (worse) line
-	for b: Button in [review_line_best, review_line_played]:
-		b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_constant_override("icon_max_width", 28)
-		b.add_theme_constant_override("h_separation", 10)
 	_color_line_button(review_line_best, _quality_color("best"))     # fixed green
+	_set_line_button_icons(review_line_best, "best")                 # 🔍 + ✓ (always the best line)
+	_played_mark = _set_line_button_icons(review_line_played, "blunder")  # 🔍 + a mark re-shaped per ply
 	review_line_best.pressed.connect(_on_line_best)
 	review_line_played.pressed.connect(_on_line_played)
 	# The 4 media controls shown while the line plays (rewind · play/pause · fast-forward · stop):
@@ -1427,6 +1424,37 @@ func _color_line_button(btn: Button, bg: Color) -> void:
 	var dim := sb.duplicate() as StyleBoxFlat
 	dim.bg_color = Color(bg.r * 0.4, bg.g * 0.4, bg.b * 0.4, 1.0)
 	btn.add_theme_stylebox_override("disabled", dim)
+
+
+## Put a centred glyph on a best-replies button: a magnifier (signals "start an analysis-style
+## walk-through") beside a quality mark drawn identically to the board's arrow symbol (✓ best / – decent /
+## ✗ blunder), so the button matches its arrow. No text, so the pair never wraps in any language. The
+## glyph lives in a mouse-transparent child so taps hit the button. Returns the mark (to re-shape per ply).
+func _set_line_button_icons(btn: Button, quality: String) -> _LineMark:
+	btn.icon = null
+	btn.text = ""
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 12)
+	var mag := TextureRect.new()
+	mag.texture = load("res://assets/icons/magnifier.png")
+	mag.custom_minimum_size = Vector2(46, 46)
+	mag.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	mag.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	mag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mark := _LineMark.new()
+	mark.quality = quality
+	mark.custom_minimum_size = Vector2(42, 42)
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mark.resized.connect(mark.queue_redraw)  # keep the shape crisp when the container sizes it
+	row.add_child(mag)
+	row.add_child(mark)
+	center.add_child(row)
+	btn.add_child(center)
+	return mark
 
 
 ## Show the 4 line-playback controls in the nav (and hide Prev/the two line buttons/Next), or vice versa.
@@ -1716,16 +1744,17 @@ func _update_review_panel() -> void:
 	else:
 		review_quality.text = tr(String(rv.get("label", "")))
 		review_quality.modulate = _quality_color(String(rv.get("quality", "")))
-	_refresh_line_buttons(rv, pre, move, is_player_row)
+	_refresh_line_buttons(rv, pre, move)
 	_ensure_review_line(_review_ply)   # lengthen the best line in the background if it's too short
-	if is_player_row:
-		_ensure_played_line(_review_ply)  # only the player's own move needs a "Your line" consequence
+	if move != int(rv.get("best", -1)) and move >= 0:
+		_ensure_played_line(_review_ply)  # any wrong move (player's or bot's) gets a consequence line
 
 
-## Set up the two best-replies buttons for the current ply: green "Best line" (whenever a best move
-## exists) and a quality-coloured "Your line" (only when the player's move differs from the best). The
-## info panel shows the best line by default.
-func _refresh_line_buttons(rv: Dictionary, pre: ChessRules, played: int, is_player: bool) -> void:
+## Set up the two best-replies buttons for the current ply: the GREEN one (whenever a best move exists)
+## explores the best move's line; the quality-coloured one explores the actually-played move's line
+## (whenever it differs from the best), so the player can walk into either a mistake of their own OR the
+## bot's blunder and see the consequence. The info panel shows the best line by default.
+func _refresh_line_buttons(rv: Dictionary, pre: ChessRules, played: int) -> void:
 	var best := int(rv.get("best", -1))
 	var best_parts := _best_line_san_parts(pre, rv.get("best_pv", PackedStringArray()), best)
 	review_line_best.disabled = best_parts.is_empty()
@@ -1734,14 +1763,18 @@ func _refresh_line_buttons(rv: Dictionary, pre: ChessRules, played: int, is_play
 		review_line_label.text = _best_replies_markup(best_parts, -1)  # static: nothing highlighted
 	else:
 		review_line_label.visible = false
-	# "Your line" is the PLAYER's own move's consequence: only on the player's own rows (a bot move isn't
-	# "yours"), and only when it differs from the best. Always launchable, matching the tappable arrow:
-	# at least the move itself, extended once its continuation search lands (see _ensure_played_line).
-	var has_played := is_player and played != best and played >= 0
+	# The played-move line exists for any wrong move (the player's OR the bot's), not just the player's.
+	# Always launchable, matching the tappable arrow: at least the move itself, extended once its
+	# continuation search lands (see _ensure_played_line).
+	var has_played := played != best and played >= 0
 	review_line_played.visible = has_played
 	if has_played:
 		review_line_played.disabled = false
-		_color_line_button(review_line_played, _quality_color(String(rv.get("quality", ""))))
+		var q := String(rv.get("quality", ""))
+		_color_line_button(review_line_played, _quality_color(q))
+		if _played_mark != null:
+			_played_mark.quality = q  # match the button glyph to this move's board arrow (✓ / – / ✗)
+			_played_mark.queue_redraw()
 
 
 ## Grade an un-reviewed ply (the auto-opening or a bot reply) on demand and fill its _review entry,
@@ -1855,11 +1888,11 @@ func _ensure_played_line(i: int) -> void:
 	ent["played_pv"] = pv
 	_review[i] = ent
 	if review_overlay.visible and _review_ply == i and not _line_active:
-		_update_review_panel()  # enable the "Your line" button now that its line is ready
+		_update_review_panel()  # enable the played-move button now that its line is ready
 
 
 ## The two best-replies entry points (buttons + board-arrow taps): the best move's line, or the
-## player's own move's line.
+## played move's line (the player's or the bot's).
 func _on_line_best() -> void:
 	_play_line(true)
 
@@ -1901,6 +1934,9 @@ func _play_line(from_best: bool) -> void:
 		pv = rv.get("played_pv", PackedStringArray())
 		if pv.is_empty():
 			pv = PackedStringArray([pre.move_to_uci(first)])  # not analysed yet: at least the move itself
+		# Whose move this line starts from decides the header wording ("Your move" vs "This move").
+		var mover: int = int(_undo_stack[_review_ply].get("mover", -1))
+		_line_is_player_move = GameManager.pass_and_play or mover == player_color
 	if first < 0:
 		return
 	_line_from_best = from_best
@@ -1997,7 +2033,7 @@ func _highlight_line_san(active: int) -> void:
 		return  # only rebuild the markup when the highlighted move actually changes
 	_line_hl_active = active
 	review_line_label.visible = true
-	review_line_label.text = _best_replies_markup(_line_san, active, not _line_from_best)
+	review_line_label.text = _best_replies_markup(_line_san, active, not _line_from_best, _line_is_player_move)
 
 
 func _dup_rules(r: ChessRules) -> ChessRules:
@@ -2058,7 +2094,7 @@ func _on_line_forward() -> void:
 
 ## "Best replies: m0 m1 …" as centred BBCode, the active move bold + accent-coloured (active < 0 =
 ## none, the static display).
-func _best_replies_markup(parts: PackedStringArray, active: int, played := false) -> String:
+func _best_replies_markup(parts: PackedStringArray, active: int, played := false, player_move := true) -> String:
 	var out := PackedStringArray()
 	for j in parts.size():
 		# Non-breaking hyphen so castling ("O-O" / "O-O-O") never wraps across two lines.
@@ -2070,7 +2106,15 @@ func _best_replies_markup(parts: PackedStringArray, active: int, played := false
 		else:
 			out.append(san)
 	# Everything else stays dim (the prefix + the other moves); the active move overrides to white.
-	var fmt: String = tr("Your line: %s") if played else tr("Best replies: %s")
+	# The played line is worded "Your move" for the human's own move and the neutral "This move" for the
+	# bot's (it isn't "yours"); the best line is always "Best replies".
+	var fmt: String
+	if not played:
+		fmt = tr("Best replies: %s")
+	elif player_move:
+		fmt = tr("Your move: %s")
+	else:
+		fmt = tr("This move: %s")
 	return "[center][color=#ffffff99]%s[/color][/center]" % (fmt % " ".join(out))
 
 
@@ -2152,3 +2196,25 @@ func _best_line_san_parts(base: ChessRules, pv: PackedStringArray, best: int) ->
 
 func _best_line_san(base: ChessRules, pv: PackedStringArray, best: int) -> String:
 	return " ".join(_best_line_san_parts(base, pv, best))
+
+
+## A small procedural quality mark for the best-replies buttons, drawn as the SAME white check / dash /
+## cross the board paints on each arrow (see chess_board.gd `_draw_quality_symbol`), so a button's glyph
+## always matches its arrow: ✓ = best, – = decent/average, ✗ = blunder.
+class _LineMark extends Control:
+	var quality := "best"
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var s := minf(size.x, size.y) * 0.36
+		var w := maxf(3.0, s * 0.34)
+		var white := Color(1, 1, 1, 0.95)
+		match quality:
+			"best":  # checkmark
+				draw_line(c + Vector2(-s, 0), c + Vector2(-s * 0.2, s * 0.7), white, w, true)
+				draw_line(c + Vector2(-s * 0.2, s * 0.7), c + Vector2(s, -s * 0.7), white, w, true)
+			"decent":  # dash
+				draw_line(c + Vector2(-s, 0), c + Vector2(s, 0), white, w, true)
+			_:  # blunder (and any unknown): cross
+				draw_line(c + Vector2(-s, -s), c + Vector2(s, s), white, w, true)
+				draw_line(c + Vector2(-s, s), c + Vector2(s, -s), white, w, true)

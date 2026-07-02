@@ -85,7 +85,8 @@ func _process(_d: float) -> bool:
 		print("BEST line: active=%s total=%d moves=%d (expect 6)" % [
 			game._line_active, game._line_total, game._line_moves_arr.size()])
 		game._exit_line()
-		# A BOT ply (Qh5, ply 4, White; player is Black): "Your line" must be HIDDEN, "Best line" enabled.
+		# A BOT ply (Qh5, ply 4, White; player is Black), a WRONG move: its played button must now show too
+		# (the player can explore the bot's mistake), and playing it is labelled "This move", not "Your move".
 		var pre4 := Rules.new()
 		pre4.reset_startpos()
 		for i in range(4):
@@ -94,10 +95,19 @@ func _process(_d: float) -> bool:
 			"quality": "decent", "label": "Inaccuracy", "cp_loss": 50,
 			"best": pre4.move_from_uci("d2d4"),
 			"best_pv": PackedStringArray(["d2d4", "d7d6", "c1e3"]),
+			"played_pv": PackedStringArray(["d1h5", "g8f6"]),
 			"deepened": true, "eval_cp": 50,
 		}
-		game._show_review_ply(4, false)
-		print("BOT ply4 (Qh5, White!=player): Your-line-visible=%s (expect FALSE)  Best-line-disabled=%s (expect false)" % [
+		game._show_review_ply(4, false)  # arrows view of the bot's wrong move (render it next frame)
+		print("BOT ply4 (Qh5, White!=player, wrong): Played-visible=%s (expect true)  Best-disabled=%s (expect false)" % [
 			game.review_line_played.visible, game.review_line_best.disabled])
+		return false
+	if frames == 72:
+		vp.get_texture().get_image().save_png("/tmp/limpid_review_bot.png")
+		print("saved /tmp/limpid_review_bot.png")
+		game._on_line_played()  # explore the BOT's own wrong move
+		print("BOT played line: active=%s is_player_move=%s (expect active=true, is_player_move=false)" % [
+			game._line_active, game._line_is_player_move])
+		game._exit_line()
 		quit()
 	return false
