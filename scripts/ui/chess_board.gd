@@ -50,7 +50,7 @@ var _explode_sq := -1
 var _explode_piece := 0
 var _explode_t := 0.0
 
-# Face to Face (Pass & Play): a cosmetic 180° rotation so the board reads for the side to move, like
+# Face to Face: a cosmetic 180° rotation so the board reads for the side to move, like
 # turning a real board to the other player. The PIECES animate their flip (pieces_angle, tweened); the
 # COORDINATE labels flip INSTANTLY (coords_angle) since a spinning digit reads oddly. The square grid,
 # highlights and guidance arrows never rotate, and hit-testing is untouched. Both are 0 or PI.

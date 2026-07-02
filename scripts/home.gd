@@ -124,7 +124,7 @@ func _on_settings_close() -> void:
 ## Tap outside the Settings card (on the dim) to dismiss it. We close on RELEASE, not press: the
 ## dim is a full-screen STOP control above the home content, so it swallows the whole tap while the
 ## overlay is still visible. Closing on press would hide the overlay mid-tap and let the release
-## (or, on touch, the emulated mouse press that follows) fall through to the Play / Pass & Play
+## (or, on touch, the emulated mouse press that follows) fall through to the Play / Face to Face
 ## buttons and start a game.
 func _on_dim_input(event: InputEvent) -> void:
 	var mb := event as InputEventMouseButton

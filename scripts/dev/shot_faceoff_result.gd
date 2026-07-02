@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Dev-only: render the Face to Face (Pass & Play) end-game result dialog, to check the "Leave" button
+## Dev-only: render the Face to Face end-game result dialog, to check the "Leave" button
 ## now carries the white-door (exit.png) icon like the Puzzles end modal.
 ##   DISPLAY=:0 godot --path . -s res://scripts/dev/shot_faceoff_result.gd   -> /tmp/limpid_faceoff_result.png
 

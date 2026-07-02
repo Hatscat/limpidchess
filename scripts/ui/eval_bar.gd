@@ -3,7 +3,7 @@ extends Control
 ## A thin horizontal evaluation bar (chess.com style): a white slice grows from the
 ## left as White stands better, with the eval printed on the leading side. Fed the
 ## current White-relative centipawn score by game.gd; shown only for bot games (an
-## eval would spoil a two-player Pass & Play). Purely a readout, never game logic.
+## eval would spoil a two-player Face to Face). Purely a readout, never game logic.
 
 const FONT := preload("res://assets/fonts/OpenDyslexic-Regular.otf")
 

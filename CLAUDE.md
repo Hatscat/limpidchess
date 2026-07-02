@@ -161,7 +161,7 @@ Rules:
 | Quality reveal after a pick | **reveal** |
 | Reward currency | **best coin** (gold) and **blunder coin** |
 | Opponent | **bot** (from `BotRoster`); never "AI player" |
-| Local two-player mode | **Pass & Play** (premium) |
+| Local two-player mode | **Face to Face** (premium; code identifier stays `pass_and_play`) |
 | Engine evaluation unit | **centipawns** (cp) |
 
 Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**).
@@ -169,7 +169,7 @@ Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**).
 ## 💸 Business model (keep it generous)
 
 - 3 free games per day (`GameManager.FREE_GAMES_PER_DAY`), tracked locally by date.
-- **Premium**: one-time ~$3.99 → unlimited games + Pass & Play. Entitlement is a local
+- **Premium**: one-time ~$3.99 → unlimited games + Face to Face. Entitlement is a local
   flag (`GameManager.is_premium`), granted by the [`Billing`](scripts/billing.gd) autoload
   (Google Play Billing) on a successful buy / restore / promo-code redemption. The price is
   read live from Play (localized). Remaining setup (plugin install + Play Console product)

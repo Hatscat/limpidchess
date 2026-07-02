@@ -500,7 +500,7 @@ func _restore_result(snap: Dictionary) -> void:
 	_show_result_dialog(_streak > _best_at_start)
 
 
-## The menu (top-left, like the bot game / Pass & Play) doubles as the leave confirmation: Leave /
+## The menu (top-left, like the bot game / Face to Face) doubles as the leave confirmation: Leave /
 ## Keep-playing, with a message making the consequence clear. The run keeps going underneath the dim,
 ## so the player loses nothing by peeking. Leaving banks the streak either way.
 func _open_menu() -> void:

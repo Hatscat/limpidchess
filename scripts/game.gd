@@ -25,7 +25,7 @@ const ANALYSIS_DEPTH_SF := 10
 const BEST_MOVETIME_MARGIN := 400  ## think a little longer than the opponent does
 const BEST_MOVETIME_FLOOR := 800   ## floor so suggestions stay sound vs weak bots (teaching)
 const BEST_MOVETIME_CAP := 2100    ## ceiling so the strongest bots' turns stay tolerable
-## Pass & Play has no opponent to scale to, and the best move is prefetched during the
+## Face to Face has no opponent to scale to, and the best move is prefetched during the
 ## reveal, so it gets a fixed, generous search for honest teaching (the wait is hidden).
 const PASS_PLAY_MOVETIME := 1500
 const OPENING_WINDOW_CP := 55
@@ -131,7 +131,7 @@ var _gen := 0
 
 # Per-colour move-quality tally (index 0 = White, 1 = Black), reset each game → the
 # end-of-game review. In a bot game only the human picks options, so every count sits
-# under the player's colour; in Pass & Play they split White vs Black for the comparison.
+# under the player's colour; in Face to Face they split White vs Black for the comparison.
 var _best: Array[int] = [0, 0]
 var _decent: Array[int] = [0, 0]
 var _blunder: Array[int] = [0, 0]
@@ -188,7 +188,7 @@ var _reply_uci := ""        ## result ("" while still searching)
 var _reply_pending := false
 signal _reply_ready
 
-# Options prefetch (Pass & Play): there's no bot reply to precompute there, so during the
+# Options prefetch (Face to Face): there's no bot reply to precompute there, so during the
 # same reveal idle we rank the position the OTHER player is about to face, and
 # _present_options consumes it instead of stalling on a fresh analysis. Bot games skip this
 # (they prefetch the bot's reply instead; the player's own next analysis can't be known
@@ -199,7 +199,7 @@ var _opts_ranked: Array = []  ## result (empty while still searching / on miss)
 var _opts_pending := false
 signal _opts_ready
 
-# Stockfish evaluation bar (bot games only; hidden in Pass & Play). Created in _ready.
+# Stockfish evaluation bar (bot games only; hidden in Face to Face). Created in _ready.
 var eval_bar: Control
 
 
@@ -355,7 +355,7 @@ func _layout_for_safe_area() -> void:
 		_position_review_ui()
 
 
-# --- Face to Face (Pass & Play): board fixed + centred. Only the pieces + coordinate labels flip to the
+# --- Face to Face: board fixed + centred. Only the pieces + coordinate labels flip to the
 # side to move; everything else is FIXED per side — two "X to move" areas (White below, upright; Black
 # above, 180°) and the captured strips (each side's captures on that side, oriented for that player). ---
 
@@ -614,7 +614,7 @@ func _rank_position(r: ChessRules = null) -> Array:
 ## list as the reference best. So "best" is genuinely strong vs deep-searching bots,
 ## while the wide spread (decent / blunder / grading) stays cheap. Fallback path is a
 ## no-op (the GDScript ranker has no separate deep search). Operates on the given rules
-## (the live board, or a throwaway clone for the Pass & Play prefetch) and returns the
+## (the live board, or a throwaway clone for the Face to Face prefetch) and returns the
 ## reordered list.
 func _deep_promote(ranked: Array, r: ChessRules, g: int) -> Array:
 	if not (_use_sf and stockfish.available) or ranked.is_empty():
@@ -724,7 +724,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	# reveal plays (~1.5s of idle CPU), search the bot's reply in the background.
 	board.reveal()
 	_prefetch_bot_reply(move, g)   # bot games: search the reply while the reveal plays
-	_prefetch_options(move, g)     # Pass & Play: rank the next player's position instead
+	_prefetch_options(move, g)     # Face to Face: rank the next player's position instead
 	await board.animate_move(move, REVEAL_SLIDE_SEC)
 	if g != _gen:
 		return
@@ -782,7 +782,7 @@ func _bot_move() -> void:
 
 
 ## Search the bot's reply to the player's (not-yet-committed) move during the reveal,
-## so the bot can answer without the player waiting. Skipped in Pass & Play, without
+## so the bot can answer without the player waiting. Skipped in Face to Face, without
 ## an engine, or for bots that may play a random move (the result could go unused).
 func _prefetch_bot_reply(player_move: int, g: int) -> void:
 	_reply_fen = ""
@@ -830,7 +830,7 @@ func _take_bot_reply(fen: String, g: int) -> String:
 	})
 
 
-## Pass & Play has no bot reply to precompute, so during the reveal we instead rank the
+## Face to Face has no bot reply to precompute, so during the reveal we instead rank the
 ## position the OTHER player will face on a throwaway ChessRules clone (the live board is
 ## left exactly as drawn), and _present_options consumes it. Bot games skip this.
 func _prefetch_options(player_move: int, g: int) -> void:
@@ -862,7 +862,7 @@ func _search_options(probe: ChessRules, g: int) -> void:
 	_opts_ready.emit()  # always wake a waiter; staleness is checked by the consumer
 
 
-## The ranked option spread for the current position: the Pass & Play prefetch if it's for
+## The ranked option spread for the current position: the Face to Face prefetch if it's for
 ## this exact position, else a fresh analysis. Awaits a still-running prefetch (never starts
 ## a second analysis for it). Mirrors _take_bot_reply for the options channel.
 func _take_options(g: int) -> Array:
@@ -913,7 +913,7 @@ func _record_position() -> void:
 
 ## Feed the eval bar the current position's score, converted to White's point of
 ## view (+ = White better). _ranked[0] is the best line from the side-to-move's
-## view; flip its sign for Black. No-op in Pass & Play (the bar stays hidden).
+## view; flip its sign for Black. No-op in Face to Face (the bar stays hidden).
 func _push_eval_from_ranked() -> void:
 	if GameManager.pass_and_play or _ranked.is_empty():
 		return
@@ -958,7 +958,7 @@ func _update_captured() -> void:
 			bmat += v
 
 	# The board flips to keep the player at the bottom, so the bottom strip is the
-	# player's (White in pass & play); the top strip is the opponent's.
+	# player's (White in Face to Face); the top strip is the opponent's.
 	var bottom_color: int = ChessRules.WHITE if GameManager.pass_and_play else player_color
 	var top_color: int = 1 - bottom_color
 	cap_bottom.set_data(_sorted_caps(bottom_color), maxi(0, _material_lead(bottom_color, wmat, bmat)))
@@ -1039,7 +1039,7 @@ func _check_game_over() -> bool:
 			text = "Not enough material to checkmate."
 			if not GameManager.pass_and_play: GameManager.record_result("draw")
 
-	# Celebratory cue for a checkmate win (incl. Pass & Play); a calm one otherwise
+	# Celebratory cue for a checkmate win (incl. Face to Face); a calm one otherwise
 	# (a loss / draw is never scolded, per the design).
 	var sfx := "end"
 	if outcome == ChessRules.Outcome.CHECKMATE and quote_key != "loss":
@@ -1080,11 +1080,11 @@ func _finish_game_after_delay(title: String, text: String, quote_key: String, ma
 func _show_result(title: String, text: String, quote_key: String) -> void:
 	result_title.text = title
 	result_text.text = text
-	# Pass & Play shows a White-vs-Black comparison; a bot game shows the single tally.
+	# Face to Face shows a White-vs-Black comparison; a bot game shows the single tally.
 	# Make "Play again" concrete for kids who can't read yet: show WHO you'd replay,
-	# the opponent's avatar + name (the handshake for Pass & Play).
+	# the opponent's avatar + name (the handshake for Face to Face).
 	if GameManager.pass_and_play:
-		# Pass & Play (Face to Face): White/Black tally, Play again + Leave, no opponent to change.
+		# Face to Face: White/Black tally, Play again + Leave, no opponent to change.
 		review_box.visible = false
 		review_box_pp.visible = true
 		bots_btn.visible = false
@@ -1143,7 +1143,7 @@ func _is_early_game() -> bool:
 
 ## Restart always ends in a NEW counted game with the same opponent (it must never be a free
 ## re-roll past the daily limit). An early restart refunds first, so a slot is always free; a
-## late restart needs a daily slot for the replay. Pass & Play has no gate.
+## late restart needs a daily slot for the replay. Face to Face has no gate.
 func _can_restart() -> bool:
 	return GameManager.pass_and_play or _is_early_game() or GameManager.can_play_game()
 
@@ -1189,7 +1189,7 @@ func _on_menu_undo() -> void:
 # --- Undo ---
 
 ## How many plies one undo rewinds: in a bot game, the player's move AND the bot's reply
-## (two); in Pass & Play, just the single last human move (the other side is also human).
+## (two); in Face to Face, just the single last human move (the other side is also human).
 func _undo_plies() -> int:
 	return 1 if GameManager.pass_and_play else 2
 
@@ -1290,7 +1290,7 @@ func _do_give_up() -> void:
 	_gen += 1  # invalidate any in-flight bot-think / analysis coroutine
 	board.clear_options()
 	Audio.play("end")
-	# Pass & Play: the side to move is the one resigning, so the other colour wins.
+	# Face to Face: the side to move is the one resigning, so the other colour wins.
 	if GameManager.pass_and_play:
 		var loser := rules.side_to_move
 		var winner := ChessRules.BLACK if loser == ChessRules.WHITE else ChessRules.WHITE
@@ -1317,7 +1317,7 @@ func _do_cancel_game() -> void:
 
 ## Restart = leave the current game AND immediately play another with the SAME opponent, so it
 ## can never be a free re-roll. Late (invested) → resign, a recorded loss; early → cancel, a
-## refund. Either way start_bot_game counts the fresh game against the daily limit. Pass & Play
+## refund. Either way start_bot_game counts the fresh game against the daily limit. Face to Face
 ## has no gate / no result, so it just resets. Gated by _can_restart (the button is disabled
 ## when a late free player has no slot for the replay), so the counted start always has room.
 func _do_restart() -> void:
@@ -1710,7 +1710,7 @@ func _update_review_panel() -> void:
 	if is_bot_move:
 		review_avatar.texture = load(BotRoster.avatar_path(bot_def))
 	# A pawn in the mover's colour marks the human player's own rows: beside "You:" vs a bot, and
-	# beside both "White:"/"Black:" in Pass & Play (both sides are human there). Same piece art as
+	# beside both "White:"/"Black:" in Face to Face (both sides are human there). Same piece art as
 	# the board. The opening (ply 0) and the bot's own moves get no pawn.
 	var is_player_row := _review_ply > 0 and (GameManager.pass_and_play or mover == player_color)
 	review_pawn.visible = is_player_row
@@ -2132,7 +2132,7 @@ func _on_review_next() -> void:
 
 
 ## Who made ply `_review_ply`: the auto-opening, "You" / the bot in a bot game, or White / Black
-## in Pass & Play.
+## in Face to Face.
 func _review_who(mover: int) -> String:
 	if _review_ply == 0:
 		# A puzzle's ply 0 is the opponent's setup move from a midgame position, not a chess opening.

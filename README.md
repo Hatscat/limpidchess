@@ -36,7 +36,7 @@ lesson, never the punishment.
 > *Tartakower*
 
 It is built beginner-first but grows with you: the opponents climb from a gentle first-timer to a
-real challenge, and a two-player Pass & Play mode is fun at any level.
+real challenge, and a two-player Face to Face mode is fun at any level.
 
 ## How it works
 
@@ -64,11 +64,11 @@ real challenge, and a two-player Pass & Play mode is fun at any level.
 - **Calm and kind.** Soft palette, no clocks, no shame on losing. Feedback teaches, it never scolds.
 - **Bots that grow with you.** Stockfish dialled down for real beginners and kids, climbing to a
   genuine challenge, with a relative difficulty meter instead of a scary rating.
-- **Pass & Play.** Local two-player on one device, with the same three-move guidance for both sides.
+- **Face to Face.** Local two-player on one device, with the same three-move guidance for both sides.
 - **Offline, no ads, no accounts, no tracking.** One small save file on your device.
 - **Accessible.** OpenDyslexic typeface, colour-blind-safe move symbols, board coordinates.
 - **Free**, with an optional one-time Premium (no subscription, ever) for unlimited games, all bots,
-  and Pass & Play.
+  and Face to Face.
 
 ## Built with
 
@@ -107,7 +107,7 @@ Building the native Android Stockfish and exporting the app are covered in
 Shipped:
 
 - [x] The three-move mechanic, opponents, coins, and end-of-game review
-- [x] Pass & Play local two-player
+- [x] Face to Face local two-player
 - [x] English / French / Spanish localization
 - [x] Sound effects and settings
 - [x] One-time Premium via Google Play Billing (localized price, restore, promo codes)

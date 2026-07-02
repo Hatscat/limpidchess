@@ -1,6 +1,6 @@
 extends Control
 
-## Premium screen. One-time purchase → unlimited games, all bots, and Pass & Play.
+## Premium screen. One-time purchase → unlimited games, all bots, and Face to Face.
 ##
 ## The actual store flow lives in the [Billing] autoload (Google Play). This screen just
 ## drives it and mirrors its signals: the price comes from Play (localized) and the buy/restore
