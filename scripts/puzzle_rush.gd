@@ -102,22 +102,42 @@ func _ready() -> void:
 		_begin()
 
 
+const _HEADER_H := 92.0        ## streak / best stats row
+const _STATUS_H := 44.0        ## "Find the best move!" line
+const _STATS_GAP := 22.0       ## gap between the stats and the status
+const _BOARD_GAP := 16.0       ## gap between the status and the board top
+
 func _layout() -> void:
+	var vp := get_viewport_rect().size
+	if vp.x <= 0.0 or vp.y <= 0.0:
+		return  # size not established yet; size_changed calls us again
 	var safe: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
 	var top: float = safe + 6.0
-	# Top bar: the menu button (left) and the "Puzzle Rush" title beside it.
+	# Top bar: the menu button (left) and the title card beside it.
 	menu_btn.offset_top = top
 	menu_btn.offset_bottom = top + 80.0
 	$Title.offset_top = top
 	$Title.offset_bottom = top + 80.0
-	# The header (difficulty / streak / best) sits BELOW the top bar so it never overlaps the menu
-	# button (an overlapping header would swallow its taps). Status + board follow; all track the safe area.
-	var hy: float = top + 92.0
-	$Header.offset_top = hy
-	$Header.offset_bottom = hy + 88.0
-	status_label.offset_top = hy + 96.0
-	status_label.offset_bottom = hy + 138.0
-	board.offset_top = hy + 148.0
+
+	# Like the chess game: a full-width square board biased into the lower-middle, with the streak/best
+	# stats and the status line HUGGING its top edge, so the whole caption block reads as one unit above
+	# the board (not floating up by the title). The remaining slack falls above the stats.
+	var area_top: float = top + 80.0
+	var caption_block: float = _HEADER_H + _STATS_GAP + _STATUS_H + _BOARD_GAP
+	var board_size: float = minf(vp.x - 16.0, vp.y - area_top - caption_block - 24.0)
+	board_size = maxf(board_size, 0.0)
+	var bx: float = (vp.x - board_size) * 0.5
+	var extra: float = maxf(0.0, vp.y - area_top - caption_block - board_size - 24.0)
+	var board_top: float = area_top + extra * 0.5 + caption_block  # biased down (half the slack above)
+	board.offset_left = bx
+	board.offset_right = -bx
+	board.offset_top = board_top
+	board.offset_bottom = (board_top + board_size) - vp.y
+
+	status_label.offset_bottom = board_top - _BOARD_GAP
+	status_label.offset_top = status_label.offset_bottom - _STATUS_H
+	$Header.offset_bottom = status_label.offset_top - _STATS_GAP
+	$Header.offset_top = $Header.offset_bottom - _HEADER_H
 
 
 func _begin() -> void:
