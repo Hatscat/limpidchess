@@ -8,7 +8,6 @@
 [ext_resource type="Texture2D" uid="uid://cfxkuttjsmhds" path="res://assets/icons/flag.png" id="7_flag"]
 [ext_resource type="Texture2D" uid="uid://ovf8opbnaxrt" path="res://assets/icons/close.png" id="8_close"]
 [ext_resource type="Texture2D" uid="uid://7g4enesb2hgm" path="res://assets/icons/check.png" id="9_check"]
-[ext_resource type="Texture2D" uid="uid://dir7jlkxh0hwk" path="res://assets/icons/home.png" id="10_home"]
 [ext_resource type="Texture2D" uid="uid://dlyyxad0h1tnk" path="res://assets/icons/magnifier.png" id="12_magnifier"]
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="13_daily"]
 
@@ -443,8 +442,7 @@ theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_btn")
 theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
-text = "Go back home"
-icon = ExtResource("10_home")
+text = "Leave"
 alignment = 0
 
 [node name="ConfirmOverlay" type="Control" parent="." unique_id=1669456548]

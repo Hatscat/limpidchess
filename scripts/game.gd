@@ -1084,11 +1084,12 @@ func _show_result(title: String, text: String, quote_key: String) -> void:
 	# Make "Play again" concrete for kids who can't read yet: show WHO you'd replay,
 	# the opponent's avatar + name (the handshake for Pass & Play).
 	if GameManager.pass_and_play:
-		# Pass & Play is unchanged: White/Black tally, Play again + Go back home, no opponent to change.
+		# Pass & Play (Face to Face): White/Black tally, Play again + Leave, no opponent to change.
 		review_box.visible = false
 		review_box_pp.visible = true
 		bots_btn.visible = false
 		home_btn.visible = true
+		home_btn.icon = load("res://assets/icons/exit.png")  # white door = leave, matching the Puzzles end modal
 		play_again_btn.visible = true
 		pp_best_w.text = str(_best[0]); pp_best_b.text = str(_best[1])
 		pp_decent_w.text = str(_decent[0]); pp_decent_b.text = str(_decent[1])
