@@ -138,6 +138,12 @@ func reveal() -> void:
 	queue_redraw()
 
 
+## Re-enable tapping AFTER reveal() (the post-game review keeps the coloured best / played arrows
+## clickable to launch that line). reveal() disables interaction for live play, so call this after it.
+func set_interactive(on: bool) -> void:
+	_interactive = on
+
+
 ## Cancel a parked piece explosion (the shattered king reappears). Used when the best-replies line is
 ## scrubbed back off a checkmate end, or the line is left, so the mate shatter isn't stuck on screen.
 func clear_explosion() -> void:

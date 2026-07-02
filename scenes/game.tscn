@@ -765,19 +765,33 @@ theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 theme_override_styles/disabled = SubResource("sb_btn")
 
-[node name="ReviewLine" type="Button" parent="ReviewOverlay/Nav" unique_id=770020009]
+[node name="ReviewLineBest" type="Button" parent="ReviewOverlay/Nav" unique_id=770020009]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_colors/font_disabled_color = Color(1, 1, 1, 0.28)
+theme_override_colors/font_disabled_color = Color(1, 1, 1, 0.35)
 theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("sb_btn_primary")
-theme_override_styles/pressed = SubResource("sb_btn_primary")
-theme_override_styles/hover = SubResource("sb_btn_primary")
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
 theme_override_styles/disabled = SubResource("sb_btn")
-text = "Best replies"
+text = "Best line"
+
+[node name="ReviewLinePlayed" type="Button" parent="ReviewOverlay/Nav" unique_id=770020024]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_disabled_color = Color(1, 1, 1, 0.35)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_btn")
+theme_override_styles/pressed = SubResource("sb_btn")
+theme_override_styles/hover = SubResource("sb_btn")
+theme_override_styles/disabled = SubResource("sb_btn")
+text = "Your line"
 
 [node name="ReviewNext" type="Button" parent="ReviewOverlay/Nav" unique_id=770020010]
 unique_name_in_owner = true
@@ -869,6 +883,5 @@ layout_mode = 1
 [connection signal="pressed" from="MenuOverlay/Card/VBox/GiveUpBtn" to="." method="_on_menu_giveup"]
 [connection signal="pressed" from="MenuOverlay/Card/VBox/CloseBtn" to="." method="_on_menu_close"]
 [connection signal="pressed" from="ReviewOverlay/Nav/ReviewPrev" to="." method="_on_review_prev"]
-[connection signal="pressed" from="ReviewOverlay/Nav/ReviewLine" to="." method="_play_best_line"]
 [connection signal="pressed" from="ReviewOverlay/Nav/ReviewNext" to="." method="_on_review_next"]
 [connection signal="pressed" from="ReviewOverlay/ReviewDone" to="." method="_close_review"]

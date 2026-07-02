@@ -94,7 +94,8 @@ const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in
 @onready var review_line_label: RichTextLabel = %ReviewBestLine
 @onready var review_prev: Button = %ReviewPrev
 @onready var review_next: Button = %ReviewNext
-@onready var review_line: Button = %ReviewLine
+@onready var review_line_best: Button = %ReviewLineBest       ## explore the BEST move's line (green)
+@onready var review_line_played: Button = %ReviewLinePlayed   ## explore the player's OWN move's line
 @onready var line_rewind: Button = %LineRewind
 @onready var line_play: Button = %LinePlayPause
 @onready var line_forward: Button = %LineForward
@@ -155,12 +156,14 @@ var _review_ply := 0
 var _review_gen := 0
 var _review_playing := false
 var _review_analyzing := {}  ## ply index -> true while an on-demand engine analysis is in flight
+var _played_analyzing := {}  ## ply index -> true while the played-move consequence line is searched
 var _review_unlocked := false  ## this game's review was already opened (counted) this session
 var _review_startpos := ""       ## non-empty (a FEN) when reviewing an injected position (a failed puzzle)
 var _puzzle_review_mode := false  ## reviewing a failed Puzzle Rush puzzle (no bot face; close → Home)
 
 # Best-replies scrubbable timeline (see the LINE_* constants).
 var _line_active := false
+var _line_from_best := true       ## the line currently playing: the best move's line (true) or the player's own
 var _line_states: Array = []     ## ChessRules after 0 .. k line moves (size k+1)
 var _line_moves_arr: Array = []  ## the k line moves (packed ints)
 var _line_san := PackedStringArray()  ## SAN of each line move, for the header highlight
@@ -655,6 +658,19 @@ func _ranked_from_sf(lines: Array, r: ChessRules) -> Array:
 
 
 func _on_option_chosen(opt: Dictionary) -> void:
+	# In the post-game review, tapping a coloured arrow launches its best-replies line (the best-move
+	# arrow → the best line; the player's own arrow → where their move leads). Live play falls through.
+	if review_overlay.visible:
+		if not _line_active:
+			var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
+			var is_best: bool = int(opt.get("move", -1)) == int(rv.get("best", -1))
+			var mover: int = int(_undo_stack[_review_ply].get("mover", -1)) if _review_ply < _undo_stack.size() else -1
+			var is_player: bool = _review_ply > 0 and (GameManager.pass_and_play or mover == player_color)
+			# The best-move arrow → the best line; the PLAYER's own arrow → their line; a bot's arrow has
+			# no "your line", so it opens the best line too. (Match by MOVE, not the quality label: an
+			# on-demand-graded move can be quality "best" yet not be the engine's #1.)
+			_play_line(is_best or not is_player)
+		return
 	if _busy:
 		return
 	_busy = true
@@ -1345,15 +1361,22 @@ func _on_bots_pressed() -> void:
 func _setup_review_buttons() -> void:
 	review_prev.icon = load("res://assets/icons/chevron_left.svg")
 	review_next.icon = load("res://assets/icons/chevron_right.svg")
-	review_line.icon = load("res://assets/icons/star.png")
-	# Prev / Next are icon-only with a centred chevron (so they stay short in every language);
-	# Best replies keeps its star + label and expands to fill the middle.
+	# Prev / Next are icon-only with a centred chevron (so they stay short in every language). The two
+	# best-replies buttons fill the middle: a GREEN "Best line" (the best move's line) and, when the
+	# player didn't play it, a quality-coloured "Your line" (where their own move leads).
 	review_prev.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	review_next.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	review_prev.add_theme_constant_override("icon_max_width", 40)
 	review_next.add_theme_constant_override("icon_max_width", 40)
-	review_line.add_theme_constant_override("icon_max_width", 30)
-	review_line.add_theme_constant_override("h_separation", 10)
+	review_line_best.icon = load("res://assets/icons/check.png")     # ✓ = the best line
+	review_line_played.icon = load("res://assets/icons/close.png")   # ✗ = your own (worse) line
+	for b: Button in [review_line_best, review_line_played]:
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.add_theme_constant_override("icon_max_width", 28)
+		b.add_theme_constant_override("h_separation", 10)
+	_color_line_button(review_line_best, _quality_color("best"))     # fixed green
+	review_line_best.pressed.connect(_on_line_best)
+	review_line_played.pressed.connect(_on_line_played)
 	# The 4 media controls shown while the line plays (rewind · play/pause · fast-forward · stop):
 	# icon-only, centred, equal width.
 	line_rewind.icon = load("res://assets/icons/rewind.svg")
@@ -1388,10 +1411,32 @@ func _set_scan_active(btn: Button, on: bool) -> void:
 	btn.add_theme_color_override("icon_hover_color", ic)
 
 
-## Show the 4 line-playback controls in the nav (and hide Prev/Best-replies/Next), or vice versa.
+## Give a best-replies button a solid quality-coloured fill (green best / red-or-blue played) so the
+## two buttons echo the two coloured arrows on the board.
+func _color_line_button(btn: Button, bg: Color) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_corner_radius_all(16)
+	sb.content_margin_left = 18.0
+	sb.content_margin_right = 18.0
+	sb.content_margin_top = 16.0
+	sb.content_margin_bottom = 16.0
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	btn.add_theme_stylebox_override("pressed", sb)
+	var dim := sb.duplicate() as StyleBoxFlat
+	dim.bg_color = Color(bg.r * 0.4, bg.g * 0.4, bg.b * 0.4, 1.0)
+	btn.add_theme_stylebox_override("disabled", dim)
+
+
+## Show the 4 line-playback controls in the nav (and hide Prev/the two line buttons/Next), or vice versa.
 func _set_line_controls(on: bool) -> void:
 	review_prev.visible = not on
-	review_line.visible = not on
+	review_line_best.visible = not on
+	# The played-line button only exists when the reviewed move wasn't the best; _refresh_line_buttons
+	# owns its visibility, so restoring the nav re-runs that instead of force-showing it.
+	if on:
+		review_line_played.visible = false
 	review_next.visible = not on
 	line_rewind.visible = on
 	line_play.visible = on
@@ -1584,6 +1629,7 @@ func _render_review_view() -> void:
 		opts.append({"move": best, "quality": "best"})  # the green best-move arrow
 	board.set_options(opts, false)
 	board.reveal()  # colour the arrows + draw the quality symbols
+	board.set_interactive(true)  # keep both arrows tappable: a tap launches that move's best-replies line
 
 
 ## Quick slide for one Prev/Next step. forward (reverse=false): play move[idx] from its pre-position;
@@ -1647,14 +1693,16 @@ func _update_review_panel() -> void:
 	if _review_ply == 0:
 		review_quality.visible = false
 		review_line_label.visible = false
-		review_line.disabled = true
+		review_line_best.disabled = true
+		review_line_played.visible = false
 		return
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 	if rv.is_empty():
 		# A bot reply not graded during play: analyse it on demand (engine, else GDScript fallback)
 		# so the review covers BOTH sides.
 		review_line_label.visible = false
-		review_line.disabled = true
+		review_line_best.disabled = true
+		review_line_played.visible = false
 		review_quality.visible = true
 		review_analyse_icon.visible = true  # the magnifier beside "Analysing…"
 		review_quality.text = tr("Analysing…")
@@ -1668,16 +1716,32 @@ func _update_review_panel() -> void:
 	else:
 		review_quality.text = tr(String(rv.get("label", "")))
 		review_quality.modulate = _quality_color(String(rv.get("quality", "")))
-	var pv: PackedStringArray = rv.get("best_pv", PackedStringArray())
-	var parts := _best_line_san_parts(pre, pv, int(rv.get("best", -1)))
-	if not parts.is_empty():
+	_refresh_line_buttons(rv, pre, move, is_player_row)
+	_ensure_review_line(_review_ply)   # lengthen the best line in the background if it's too short
+	if is_player_row:
+		_ensure_played_line(_review_ply)  # only the player's own move needs a "Your line" consequence
+
+
+## Set up the two best-replies buttons for the current ply: green "Best line" (whenever a best move
+## exists) and a quality-coloured "Your line" (only when the player's move differs from the best). The
+## info panel shows the best line by default.
+func _refresh_line_buttons(rv: Dictionary, pre: ChessRules, played: int, is_player: bool) -> void:
+	var best := int(rv.get("best", -1))
+	var best_parts := _best_line_san_parts(pre, rv.get("best_pv", PackedStringArray()), best)
+	review_line_best.disabled = best_parts.is_empty()
+	if not best_parts.is_empty():
 		review_line_label.visible = true
-		review_line_label.text = _best_replies_markup(parts, -1)  # static: nothing highlighted
-		review_line.disabled = false
+		review_line_label.text = _best_replies_markup(best_parts, -1)  # static: nothing highlighted
 	else:
 		review_line_label.visible = false
-		review_line.disabled = true
-	_ensure_review_line(_review_ply)  # lengthen the line in the background if it's too short
+	# "Your line" is the PLAYER's own move's consequence: only on the player's own rows (a bot move isn't
+	# "yours"), and only when it differs from the best. Always launchable, matching the tappable arrow:
+	# at least the move itself, extended once its continuation search lands (see _ensure_played_line).
+	var has_played := is_player and played != best and played >= 0
+	review_line_played.visible = has_played
+	if has_played:
+		review_line_played.disabled = false
+		_color_line_button(review_line_played, _quality_color(String(rv.get("quality", ""))))
 
 
 ## Grade an un-reviewed ply (the auto-opening or a bot reply) on demand and fill its _review entry,
@@ -1760,6 +1824,50 @@ func _ensure_review_line(i: int) -> void:
 		_render_review_view()
 
 
+## Compute (and cache) the "played line": the player's OWN move followed by the engine's best
+## continuation, so the review can replay where the mistake leads. Only meaningful when the played
+## move wasn't already the best; runs once per ply in the background (needs the engine).
+func _ensure_played_line(i: int) -> void:
+	if i <= 0 or i >= _review.size():
+		return
+	var rv: Dictionary = _review[i]
+	if rv.is_empty() or rv.has("played_pv"):
+		return
+	var played := int(_undo_stack[i]["move"])
+	if played == int(rv.get("best", -1)):
+		return  # played the best: the "played line" IS the best line, no separate one needed
+	if not (_use_sf and stockfish.available) or _played_analyzing.has(i):
+		return
+	_played_analyzing[i] = true
+	var pre := _rules_after(i)
+	var after := ChessRules.new()
+	after.set_fen(pre.get_fen())
+	after.make_move(played)  # play the mistake, then search the opponent's best exploitation
+	var lines: Array = await stockfish.analyse(after.get_fen(), 1, REVIEW_LINE_DEPTH)
+	_played_analyzing.erase(i)
+	if i >= _review.size():
+		return
+	var pv := PackedStringArray([pre.move_to_uci(played)])  # the line always starts with the played move
+	if not lines.is_empty():
+		for uci in lines[0].get("pv", PackedStringArray()):
+			pv.append(uci)
+	var ent: Dictionary = _review[i]
+	ent["played_pv"] = pv
+	_review[i] = ent
+	if review_overlay.visible and _review_ply == i and not _line_active:
+		_update_review_panel()  # enable the "Your line" button now that its line is ready
+
+
+## The two best-replies entry points (buttons + board-arrow taps): the best move's line, or the
+## player's own move's line.
+func _on_line_best() -> void:
+	_play_line(true)
+
+
+func _on_line_played() -> void:
+	_play_line(false)
+
+
 ## Map a grade label to one of the three option-quality buckets, for colouring an analysed move.
 func _quality_from_label(label: String) -> String:
 	match label:
@@ -1774,20 +1882,33 @@ func _quality_from_label(label: String) -> String:
 ## forward. The stepping happens in _process so the player can grab the board to scrub (rewind /
 ## pause / fast-forward) at any time. It's a toggle: re-tapping leaves the line and restores the
 ## played + best-move arrows on the same move.
-func _play_best_line() -> void:
-	if _undo_stack.is_empty() or _line_active:  # button is hidden while active; exit is via Stop
+func _play_line(from_best: bool) -> void:
+	if _undo_stack.is_empty() or _line_active or _review_ply <= 0:  # controls hide while active; exit via Stop
 		return
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 	if rv.is_empty():
 		return
 	var pre := _rules_after(_review_ply)
-	var pv: PackedStringArray = rv.get("best_pv", PackedStringArray())
-	var best := int(rv.get("best", -1))
-	_line_moves_arr = _line_moves(pre, pv, best)
+	# from_best: the engine's best move + its continuation. else: the player's OWN move + where it leads
+	# (the consequence of the mistake), so they can compare the two lines.
+	var first: int
+	var pv: PackedStringArray
+	if from_best:
+		first = int(rv.get("best", -1))
+		pv = rv.get("best_pv", PackedStringArray())
+	else:
+		first = int(_undo_stack[_review_ply]["move"])
+		pv = rv.get("played_pv", PackedStringArray())
+		if pv.is_empty():
+			pv = PackedStringArray([pre.move_to_uci(first)])  # not analysed yet: at least the move itself
+	if first < 0:
+		return
+	_line_from_best = from_best
+	_line_moves_arr = _line_moves(pre, pv, first)
 	if _line_moves_arr.is_empty():
 		return
 	_line_total = _line_moves_arr.size()
-	_line_san = _best_line_san_parts(pre, pv, best)
+	_line_san = _best_line_san_parts(pre, pv, first)
 	# Precompute the position after each prefix once, so per-frame rendering is just refs/ints.
 	_line_states.clear()
 	var sim := ChessRules.new()
@@ -1876,7 +1997,7 @@ func _highlight_line_san(active: int) -> void:
 		return  # only rebuild the markup when the highlighted move actually changes
 	_line_hl_active = active
 	review_line_label.visible = true
-	review_line_label.text = _best_replies_markup(_line_san, active)
+	review_line_label.text = _best_replies_markup(_line_san, active, not _line_from_best)
 
 
 func _dup_rules(r: ChessRules) -> ChessRules:
@@ -1937,7 +2058,7 @@ func _on_line_forward() -> void:
 
 ## "Best replies: m0 m1 …" as centred BBCode, the active move bold + accent-coloured (active < 0 =
 ## none, the static display).
-func _best_replies_markup(parts: PackedStringArray, active: int) -> String:
+func _best_replies_markup(parts: PackedStringArray, active: int, played := false) -> String:
 	var out := PackedStringArray()
 	for j in parts.size():
 		# Non-breaking hyphen so castling ("O-O" / "O-O-O") never wraps across two lines.
@@ -1949,7 +2070,8 @@ func _best_replies_markup(parts: PackedStringArray, active: int) -> String:
 		else:
 			out.append(san)
 	# Everything else stays dim (the prefix + the other moves); the active move overrides to white.
-	return "[center][color=#ffffff99]%s[/color][/center]" % (tr("Best replies: %s") % " ".join(out))
+	var fmt: String = tr("Your line: %s") if played else tr("Best replies: %s")
+	return "[center][color=#ffffff99]%s[/color][/center]" % (fmt % " ".join(out))
 
 
 func _on_review_prev() -> void:
