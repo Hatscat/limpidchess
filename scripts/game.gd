@@ -169,6 +169,8 @@ var _line_active := false
 var _line_from_best := true       ## the line currently playing: the best move's line (true) or the played move's
 var _line_is_player_move := false ## when playing the played line: was that move the human's (label "Your move") or the bot's ("This move")
 var _line_states: Array = []     ## ChessRules after 0 .. k line moves (size k+1)
+var _line_evals := PackedInt32Array()  ## White-relative cp eval at each of the k+1 states, for the live eval bar
+var _line_last_eval := 0x7fffffff  ## last cp pushed to the bar during playback; skip the redraw when unchanged
 var _line_moves_arr: Array = []  ## the k line moves (packed ints)
 var _line_san := PackedStringArray()  ## SAN of each line move, for the header highlight
 var _line_total := 0
@@ -1591,6 +1593,9 @@ func _close_review() -> void:
 		board.set_last_move(int(top["move"]), int(top["mover"]))
 	_update_check_highlight()
 	board.end_animation()
+	if eval_bar != null:  # don't leave a mid-line eval ("M" / a swing) showing through the result dim
+		var ev: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
+		eval_bar.set_eval(int(ev.get("eval_cp", 0)))
 	_set_live_chrome(true)
 	_layout_for_safe_area()  # restore the live eval-bar / chrome positions moved during review
 	result_overlay.visible = true
@@ -1905,6 +1910,10 @@ func _ensure_played_line(i: int) -> void:
 			pv.append(uci)
 	var ent: Dictionary = _review[i]
 	ent["played_pv"] = pv
+	if not lines.is_empty():
+		# White-relative eval of the position AFTER the played move, for the line's eval-bar readout.
+		var sc := int(lines[0].get("score", 0))
+		ent["played_eval_cp"] = sc if after.side_to_move == ChessRules.WHITE else -sc
 	_review[i] = ent
 	if review_overlay.visible and _review_ply == i and not _line_active:
 		_update_review_panel()  # enable the played-move button now that its line is ready
@@ -1972,6 +1981,23 @@ func _play_line(from_best: bool) -> void:
 	for m: int in _line_moves_arr:
 		sim.make_move(m)
 		_line_states.append(_dup_rules(sim))
+	# Eval-bar readout for each state. Along a principal variation the engine eval is flat (best play
+	# holds it), so the best line stays at the position eval; the played line drops to the played move's
+	# eval after its first (worse) move. base/post are White-relative centipawns.
+	var base_eval := int(rv.get("eval_cp", 0))
+	var post_eval := base_eval
+	if not from_best:
+		if rv.has("played_eval_cp"):
+			post_eval = int(rv["played_eval_cp"])  # analysed (accurate, handles mate)
+		else:
+			# Fallback before the async played-line search lands: derive from the graded loss.
+			var mv_sign := 1 if int(_undo_stack[_review_ply].get("mover", ChessRules.WHITE)) == ChessRules.WHITE else -1
+			post_eval = base_eval - int(rv.get("cp_loss", 0)) * mv_sign
+	_line_evals = PackedInt32Array()
+	_line_evals.append(base_eval)  # state 0: before the line's first move
+	for _si in range(1, _line_states.size()):
+		_line_evals.append(post_eval)  # after the first move, the PV eval settles (flat)
+	_line_last_eval = 0x7fffffff  # force the first push; then only push when the value changes
 	_review_gen += 1            # cancel any step animation in flight
 	_line_active = true
 	_review_playing = true      # keep existing "line busy" guards satisfied
@@ -2017,9 +2043,31 @@ func _maybe_explode_line_mate() -> void:
 	board.explode_piece(final_state.king_square(final_state.side_to_move), MATE_EXPLODE_SEC)
 
 
+## Interpolate the White-relative eval at a fractional playback position (so the bar glides between the
+## per-state evals as the line scrubs). A segment touching a forced mate snaps at its midpoint instead of
+## sweeping through absurd centipawns (else the label would flash "+400" on the way to "M"). Empty: 0.
+func _line_eval_at(pos: float) -> int:
+	var top := _line_evals.size() - 1
+	if top < 0:
+		return 0
+	var i: int = clampi(int(floor(pos)), 0, top)
+	var j: int = mini(i + 1, top)
+	var a := _line_evals[i]
+	var b := _line_evals[j]
+	var frac: float = clampf(pos - float(i), 0.0, 1.0)
+	if absi(a) >= EvalBarScript.MATE_CP or absi(b) >= EvalBarScript.MATE_CP:
+		return b if frac >= 0.5 else a
+	return int(round(lerpf(float(a), float(b), frac)))
+
+
 ## Draw the timeline at _line_pos: base position after floor(pos) moves, the current move sliding at
 ## the fractional part, the matching SAN highlighted in the header.
 func _render_line_frame() -> void:
+	if eval_bar != null and not _line_evals.is_empty():
+		var ev := _line_eval_at(_line_pos)  # live eval as the line plays; only redraw when it changes
+		if ev != _line_last_eval:
+			_line_last_eval = ev
+			eval_bar.set_eval(ev)
 	var k := _line_total
 	var i: int = clampi(int(floor(_line_pos)), 0, k)
 	if i >= k:
