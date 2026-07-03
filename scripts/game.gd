@@ -1549,7 +1549,7 @@ func _enter_puzzle_review() -> void:
 		GameManager.go_to_home()
 		return
 	rules.set_fen(r.get_fen())  # the final position, so the review's close-restore stays consistent
-	_open_review(1)  # start at the puzzle's beginning so the player can review the whole line, ending on their mistake
+	_open_review(_undo_stack.size() - 1)  # open straight on the player's wrong move (the last ply); they can step back for the earlier line
 
 
 func _open_review(start_ply := 0) -> void:
