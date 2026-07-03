@@ -97,6 +97,8 @@ const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in
 @onready var review_line_best: Button = %ReviewLineBest       ## explore the BEST move's line (green)
 @onready var review_line_played: Button = %ReviewLinePlayed   ## explore the played move's line (player's or bot's)
 var _played_mark: _LineMark                                   ## the played button's quality glyph, re-shaped per ply
+var _best_mark: _LineMark                                     ## the best button's ✓ glyph (shown when a played button is also up)
+var _best_label: Label                                        ## the best button's "Best replies" text (shown when it stands alone)
 @onready var line_rewind: Button = %LineRewind
 @onready var line_play: Button = %LinePlayPause
 @onready var line_forward: Button = %LineForward
@@ -1392,7 +1394,16 @@ func _setup_review_buttons() -> void:
 	review_prev.add_theme_constant_override("icon_max_width", 40)
 	review_next.add_theme_constant_override("icon_max_width", 40)
 	_color_line_button(review_line_best, _quality_color("best"))     # fixed green
-	_set_line_button_icons(review_line_best, "best")                 # 🔍 + ✓ (always the best line)
+	_best_mark = _set_line_button_icons(review_line_best, "best")    # 🔍 + ✓ when paired with a played button
+	# Standing alone (the reviewed move WAS the best, so no second button), the green button has room for
+	# a label: swap the ✓ for "Best replies" text, keeping the magnifier. Added to the same row, hidden
+	# until _refresh_line_buttons decides the button is solo.
+	_best_label = Label.new()
+	_best_label.text = tr("Best replies")
+	_best_label.add_theme_font_size_override("font_size", UI.FONT_BODY)
+	_best_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_best_label.visible = false
+	_best_mark.get_parent().add_child(_best_label)  # into the row, right after the ✓ mark
 	_played_mark = _set_line_button_icons(review_line_played, "blunder")  # 🔍 + a mark re-shaped per ply
 	review_line_best.pressed.connect(_on_line_best)
 	review_line_played.pressed.connect(_on_line_played)
@@ -1790,6 +1801,11 @@ func _refresh_line_buttons(rv: Dictionary, pre: ChessRules, played: int) -> void
 	# continuation search lands (see _ensure_played_line).
 	var has_played := played != best and played >= 0
 	review_line_played.visible = has_played
+	# Best button solo (played == best): show the "Best replies" label; paired: keep it icon-only (✓).
+	if _best_mark != null:
+		_best_mark.visible = has_played
+	if _best_label != null:
+		_best_label.visible = not has_played
 	if has_played:
 		review_line_played.disabled = false
 		var q := String(rv.get("quality", ""))
