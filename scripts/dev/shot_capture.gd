@@ -50,7 +50,7 @@ func _process(_d: float) -> bool:
 		game.rules.set_fen("r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4")
 		game.board.set_rules(game.rules)
 		game.board.flipped = false
-		game._start_capture_burst(game.rules.move_from_uci("b5c6"))  # hides c6, starts the shatter
+		game.board.burst_capture_for(game.rules.move_from_uci("b5c6"))  # hides c6, starts the shatter
 		_park_bishop_on_c6()
 		game.board._cap_t = 0.18
 		game.board.queue_redraw()

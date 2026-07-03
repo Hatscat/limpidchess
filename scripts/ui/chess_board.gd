@@ -318,14 +318,34 @@ func _set_explode_t(v: float) -> void:
 	queue_redraw()
 
 
+## Detect whether `move` captures (reading the still-uncommitted position in `rules`) and, if so, start
+## the smash on the taken piece's square, hiding it until the move commits. Call right after animate_move,
+## BEFORE the move is applied to rules. Handles en passant (the taken pawn sits beside the destination).
+## No-op for a non-capture. Shared by the bot game and the puzzle mode.
+func burst_capture_for(move: int) -> void:
+	if rules == null:
+		return
+	var to := Rules.move_to(move)
+	var sq := to
+	var piece: int = rules.board[to]
+	if piece == 0:
+		# A pawn stepping diagonally onto an empty square is en passant: the taken pawn is beside it.
+		var from := Rules.move_from(move)
+		if (rules.board[from] & 7) == Rules.PAWN and Rules.file_of(from) != Rules.file_of(to):
+			sq = Rules.rank_of(from) * 8 + Rules.file_of(to)
+			piece = rules.board[sq]
+	if piece != 0:
+		capture_burst(sq, piece, true)  # hide the taken piece until the move commits
+
+
 ## Shatter the captured piece over `square` (its own sprite bursting into fading, spinning fragments),
 ## timed to the moment the capturer lands. `piece` is passed in explicitly since the caller knows the
-## taken piece (and, when fired pre-commit, the board data may still hold it). When `hide`, the piece on
-## `square` is suppressed from the static draw until the move commits (end_animation), so it shatters
-## instead of lingering under the capturer through the reveal hold. Fire-and-forget: self-clears when the
-## tween ends, and a fresh capture kills any still-running burst. NOTE: don't clear the burst in
+## taken piece (and, when fired pre-commit, the board data may still hold it). When `hide_taken`, the
+## piece on `square` is suppressed from the static draw until the move commits (end_animation), so it
+## shatters instead of lingering under the capturer through the reveal hold. Fire-and-forget: self-clears
+## when the tween ends, and a fresh capture kills any still-running burst. NOTE: don't clear the burst in
 ## clear_options() (called right after every move) or it would die instantly.
-func capture_burst(square: int, piece: int, hide := false, duration := 0.36) -> void:
+func capture_burst(square: int, piece: int, hide_taken := false, duration := 0.36) -> void:
 	if square < 0 or piece == 0:
 		return
 	if _cap_tween != null and _cap_tween.is_valid():
@@ -334,7 +354,7 @@ func capture_burst(square: int, piece: int, hide := false, duration := 0.36) -> 
 	_cap_piece = piece
 	_cap_t = 0.0
 	_cap_active = true
-	if hide:
+	if hide_taken:
 		_cap_hide_sq = square
 	_cap_tween = create_tween()
 	_cap_tween.tween_method(_set_cap_t, 0.0, 1.0, duration)

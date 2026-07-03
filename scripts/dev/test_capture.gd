@@ -34,14 +34,14 @@ func _process(_d: float) -> bool:
 	game._game_over = true
 	game._busy = false
 
-	# --- Normal capture: white bishop on b5 takes the knight on c6 (Bxc6). _start_capture_burst runs
+	# --- Normal capture: white bishop on b5 takes the knight on c6 (Bxc6). burst_capture_for runs
 	# PRE-commit (right after the slide), so it must read the taken piece + hide its square. ---
 	game.rules.set_fen("r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4")
 	game.board.set_rules(game.rules)
 	game.board._end_capture_burst()
 	game.board._cap_hide_sq = -1
 	var bxc6: int = game.rules.move_from_uci("b5c6")
-	game._start_capture_burst(bxc6)  # pre-commit: rules still holds the pre-move position
+	game.board.burst_capture_for(bxc6)  # pre-commit: rules still holds the pre-move position
 	var c6: int = 5 * 8 + 2  # c6
 	var black_knight: int = Rules.KNIGHT | Rules.BLACK_FLAG
 	if not game.board._cap_active:
@@ -64,7 +64,7 @@ func _process(_d: float) -> bool:
 	game.rules.set_fen("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")
 	game.board.set_rules(game.rules)
 	var exd6: int = game.rules.move_from_uci("e5d6")
-	game._start_capture_burst(exd6)
+	game.board.burst_capture_for(exd6)
 	var d5: int = 4 * 8 + 3  # d5, where the captured pawn actually was
 	var d6: int = 5 * 8 + 3
 	if not game.board._cap_active:
@@ -81,7 +81,7 @@ func _process(_d: float) -> bool:
 	game.board._cap_hide_sq = -1
 	game.rules.set_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 	game.board.set_rules(game.rules)
-	game._start_capture_burst(game.rules.move_from_uci("e2e4"))
+	game.board.burst_capture_for(game.rules.move_from_uci("e2e4"))
 	if game.board._cap_active or game.board._cap_hide_sq != -1:
 		_fail("a quiet move wrongly started a burst / hid a square")
 	print("quiet move: burst active=%s hide=%d (expected false / -1)" % [game.board._cap_active, game.board._cap_hide_sq])

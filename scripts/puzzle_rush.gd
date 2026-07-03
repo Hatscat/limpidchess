@@ -325,6 +325,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	await board.animate_move(_solution, MOVE_SLIDE)
 	if g != _gen:
 		return
+	board.burst_capture_for(_solution)  # smash the taken piece as the solution lands (same as the bot game)
 	rules.make_move(_solution)
 	board.set_rules(rules)
 	board.set_last_move(_solution, mover)
@@ -352,6 +353,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 		await board.animate_move(reply, MOVE_SLIDE)
 		if g != _gen:
 			return
+		board.burst_capture_for(reply)  # smash the taken piece as the opponent's reply lands
 		rules.make_move(reply)
 		board.set_rules(rules)
 		board.set_last_move(reply, rmover)
