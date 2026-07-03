@@ -903,6 +903,10 @@ func _play_move(move: int, review := {}) -> void:
 	board.set_last_move(move, mover)
 	board.set_rules(rules)
 	board.end_animation()  # commit done → drop the slide overlay (piece is now at dest)
+	if captured != 0:
+		# Smash the taken piece: shatter its sprite over the capture square (its own square, or the
+		# passed pawn's for en passant) as the capturer lands. Fire-and-forget, so play stays snappy.
+		board.capture_burst(int(undo.get("captured_sq", ChessRules.move_to(move))), captured)
 	_update_captured()
 	_record_position()
 

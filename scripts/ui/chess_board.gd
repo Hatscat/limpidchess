@@ -50,6 +50,14 @@ var _explode_sq := -1
 var _explode_piece := 0
 var _explode_t := 0.0
 
+# Capture "smash": the taken piece shatters over its square as the capturer lands (a lighter, quicker
+# cousin of the checkmate shatter, played on every capture). Fire-and-forget, self-clearing. _cap_t 0→1.
+var _cap_active := false
+var _cap_sq := -1
+var _cap_piece := 0
+var _cap_t := 0.0
+var _cap_tween: Tween = null
+
 # Face to Face: a cosmetic 180° rotation so the board reads for the side to move, like
 # turning a real board to the other player. The PIECES animate their flip (pieces_angle, tweened); the
 # COORDINATE labels flip INSTANTLY (coords_angle) since a spinning digit reads oddly. The square grid,
@@ -304,6 +312,36 @@ func _set_explode_t(v: float) -> void:
 	queue_redraw()
 
 
+## Shatter the captured piece over `square` (its own sprite bursting into fading, spinning fragments),
+## timed to the moment the capturer lands. `piece` is passed in because the board data already holds the
+## capturer by the time this runs. Fire-and-forget: it self-clears when the tween ends, and a fresh
+## capture kills any still-running burst. NOTE: don't clear this in clear_options() (called right after
+## every move) or the burst would die instantly.
+func capture_burst(square: int, piece: int, duration := 0.36) -> void:
+	if square < 0 or piece == 0:
+		return
+	if _cap_tween != null and _cap_tween.is_valid():
+		_cap_tween.kill()
+	_cap_sq = square
+	_cap_piece = piece
+	_cap_t = 0.0
+	_cap_active = true
+	_cap_tween = create_tween()
+	_cap_tween.tween_method(_set_cap_t, 0.0, 1.0, duration)
+	_cap_tween.tween_callback(_end_capture_burst)
+
+
+func _set_cap_t(v: float) -> void:
+	_cap_t = v
+	queue_redraw()
+
+
+func _end_capture_burst() -> void:
+	_cap_active = false
+	_cap_sq = -1
+	queue_redraw()
+
+
 # --- Drawing ---
 
 func _draw() -> void:
@@ -317,6 +355,8 @@ func _draw() -> void:
 	_draw_options()
 	if _in_line_mode:
 		_draw_line_frame()  # cue that the board is replaying the best-replies line
+	if _cap_active:
+		_draw_capture_burst()
 	if _explode_active:
 		_draw_explosion()
 
@@ -450,9 +490,7 @@ func _draw_slider(piece: int, from_sq: int, to_sq: int) -> void:
 	_draw_piece_tex(tex, Rect2(pos, Vector2(_cell, _cell)))
 
 
-## The checkmate shatter: a quick flash + shockwave ring, then the king's sprite split into
-## an N×N grid of fragments flung radially with gravity, each spinning and fading out. The
-## per-fragment jitter is a deterministic function of its index, so it's stable frame to frame.
+## The checkmate shatter: a quick flash + shockwave ring, then the king's sprite shattering into debris.
 func _draw_explosion() -> void:
 	var tex: Texture2D = _tex.get(_explode_piece)
 	if tex == null:
@@ -467,13 +505,36 @@ func _draw_explosion() -> void:
 		var rt := t / 0.6
 		draw_arc(center, _cell * (0.25 + rt * 1.1), 0.0, TAU, 40,
 			Color(1.0, 0.95, 0.75, (1.0 - rt) * 0.5), maxf(2.0, _cell * 0.06 * (1.0 - rt)), true)
-	# Sprite fragments.
+	_draw_shatter(rect, tex, t, 1.0)  # full-strength debris
+
+
+## The capture smash: a small quick flash, then the taken piece shattering into debris that stays
+## contained near the square (a gentler throw than the game-over explosion, so it reads on every capture
+## without stealing the show).
+func _draw_capture_burst() -> void:
+	var tex: Texture2D = _tex.get(_cap_piece)
+	if tex == null:
+		return
+	var rect := _square_rect(_cap_sq)
+	var center := rect.position + rect.size * 0.5
+	var t := _cap_t
+	if t < 0.25:
+		draw_circle(center, _cell * 0.42, Color(1.0, 1.0, 0.9, (0.25 - t) / 0.25 * 0.4))
+	_draw_shatter(rect, tex, t, 0.6)  # gentler throw than the checkmate shatter
+
+
+## Shatter a piece's sprite into an N×N grid of fragments flung radially with gravity, each spinning and
+## fading out; `intensity` scales the throw distance (1.0 = checkmate flourish, <1 = a contained smash).
+## The per-fragment jitter is a deterministic function of its index, so it's stable frame to frame.
+## Shared by the checkmate explosion and the capture burst so the two read as the same effect.
+func _draw_shatter(rect: Rect2, tex: Texture2D, t: float, intensity: float) -> void:
+	var center := rect.position + rect.size * 0.5
 	var n := 4
 	var frag := rect.size / float(n)
 	var src_cell := tex.get_size() / float(n)
 	var burst := 1.0 - pow(1.0 - t, 2.0)                  # fast out, slowing
 	var fade: float = clampf((1.0 - t) / 0.45, 0.0, 1.0)  # hold, then fade over the last 45%
-	var gravity := _cell * 2.4
+	var gravity := _cell * 2.4 * intensity
 	for i in n:
 		for j in n:
 			var home := rect.position + Vector2((j + 0.5) * frag.x, (i + 0.5) * frag.y)
@@ -482,7 +543,7 @@ func _draw_explosion() -> void:
 			var dir := Vector2(cos(ang), sin(ang))
 			if home.distance_to(center) < 1.0:            # the middle fragment: shoot it up
 				dir = Vector2(sin(fseed) * 0.4, -1.0).normalized()
-			var speed := _cell * (1.0 + 0.6 * absf(sin(fseed * 1.7)))
+			var speed := _cell * (1.0 + 0.6 * absf(sin(fseed * 1.7))) * intensity
 			var spin := (1.0 if fseed % 2 == 0 else -1.0) * (PI * 1.5 + absf(cos(fseed)) * PI)
 			var pos := home + dir * speed * burst + Vector2(0.0, gravity * t * t * 0.5)
 			# Face to Face: orient the fragment + its trajectory to the cosmetic piece angle.
