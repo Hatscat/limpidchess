@@ -216,6 +216,12 @@ each frame) and a **subprocess** (`pipe`, worker thread). Neither → GDScript f
 
 ## 🛠 Development & validation
 
+> **Committing is the maintainer's job.** Lucien commits code and assets himself, so
+> do NOT run `git commit` / `git push` unless explicitly asked. You ARE encouraged to
+> go the other way on verification: run the headless checks below liberally and do
+> adversarial self-reviews of your own changes, especially to catch **regressions**
+> before handing work back.
+
 Requires Godot 4.6 on `$PATH`. See [HOW_TO.md](HOW_TO.md) for recipes.
 
 ```
