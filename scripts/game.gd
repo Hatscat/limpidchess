@@ -728,6 +728,7 @@ func _on_option_chosen(opt: Dictionary) -> void:
 	await board.animate_move(move, REVEAL_SLIDE_SEC)
 	if g != _gen:
 		return
+	_start_capture_burst(move)  # smash the taken piece the instant the slide lands, before the hold
 	await get_tree().create_timer(REVEAL_HOLD_SEC).timeout
 	if g != _gen:
 		return
@@ -776,6 +777,7 @@ func _bot_move() -> void:
 	await board.animate_move(move, BOT_SLIDE_SEC)
 	if g != _gen:
 		return
+	_start_capture_burst(move)  # smash the taken piece as the bot's piece lands
 	_play_move(move)
 	_busy = false
 	_advance()
@@ -888,6 +890,25 @@ func _take_options(g: int) -> Array:
 	return await _deep_promote(fresh, rules, g)
 
 
+## Kick off the capture "smash" the instant the slide lands (called right after animate_move, BEFORE the
+## reveal hold / commit), so the taken piece bursts on impact instead of sitting under the capturer for
+## the ~1s hold. Reads the still-uncommitted position (the prefetch restores rules synchronously, so the
+## board is the pre-move one here) and handles en passant; no-op for a non-capture. `hide` suppresses the
+## taken piece until the move commits, so it doesn't reappear after the 0.36s burst.
+func _start_capture_burst(move: int) -> void:
+	var to := ChessRules.move_to(move)
+	var sq := to
+	var piece: int = rules.board[to]
+	if piece == 0:
+		# A pawn stepping diagonally onto an empty square is en passant: the taken pawn is beside it.
+		var from := ChessRules.move_from(move)
+		if (rules.board[from] & 7) == ChessRules.PAWN and ChessRules.file_of(from) != ChessRules.file_of(to):
+			sq = ChessRules.rank_of(from) * 8 + ChessRules.file_of(to)
+			piece = rules.board[sq]
+	if piece != 0:
+		board.capture_burst(sq, piece, true)  # hide the taken piece until the move commits
+
+
 func _play_move(move: int, review := {}) -> void:
 	var mover := rules.side_to_move
 	var undo := rules.make_move(move)
@@ -903,10 +924,6 @@ func _play_move(move: int, review := {}) -> void:
 	board.set_last_move(move, mover)
 	board.set_rules(rules)
 	board.end_animation()  # commit done → drop the slide overlay (piece is now at dest)
-	if captured != 0:
-		# Smash the taken piece: shatter its sprite over the capture square (its own square, or the
-		# passed pawn's for en passant) as the capturer lands. Fire-and-forget, so play stays snappy.
-		board.capture_burst(int(undo.get("captured_sq", ChessRules.move_to(move))), captured)
 	_update_captured()
 	_record_position()
 

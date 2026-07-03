@@ -1,9 +1,12 @@
 extends SceneTree
 
-## Dev-only: render the capture "smash" mid-burst, to check the taken piece shatters over its square like
-## a lighter checkmate flourish.  DISPLAY=:0 godot --path . -s res://scripts/dev/shot_capture.gd
-## -> /tmp/limpid_capture_early.png (t=0.18) + /tmp/limpid_capture_mid.png (t=0.4)
-## Scenario: after 4.Bxc6, the white bishop sits on c6 and the taken black knight bursts over it.
+## Dev-only: render the PRE-COMMIT hold state of a player capture (Bxc6), the moment the fix targets:
+## the bishop is parked on c6 (slide landed) and the taken knight is hidden + shattering, instead of
+## lingering under the bishop for the ~1s reveal hold.
+##   DISPLAY=:0 godot --path . -s res://scripts/dev/shot_capture.gd
+## -> /tmp/limpid_capture_early.png (burst t=0.18) + /tmp/limpid_capture_mid.png (t=0.42)
+
+const Rules := preload("res://scripts/chess/chess_rules.gd")
 
 var vp: SubViewport
 var game
@@ -19,12 +22,13 @@ func _initialize() -> void:
 	root.add_child(vp)
 
 
-func _burst_at(t: float) -> void:
-	game.board._cap_sq = 42        # c6 = rank5*8 + file2
-	game.board._cap_piece = 10     # black knight (2 | 8)
-	game.board._cap_t = t
-	game.board._cap_active = true
-	game.board.queue_redraw()
+## Park the capturing bishop's slider on c6 (as it is at slide-end, before commit).
+func _park_bishop_on_c6() -> void:
+	game.board._anim_from = 4 * 8 + 1   # b5
+	game.board._anim_to = 5 * 8 + 2     # c6
+	game.board._anim_piece = Rules.BISHOP  # white bishop
+	game.board._anim_progress = 1.0
+	game.board._anim_active = true
 
 
 func _process(_d: float) -> bool:
@@ -42,16 +46,21 @@ func _process(_d: float) -> bool:
 		game._gen += 1
 		game._busy = false
 		game._game_over = true
-		# Position after 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6: white bishop on c6, the knight just taken.
-		game.rules.set_fen("r1bqkbnr/1ppp1ppp/p1B5/4p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 4")
+		# Pre-move position: white bishop on b5, black knight still on c6 (about to be taken by Bxc6).
+		game.rules.set_fen("r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4")
 		game.board.set_rules(game.rules)
 		game.board.flipped = false
-		_burst_at(0.18)
+		game._start_capture_burst(game.rules.move_from_uci("b5c6"))  # hides c6, starts the shatter
+		_park_bishop_on_c6()
+		game.board._cap_t = 0.18
+		game.board.queue_redraw()
 		return false
 	if frames == 24:
 		vp.get_texture().get_image().save_png("/tmp/limpid_capture_early.png")
-		print("saved /tmp/limpid_capture_early.png")
-		_burst_at(0.4)
+		print("saved /tmp/limpid_capture_early.png  (hide_sq=%d, expect c6=42)" % game.board._cap_hide_sq)
+		_park_bishop_on_c6()
+		game.board._cap_t = 0.42
+		game.board.queue_redraw()
 		return false
 	if frames == 28:
 		vp.get_texture().get_image().save_png("/tmp/limpid_capture_mid.png")

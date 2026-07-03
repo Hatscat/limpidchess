@@ -57,6 +57,10 @@ var _cap_sq := -1
 var _cap_piece := 0
 var _cap_t := 0.0
 var _cap_tween: Tween = null
+# When the burst starts BEFORE the move commits (fired the instant the slide lands, not after the reveal
+# hold), the taken piece is still on the board: suppress its static sprite here so it shatters instead of
+# lingering under the capturer. Held past the burst until end_animation() commits the move.
+var _cap_hide_sq := -1
 
 # Face to Face: a cosmetic 180° rotation so the board reads for the side to move, like
 # turning a real board to the other player. The PIECES animate their flip (pieces_angle, tweened); the
@@ -137,6 +141,7 @@ func clear_options() -> void:
 	_chosen_move = -1
 	_explode_active = false
 	_explode_sq = -1
+	_cap_hide_sq = -1  # safety reset for a new game (normally cleared at commit by end_animation)
 	queue_redraw()
 
 
@@ -281,6 +286,7 @@ func _run_slide(duration: float) -> void:
 func end_animation() -> void:
 	_anim_active = false
 	_anim2_from = -1
+	_cap_hide_sq = -1  # move committed: the taken piece is gone from the data, stop suppressing its square
 	queue_redraw()
 
 
@@ -313,11 +319,13 @@ func _set_explode_t(v: float) -> void:
 
 
 ## Shatter the captured piece over `square` (its own sprite bursting into fading, spinning fragments),
-## timed to the moment the capturer lands. `piece` is passed in because the board data already holds the
-## capturer by the time this runs. Fire-and-forget: it self-clears when the tween ends, and a fresh
-## capture kills any still-running burst. NOTE: don't clear this in clear_options() (called right after
-## every move) or the burst would die instantly.
-func capture_burst(square: int, piece: int, duration := 0.36) -> void:
+## timed to the moment the capturer lands. `piece` is passed in explicitly since the caller knows the
+## taken piece (and, when fired pre-commit, the board data may still hold it). When `hide`, the piece on
+## `square` is suppressed from the static draw until the move commits (end_animation), so it shatters
+## instead of lingering under the capturer through the reveal hold. Fire-and-forget: self-clears when the
+## tween ends, and a fresh capture kills any still-running burst. NOTE: don't clear the burst in
+## clear_options() (called right after every move) or it would die instantly.
+func capture_burst(square: int, piece: int, hide := false, duration := 0.36) -> void:
 	if square < 0 or piece == 0:
 		return
 	if _cap_tween != null and _cap_tween.is_valid():
@@ -326,6 +334,8 @@ func capture_burst(square: int, piece: int, duration := 0.36) -> void:
 	_cap_piece = piece
 	_cap_t = 0.0
 	_cap_active = true
+	if hide:
+		_cap_hide_sq = square
 	_cap_tween = create_tween()
 	_cap_tween.tween_method(_set_cap_t, 0.0, 1.0, duration)
 	_cap_tween.tween_callback(_end_capture_burst)
@@ -458,6 +468,8 @@ func _draw_pieces() -> void:
 			continue  # the moving piece(s) are drawn separately, mid-slide
 		if _explode_active and sq == _explode_sq:
 			continue  # the shattering king is drawn by _draw_explosion()
+		if sq == _cap_hide_sq:
+			continue  # a piece being captured pre-commit: it's shattering (drawn by _draw_capture_burst)
 		var p: int = rules.board[sq]
 		if p == 0:
 			continue
