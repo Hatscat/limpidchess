@@ -799,7 +799,7 @@ theme_override_styles/pressed = SubResource("sb_btn")
 theme_override_styles/hover = SubResource("sb_btn")
 theme_override_styles/disabled = SubResource("sb_btn")
 
-[node name="LineRewind" type="Button" parent="ReviewOverlay/Nav" unique_id=770020017]
+[node name="LineStepBack" type="Button" parent="ReviewOverlay/Nav" unique_id=770020017]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(0, 72)
@@ -822,7 +822,7 @@ theme_override_styles/normal = SubResource("sb_btn_primary")
 theme_override_styles/pressed = SubResource("sb_btn_primary")
 theme_override_styles/hover = SubResource("sb_btn_primary")
 
-[node name="LineForward" type="Button" parent="ReviewOverlay/Nav" unique_id=770020019]
+[node name="LineStepForward" type="Button" parent="ReviewOverlay/Nav" unique_id=770020019]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(0, 72)

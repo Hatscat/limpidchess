@@ -49,9 +49,8 @@ const REVIEW_LINE_DEPTH := 14
 const REVIEW_MIN_LINE := 6
 ## Best-replies playback is a timeline: position runs 0 .. ply-count, integer part = the move index,
 ## fraction = that move's slide progress. Rate is in moves/sec, signed (negative = rewind), driven by
-## the media-control buttons (play/pause/rewind/fast-forward).
-const LINE_PLAY_RATE := 1.1        ## normal play speed (forward)
-const LINE_MAX_RATE := 8.0         ## speed cap when rewinding / fast-forwarding (each tap ×2)
+## the media-control buttons (step back / play-pause / step forward / stop).
+const LINE_PLAY_RATE := 1.1        ## auto-play speed (forward)
 const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in the best-replies line (base is 20)
 
 @onready var board: Control = %Board
@@ -99,9 +98,9 @@ const REVIEW_HL_SIZE := 28         ## font size of the move currently playing in
 var _played_mark: _LineMark                                   ## the played button's quality glyph, re-shaped per ply
 var _best_mark: _LineMark                                     ## the best button's ✓ glyph (shown when a played button is also up)
 var _best_label: Label                                        ## the best button's "Best replies" text (shown when it stands alone)
-@onready var line_rewind: Button = %LineRewind
+@onready var line_step_back: Button = %LineStepBack
 @onready var line_play: Button = %LinePlayPause
-@onready var line_forward: Button = %LineForward
+@onready var line_step_forward: Button = %LineStepForward
 @onready var line_stop: Button = %LineStop
 @onready var review_done: Button = %ReviewDone
 
@@ -178,8 +177,6 @@ var _line_pos := 0.0             ## playback position in [0, k]
 var _line_rate := 0.0            ## signed play rate (moves/sec; 0 = paused, <0 = rewind)
 var _line_hl_active := -2        ## last move index highlighted in the header (avoids rebuilding it every frame)
 var _line_mate_exploded := false ## the best line's mate shatter has played (once per arrival at the end)
-var _scan_style_off: StyleBox = null  ## rewind/fast-forward button look when OFF (dark) ...
-var _scan_style_on: StyleBox = null   ## ... vs ON (reversed: light fill + dark icon)
 var _player_moves := 0  ## moves the human has actually chosen this game (drives early "cancel")
 
 # Bot-reply prefetch: the reveal of the player's pick (slide + hold ~1.5s) is idle
@@ -1390,38 +1387,19 @@ func _setup_review_buttons() -> void:
 	_played_mark = _set_line_button_icons(review_line_played, "blunder")  # 🔍 + a mark re-shaped per ply
 	review_line_best.pressed.connect(_on_line_best)
 	review_line_played.pressed.connect(_on_line_played)
-	# The 4 media controls shown while the line plays (rewind · play/pause · fast-forward · stop):
-	# icon-only, centred, equal width.
-	line_rewind.icon = load("res://assets/icons/rewind.svg")
+	# The 4 media controls shown while the line plays (step back · play/pause · step forward · stop):
+	# icon-only, centred, equal width. Single chevrons = one move at a time (vs the old fast-scan arrows).
+	line_step_back.icon = load("res://assets/icons/chevron_left.svg")
 	line_play.icon = load("res://assets/icons/play.svg")
-	line_forward.icon = load("res://assets/icons/forward.svg")
+	line_step_forward.icon = load("res://assets/icons/chevron_right.svg")
 	line_stop.icon = load("res://assets/icons/close.png")  # ✕ = leave the line, back to the move
-	for b: Button in [line_rewind, line_play, line_forward, line_stop]:
+	for b: Button in [line_step_back, line_play, line_step_forward, line_stop]:
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		b.add_theme_constant_override("icon_max_width", 36)
-	# line_play.add_theme_constant_override("icon_max_width", 48)  # the primary control: bigger icon
-	line_rewind.pressed.connect(_on_line_rewind)
+	line_step_back.pressed.connect(_on_line_step_back)
 	line_play.pressed.connect(_on_line_play_pause)
-	line_forward.pressed.connect(_on_line_forward)
+	line_step_forward.pressed.connect(_on_line_step_forward)
 	line_stop.pressed.connect(_on_line_stop)
-	# Rewind / fast-forward are toggles: an "on" look that reverses the colours (light fill + dark
-	# icon) when that direction is active.
-	_scan_style_off = line_rewind.get_theme_stylebox("normal")
-	var on_sb := (_scan_style_off as StyleBoxFlat).duplicate() as StyleBoxFlat
-	on_sb.bg_color = Color(0.9, 0.91, 0.93)
-	_scan_style_on = on_sb
-
-
-## Light a scan button (rewind / fast-forward) when its direction is active, reversing its colours.
-func _set_scan_active(btn: Button, on: bool) -> void:
-	var sb: StyleBox = _scan_style_on if on else _scan_style_off
-	btn.add_theme_stylebox_override("normal", sb)
-	btn.add_theme_stylebox_override("hover", sb)
-	btn.add_theme_stylebox_override("pressed", sb)
-	var ic := Color(0.13, 0.14, 0.17) if on else Color(1, 1, 1)  # dark icon on light, white on dark
-	btn.add_theme_color_override("icon_normal_color", ic)
-	btn.add_theme_color_override("icon_pressed_color", ic)
-	btn.add_theme_color_override("icon_hover_color", ic)
 
 
 ## Give a best-replies button a solid quality-coloured fill (green best / red-or-blue played) so the
@@ -1482,22 +1460,19 @@ func _set_line_controls(on: bool) -> void:
 	if on:
 		review_line_played.visible = false
 	review_next.visible = not on
-	line_rewind.visible = on
+	line_step_back.visible = on
 	line_play.visible = on
-	line_forward.visible = on
+	line_step_forward.visible = on
 	line_stop.visible = on
 	# Hide the top "close analysis" ✕ while in the line, so the only ✕ is the line's own exit: the
 	# player leaves best-replies first, then can close the review.
 	review_done.visible = not on
 
 
-## Refresh the media controls from the current rate: play/pause icon + the rewind/fast-forward
-## "on" highlight (rewind active when going backward, fast-forward when faster than normal play).
+## Refresh the play/pause icon from the current rate (the step buttons are momentary, no state to show).
 func _update_line_buttons() -> void:
 	var playing := _line_active and _line_rate != 0.0
 	line_play.icon = load("res://assets/icons/pause.svg" if playing else "res://assets/icons/play.svg")
-	_set_scan_active(line_rewind, _line_active and _line_rate < 0.0)
-	_set_scan_active(line_forward, _line_active and _line_rate > LINE_PLAY_RATE)
 
 
 ## Entry point from the result dialog's "Understand your moves" button (in-app, replacing the old
@@ -2143,19 +2118,34 @@ func _on_line_play_pause() -> void:
 	_update_line_buttons()
 
 
-## Rewind: play backward; each tap doubles the rewind speed (capped).
-func _on_line_rewind() -> void:
+## Step back: pause and jump to the previous move (snapping to the boundary if mid-slide), for
+## precise move-by-move review.
+func _on_line_step_back() -> void:
 	if not _line_active:
 		return
-	_line_rate = maxf(minf(_line_rate, -LINE_PLAY_RATE) * 2.0, -LINE_MAX_RATE)
-	_update_line_buttons()
+	_line_rate = 0.0
+	_line_pos = maxf(ceil(_line_pos) - 1.0, 0.0)
+	_settle_line_step()
 
 
-## Fast-forward: play forward faster; each tap doubles the speed (capped, ×2 the spec).
-func _on_line_forward() -> void:
+## Step forward: pause and jump to the next move (snapping to the boundary if mid-slide).
+func _on_line_step_forward() -> void:
 	if not _line_active:
 		return
-	_line_rate = minf(maxf(_line_rate, LINE_PLAY_RATE) * 2.0, LINE_MAX_RATE)
+	_line_rate = 0.0
+	_line_pos = minf(floor(_line_pos) + 1.0, float(_line_total))
+	_settle_line_step()
+
+
+## Shared tail for a step: same mate handling as _process (clear a stale shatter when stepping back off
+## the mate, re-explode when landing on it), render, refresh the play/pause icon.
+func _settle_line_step() -> void:
+	if _line_pos < float(_line_total) and _line_mate_exploded:
+		board.clear_explosion()
+		_line_mate_exploded = false
+	_render_line_frame()
+	if _line_pos >= float(_line_total):
+		_maybe_explode_line_mate()
 	_update_line_buttons()
 
 
