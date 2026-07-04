@@ -15,9 +15,11 @@ Usage:
 import sys, heapq, itertools
 
 # Per 100-rating band target counts, decreasing from easy to hard (the easiest band gets the most).
+# The decline gets gentler toward the top (steps shrink 20 -> 3), so the rarely-reached hard bands keep
+# a healthy pool of variety for a strong player instead of dropping off a cliff.
 TARGETS = {4: 1200, 5: 1000, 6: 850, 7: 700, 8: 600, 9: 500, 10: 450, 11: 400, 12: 360, 13: 330,
-           14: 300, 15: 280, 16: 260, 17: 240, 18: 220, 19: 200, 20: 190, 21: 180, 22: 170,
-           23: 160, 24: 150, 25: 140, 26: 130}
+           14: 310, 15: 292, 16: 276, 17: 262, 18: 250, 19: 240, 20: 231, 21: 223, 22: 216,
+           23: 210, 24: 205, 25: 201, 26: 198}
 
 heaps = {b: [] for b in TARGETS}   # per band: a min-heap of the top-N by (popularity, nb_plays)
 cnt = itertools.count()
