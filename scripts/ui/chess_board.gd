@@ -24,6 +24,12 @@ var flipped := false
 var _last_white := -1
 var _last_black := -1
 var check_square := -1
+# The king in check trembles (a looping sway + slight wobble) ON TOP of the red cell, so a check is
+# unmissable even for players who don't register the coloured square. Driven by _process while checked.
+const _CHECK_SHAKE_HZ := 4.0    ## trembles per second
+const _CHECK_SHAKE_AMP := 0.075  ## horizontal sway, in cell widths
+const _CHECK_SHAKE_ROT := 0.08   ## wobble, in radians (~4.5°)
+var _check_shake := 0.0          ## elapsed time while in check; drives the shake phase
 
 # Options: Array of { move:int, quality:String("best"|"decent"|"blunder") }.
 var _options: Array = []
@@ -87,6 +93,16 @@ var _coord_key := ""
 func _ready() -> void:
 	_load_textures()
 	resized.connect(queue_redraw)
+	set_process(false)  # only tick while a king is in check (see set_check_square)
+
+
+## Advance the check king's tremble. Only runs while a king is in check (set_process toggled in
+## set_check_square); a mated king shatters instead, so skip the shake once the explosion starts.
+func _process(delta: float) -> void:
+	if check_square < 0 or _explode_active:
+		return
+	_check_shake += delta
+	queue_redraw()
 
 
 func _load_textures() -> void:
@@ -122,7 +138,10 @@ func clear_last_moves() -> void:
 
 
 func set_check_square(sq: int) -> void:
+	if sq != check_square:
+		_check_shake = 0.0   # restart the tremble cleanly when the checked king changes / clears
 	check_square = sq
+	set_process(sq >= 0)     # tick the shake only while a king is in check
 	queue_redraw()
 
 
@@ -142,6 +161,12 @@ func clear_options() -> void:
 	_explode_active = false
 	_explode_sq = -1
 	_cap_hide_sq = -1  # safety reset for a new game (normally cleared at commit by end_animation)
+	# Also drop any check highlight + stop its shake tick: clear_options runs at every game/run end AND
+	# every turn transition, so a game that ended WHILE in check (a perpetual-check draw, a wrong puzzle
+	# pick) can't leave the board processing/redrawing forever. A live turn re-sets the check right after.
+	check_square = -1
+	_check_shake = 0.0
+	set_process(false)
 	queue_redraw()
 
 
@@ -494,7 +519,11 @@ func _draw_pieces() -> void:
 		if p == 0:
 			continue
 		var tex: Texture2D = _tex.get(p)
-		if tex:
+		if tex == null:
+			continue
+		if sq == check_square:
+			_draw_check_king(tex, _square_rect(sq))  # trembling, over the red cell
+		else:
 			_draw_piece_tex(tex, _square_rect(sq))
 	if _anim_active:
 		_draw_slider(_anim_piece, _anim_from, _anim_to)
@@ -509,6 +538,17 @@ func _draw_piece_tex(tex: Texture2D, rect: Rect2) -> void:
 		return
 	var c := rect.position + rect.size * 0.5
 	draw_set_transform(c, pieces_angle, Vector2.ONE)
+	draw_texture_rect(tex, Rect2(-rect.size * 0.5, rect.size), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## The checked king: draw it trembling (a looping horizontal sway + slight wobble about its own centre)
+## over the red cell, so the check reads even for players who miss the coloured square. Composes with the
+## Face to Face piece angle.
+func _draw_check_king(tex: Texture2D, rect: Rect2) -> void:
+	var s := sin(_check_shake * TAU * _CHECK_SHAKE_HZ)
+	var c := rect.position + rect.size * 0.5 + Vector2(s * _cell * _CHECK_SHAKE_AMP, 0.0)
+	draw_set_transform(c, pieces_angle + s * _CHECK_SHAKE_ROT, Vector2.ONE)
 	draw_texture_rect(tex, Rect2(-rect.size * 0.5, rect.size), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
