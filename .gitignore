@@ -34,3 +34,7 @@ native/**/*.os
 # Python bytecode (from scripts/dev tooling)
 __pycache__/
 *.pyc
+
+# heavy puzzle database file from Lichess
+lichess_db_puzzle.csv
+lichess_db_puzzle.csv.zst
