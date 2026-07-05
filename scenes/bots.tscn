@@ -26,19 +26,19 @@ color = Color(0.09, 0.1, 0.12, 1)
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 16.0
+offset_left = 12.0
 offset_top = 16.0
 offset_right = -24.0
-offset_bottom = 92.0
+offset_bottom = 100.0
 grow_horizontal = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="Back" type="Button" parent="Header"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_constants/icon_max_width = 40
+theme_override_constants/icon_max_width = 48
 icon = ExtResource("2_back")
 flat = true
 icon_alignment = 1
@@ -52,8 +52,8 @@ theme_override_constants/separation = 2
 
 [node name="Title" type="Label" parent="Header/TextVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 40
-text = "Duels"
+theme_override_font_sizes/font_size = 36
+text = "New chess game"
 
 [node name="Subtitle" type="Label" parent="Header/TextVBox"]
 modulate = Color(1, 1, 1, 0.6)
@@ -68,7 +68,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = 108.0
+offset_top = 144.0
 offset_right = -20.0
 offset_bottom = -24.0
 grow_horizontal = 2
@@ -80,7 +80,7 @@ scroll_deadzone = 16
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 20
 mouse_filter = 1
 
 [node name="DailyLimit" parent="." instance=ExtResource("3_daily")]

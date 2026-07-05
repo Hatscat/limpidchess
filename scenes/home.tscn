@@ -383,9 +383,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -300.0
-offset_top = -290.0
+offset_top = -235.0
 offset_right = 300.0
-offset_bottom = 290.0
+offset_bottom = 235.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
@@ -410,17 +410,19 @@ theme_override_font_sizes/font_size = 22
 text = "Sound"
 alignment = 0
 
-[node name="LangLabel" type="Label" parent="SettingsOverlay/Card/VBox" unique_id=1543917673]
-modulate = Color(1, 1, 1, 0.55)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Language"
-horizontal_alignment = 1
-
-[node name="LangList" type="VBoxContainer" parent="SettingsOverlay/Card/VBox" unique_id=2034737097]
+[node name="LanguageBtn" type="Button" parent="SettingsOverlay/Card/VBox" unique_id=2034737097]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
-theme_override_constants/separation = 12
+focus_mode = 0
+theme_override_constants/icon_max_width = 34
+theme_override_constants/h_separation = 12
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_ghost")
+theme_override_styles/pressed = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
+text = "Language"
+alignment = 0
 
 [node name="AboutBtn" type="Button" parent="SettingsOverlay/Card/VBox" unique_id=731904900]
 custom_minimum_size = Vector2(0, 60)
@@ -457,9 +459,85 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = 216.0
-offset_top = -276.0
+offset_top = -221.0
 offset_right = 280.0
-offset_bottom = -212.0
+offset_bottom = -157.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+icon = ExtResource("8_close")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="LanguagePicker" type="Control" parent="." unique_id=1995633600]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="LanguagePicker" unique_id=1995633601]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Card" type="PanelContainer" parent="LanguagePicker" unique_id=1995633602]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -470.0
+offset_right = 300.0
+offset_bottom = 470.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_card")
+
+[node name="VBox" type="VBoxContainer" parent="LanguagePicker/Card" unique_id=1995633603]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="LanguagePicker/Card/VBox" unique_id=1995633604]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Language"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="LanguagePicker/Card/VBox" unique_id=1995633605]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+scroll_deadzone = 16
+
+[node name="List" type="VBoxContainer" parent="LanguagePicker/Card/VBox/Scroll" unique_id=1995633606]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+mouse_filter = 1
+
+[node name="CloseX" type="Button" parent="LanguagePicker" unique_id=1995633607]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 216.0
+offset_top = -456.0
+offset_right = 280.0
+offset_bottom = -392.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 0
@@ -480,6 +558,9 @@ layout_mode = 1
 [connection signal="pressed" from="Center/VBox/PassPlay" to="." method="_on_pass_play_pressed"]
 [connection signal="gui_input" from="SettingsOverlay/Dim" to="." method="_on_dim_input"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/SoundToggle" to="." method="_on_sound_pressed"]
+[connection signal="pressed" from="SettingsOverlay/Card/VBox/LanguageBtn" to="." method="_on_language_btn_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/AboutBtn" to="." method="_on_about_pressed"]
+[connection signal="gui_input" from="LanguagePicker/Dim" to="." method="_on_lang_picker_dim_input"]
+[connection signal="pressed" from="LanguagePicker/CloseX" to="." method="_on_lang_picker_close"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/ResetBtn" to="." method="_on_reset_pressed"]
 [connection signal="pressed" from="SettingsOverlay/CloseX" to="." method="_on_settings_close"]

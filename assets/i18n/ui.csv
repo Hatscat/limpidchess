@@ -34,7 +34,7 @@ Best,Best,Meilleur,Mejor
 Black,Black,Noirs,Negras
 Blunder,Blunder,Gaffe,Error grave
 "Bold, sharp attacks.","Bold, sharp attacks.","Audacieuse, attaques tranchantes.","Audaz, ataques agudos."
-Duels,Duels,Duels,Duelos
+New chess game,New chess game,Nouvelle partie d'échecs,Nueva partida de ajedrez
 Built with,Built with,Construit avec,Construido con
 Calculates without mercy.,Calculates without mercy.,Calcule sans merci.,Calcula sin piedad.
 Cancel,Cancel,Annuler,Cancelar
@@ -72,6 +72,7 @@ Inaccuracy,Inaccuracy,Imprécision,Imprecisión
 It is always better to sacrifice your opponent's men.,It is always better to sacrifice your opponent's men.,Il vaut toujours mieux sacrifier les pièces de votre adversaire.,Siempre es mejor sacrificar las piezas de tu adversario.
 Just learned how the pieces move.,Just learned how the pieces move.,Sait comment bougent les pièces.,Sabe cómo se mueven las piezas.
 Language,Language,Langue,Idioma
+Language: %s,Language: %s,Langue : %s,Idioma: %s
 Leaps at every capture.,Leaps at every capture.,Saute sur chaque capture.,Salta en cada captura.
 Gives lots of gifts.,Gives lots of gifts.,Offre plein de cadeaux.,Regala muchas piezas.
 Master,Master,Maître,Maestro

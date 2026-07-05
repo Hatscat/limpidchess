@@ -19,7 +19,7 @@ func _ready() -> void:
 	var top: int = max(safe.position.y, 16)
 	$Content.offset_top = top
 	$Back.offset_top = top
-	$Back.offset_bottom = top + 56
+	$Back.offset_bottom = top + 80
 	Billing.price_updated.connect(_on_price_updated)
 	Billing.purchase_succeeded.connect(_on_purchase_succeeded)
 	Billing.purchase_failed.connect(_on_purchase_failed)

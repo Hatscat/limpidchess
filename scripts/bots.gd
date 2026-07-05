@@ -13,8 +13,8 @@ func _ready() -> void:
 	var safe := DisplayServer.get_display_safe_area()
 	var top: int = max(safe.position.y, 16)
 	$Header.offset_top = top
-	$Header.offset_bottom = top + 80
-	scroll.offset_top = top + 108
+	$Header.offset_bottom = top + 100
+	scroll.offset_top = top + 144  # generous gap between the title/subtitle and the first bot card
 	for bot in BotRoster.ALL:
 		list.add_child(_make_row(bot))
 	# Rows are a fixed-min Button, so a tagline that wraps (longer in fr/es) would

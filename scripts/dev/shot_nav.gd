@@ -3,13 +3,14 @@ extends SceneTree
 ## Dev-only: render the reworked navigation scenes at design scale.
 ##   DISPLAY=:0 godot --path . -s res://scripts/dev/shot_nav.gd  -> /tmp/limpid_nav_*.png
 
-# (scene, is_premium, open_settings)
+# (scene, is_premium, mode)  mode: "" | "settings" | "langpicker"
 var shots := [
-	["home", true, false],
-	["home", true, true],   # settings dialog open (shows the new About row)
-	["bots", false, false], # non-premium: shows locked bots
-	["premium", false, false],
-	["about", true, false],
+	["home", true, ""],
+	["home", true, "settings"],   # settings dialog (shows the single Language row + About)
+	["home", true, "langpicker"], # the scrollable language picker open
+	["bots", false, ""],          # non-premium: shows locked bots + new title/spacing
+	["premium", false, ""],
+	["about", true, ""],
 ]
 var idx := 0
 var vp: SubViewport
@@ -46,10 +47,13 @@ func _process(_d: float) -> bool:
 	if cur == null:
 		return false
 	frames += 1
-	if frames == 6 and bool(shots[idx][2]):
+	var mode: String = shots[idx][2]
+	if frames == 6 and mode != "":
 		cur._on_settings_pressed()  # open the settings dialog
+		if mode == "langpicker":
+			cur._on_language_btn_pressed()  # then open the language picker on top
 	if frames == 14:
-		var name := "%s%s" % [shots[idx][0], "_settings" if bool(shots[idx][2]) else ""]
+		var name := "%s%s" % [shots[idx][0], "_" + mode if mode != "" else ""]
 		vp.get_texture().get_image().save_png("/tmp/limpid_nav_%s.png" % name)
 		print("saved /tmp/limpid_nav_%s.png" % name)
 		idx += 1

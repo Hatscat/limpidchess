@@ -50,11 +50,11 @@ grow_horizontal = 2
 theme_override_constants/separation = 8
 
 [node name="Back" type="Button" parent="Header" unique_id=365819301]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_constants/icon_max_width = 40
+theme_override_constants/icon_max_width = 48
 icon = ExtResource("2_back")
 flat = true
 icon_alignment = 1
