@@ -171,7 +171,11 @@ func _on_reset_pressed() -> void:
 
 ## Country flag per language code (a quick visual cue alongside the native name). Extend as languages
 ## are added; a code with no flag just shows its name.
-const LANG_FLAGS := {"en": "flag_en.png", "fr": "flag_fr.png", "es": "flag_es.png"}
+const LANG_FLAGS := {
+	"en": "flag_en.png", "fr": "flag_fr.png", "es": "flag_es.png",
+	"pt": "flag_pt.png", "de": "flag_de.png", "it": "flag_it.png", "ru": "flag_ru.png",
+	"tr": "flag_tr.png", "pl": "flag_pl.png", "id": "flag_id.png", "vi": "flag_vi.png",
+}
 
 
 func _lang_name(code: String) -> String:

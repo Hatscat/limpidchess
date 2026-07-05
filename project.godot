@@ -52,7 +52,7 @@ pointing/emulate_touch_from_mouse=true
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://assets/i18n/ui.en.translation", "res://assets/i18n/ui.fr.translation", "res://assets/i18n/ui.es.translation")
+locale/translations=PackedStringArray("res://assets/i18n/ui.en.translation", "res://assets/i18n/ui.fr.translation", "res://assets/i18n/ui.es.translation", "res://assets/i18n/ui.pt.translation", "res://assets/i18n/ui.de.translation", "res://assets/i18n/ui.it.translation", "res://assets/i18n/ui.ru.translation", "res://assets/i18n/ui.tr.translation", "res://assets/i18n/ui.pl.translation", "res://assets/i18n/ui.id.translation", "res://assets/i18n/ui.vi.translation")
 
 [rendering]
 

@@ -23,6 +23,14 @@ const LANGUAGES := [
 	{"code": "en", "name": "English"},
 	{"code": "fr", "name": "Français"},
 	{"code": "es", "name": "Español"},
+	{"code": "pt", "name": "Português"},
+	{"code": "de", "name": "Deutsch"},
+	{"code": "it", "name": "Italiano"},
+	{"code": "ru", "name": "Русский"},
+	{"code": "tr", "name": "Türkçe"},
+	{"code": "pl", "name": "Polski"},
+	{"code": "id", "name": "Bahasa Indonesia"},
+	{"code": "vi", "name": "Tiếng Việt"},
 ]
 
 const FREE_GAMES_PER_DAY := 3
