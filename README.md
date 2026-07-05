@@ -36,7 +36,8 @@ lesson, never the punishment.
 > *Tartakower*
 
 It is built beginner-first but grows with you: the opponents climb from a gentle first-timer to a
-real challenge, and a two-player Face to Face mode is fun at any level.
+real challenge, a rising puzzle streak keeps the tactics coming, and a two-player Face to Face mode
+is fun at any level.
 
 ## How it works
 
@@ -53,14 +54,22 @@ real challenge, and a two-player Face to Face mode is fun at any level.
    yourself.
 
 <p align="center">
-  <img src="docs/img/home.png" width="220" alt="Home screen">
+  <img src="docs/img/home.png" width="200" alt="Home screen">
   &nbsp;
-  <img src="docs/img/review.png" width="220" alt="End-of-game review">
+  <img src="docs/img/moves_review.png" width="200" alt="Move-by-move review: the best line vs the move you played">
+  &nbsp;
+  <img src="docs/img/puzzle.png" width="200" alt="Puzzle streak">
+  &nbsp;
+  <img src="docs/img/facetoface.png" width="200" alt="Face to Face, two players on one device">
 </p>
 
 ## Features
 
 - **Three guided moves every turn**, the whole product, shown neutrally so you must find the best.
+- **Puzzles that climb.** A rising streak of real tactics from the Lichess database, each still just
+  three moves. One attempt a day for free players; unlimited with Premium.
+- **Review every game.** Step through afterwards to see the best line, replay where your move went
+  wrong, and watch the evaluation swing, so every game teaches you something.
 - **Calm and kind.** Soft palette, no clocks, no shame on losing. Feedback teaches, it never scolds.
 - **Bots that grow with you.** Stockfish dialled down for real beginners and kids, climbing to a
   genuine challenge, with a relative difficulty meter instead of a scary rating.
@@ -106,9 +115,12 @@ Building the native Android Stockfish and exporting the app are covered in
 
 Shipped:
 
-- [x] The three-move mechanic, opponents, coins, and end-of-game review
+- [x] The three-move mechanic, opponents, coins, and the move-by-move game review
+- [x] **Puzzles**: a rising-difficulty streak of tactics from the
+      [Lichess open puzzle database](https://database.lichess.org/) (CC0), one wrong move ends the
+      run, beat your best streak, one attempt a day for free players
 - [x] Face to Face local two-player
-- [x] English / French / Spanish localization
+- [x] English / French / Spanish localization (with a language picker built to scale to more)
 - [x] Sound effects and settings
 - [x] One-time Premium via Google Play Billing (localized price, restore, promo codes)
 - [x] Marketing site (landing, privacy, terms)
@@ -118,9 +130,6 @@ Planned:
 - [ ] Publish to Google Play (in progress)
 - [ ] More languages: **Portuguese, German, Italian** (the bundled font also covers Russian,
       Ukrainian, and Greek with no extra work)
-- [ ] **Puzzle Rush** mode: a rising-difficulty streak of tactics from the
-      [Lichess open puzzle database](https://database.lichess.org/) (CC0), one wrong move ends the
-      run, beat your best streak, one attempt a day for free players
 - [ ] Verify the embedded native Stockfish on real Android devices
 - [ ] Upgrade to **Godot 4.7** post-launch (checklist in [HOW_TO.md](HOW_TO.md#upgrade-godot))
 - [ ] Later: Chinese / Japanese / Korean / Arabic (these need an additional font)
@@ -145,7 +154,7 @@ make the corresponding source available under the same licence.
 - **[OpenMoji](https://openmoji.org/)**, UI icons and bot avatars, CC BY-SA 4.0.
 - **[OpenDyslexic](https://opendyslexic.org/)**, the typeface.
 - Chess pieces: **JohnPablok's improved Cburnett set**, CC0.
-- **[Lichess open puzzle database](https://database.lichess.org/)**, CC0 (planned, for Puzzle Rush).
+- **[Lichess open puzzle database](https://database.lichess.org/)**, CC0, for the Puzzles mode.
 
 ---
 
