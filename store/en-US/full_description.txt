@@ -1,0 +1,57 @@
+Limpid Chess shows you just three moves each turn, and your job is to find the best one. That is the whole idea, and it is what makes chess finally click for beginners and kids.
+
+No more staring at a confusing board, frozen, not knowing what to play. Three clear choices appear, you pick one, and you are already on to the next turn. Fast turns, few taps, and you stay in the flow from your first move to your last. It is the easiest way to learn chess and actually enjoy every move.
+
+HOW IT WORKS
+
+Each turn, three moves are drawn right on the board as neutral numbered arrows. One is the best move, one is "not bad", and one is a blunder. They all look the same at first, so you have to find which one is strongest.
+
+Pick a move and it reveals the quality:
+• Green = the best move
+• Blue = an ok move
+• Red = a blunder
+
+You earn coins for spotting the best move, and a plain-language note shows you what the strongest move was and why. Mistakes are never a punishment here, they are the lesson, so you get a little sharper every single turn. Soon you start seeing the good moves all by yourself.
+
+The best move is always there, you just have to see it.
+
+LEARN BY PLAYING, AND IT GROWS WITH YOU
+
+This is not a dry tutorial. You learn the natural way, by playing real games and getting friendly, instant feedback after every move. When the game ends, step back through it to see the best line and exactly where things turned. It is dead-easy to start: if you have never touched a chessboard, you can play your first game in seconds, and a child or a total newcomer gets it instantly.
+
+And it keeps up as you improve. Climb a roster of friendly bots that get stronger as you do, sharpen your tactics, and start spotting the best move on your own. It is beginner-first but never beginners-only: whether this is your first game of chess or your thousandth, there is always a better move to find.
+
+FRIENDLY OPPONENTS
+
+Play a roster of friendly bots of increasing strength. Under the hood they are powered by a real chess engine, Stockfish, dialled down so the bots stay beatable and feel human. Win at your own pace. There is no clock and no shame in losing, just gentle feedback that helps you grow.
+
+PUZZLES
+
+When you want pure tactics, jump into a puzzle streak: a rising run of real puzzles, each still shown as three moves on the board. One wrong move ends the run, so climb as high as you can and beat your best streak.
+
+KIND, SIMPLE, AND PRIVATE
+
+• Works fully offline, play anywhere, anytime
+• No ads, ever
+• No account, no sign-up, no online play
+• One local save on your device, nothing is collected about you
+• A clean, custom 2D board with a calm palette and soft, easy-on-the-eyes colours
+• Ships with the OpenDyslexic dyslexia-friendly font for easy reading
+• Available in English, French and Spanish
+
+PLAY YOUR WAY
+
+• 3 free games and one puzzle streak every day
+• Premium is a one-time purchase, no subscription ever: unlimited games and puzzles, every bot unlocked, plus Face to Face, a local two-player mode so you and a friend can share one device
+
+GREAT FOR
+
+• Total beginners learning chess from scratch
+• Kids taking their first steps on the board
+• Anyone who freezes and does not know what to play
+• Players who want quick chess puzzles and chess tactics in every game
+• Single player chess on the go, no internet needed
+
+Limpid Chess is open source (GPL-3.0), built with Godot, and uses the Stockfish chess engine.
+
+Open the app, tap Play, find the best of three, and start seeing the good moves yourself. ♟

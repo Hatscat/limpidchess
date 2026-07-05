@@ -1,0 +1,1 @@
+Un juego de ajedrez con tres jugadas por turno: ¡Encuentra la correcta!

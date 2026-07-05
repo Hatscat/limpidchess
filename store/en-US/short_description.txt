@@ -1,0 +1,1 @@
+A chess game with 3 moves per turn: find the strongest one!

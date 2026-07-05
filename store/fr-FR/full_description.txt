@@ -1,0 +1,57 @@
+Limpid Chess te montre seulement trois coups à chaque tour, et ton but est de trouver le meilleur. C'est toute l'idée, et c'est ce qui fait enfin déclic chez les débutants et les enfants.
+
+Fini de fixer un échiquier confus, bloqué, sans savoir quoi jouer. Trois choix clairs apparaissent, tu en choisis un, et te voilà déjà au tour suivant. Des tours rapides, peu de touches, et tu restes dans le rythme du début à la fin. C'est la façon la plus simple d'apprendre les échecs en prenant plaisir à chaque coup.
+
+COMMENT ÇA MARCHE
+
+À chaque tour, trois coups sont dessinés directement sur l'échiquier sous forme de flèches numérotées et neutres. L'un est le meilleur coup, l'un est "pas mal", et l'un est une gaffe. Au début ils se ressemblent tous, alors à toi de trouver lequel est le plus fort.
+
+Choisis un coup et sa qualité se révèle :
+• Vert = le meilleur coup
+• Bleu = un coup correct
+• Rouge = une gaffe
+
+Tu gagnes des pièces quand tu repères le meilleur coup, et une explication toute simple te montre quel était le coup le plus fort, et pourquoi. Ici une erreur n'est jamais une punition, c'est la leçon, alors tu progresses un peu à chaque tour. Très vite, tu commences à voir les bons coups tout seul.
+
+Le meilleur coup est toujours là, il suffit de le voir.
+
+APPRENDS EN JOUANT, ET ÇA GRANDIT AVEC TOI
+
+Ce n'est pas un tutoriel ennuyeux. Tu apprends naturellement, en jouant de vraies parties et en recevant un retour amical et instantané après chaque coup. À la fin, reparcours la partie pour voir la meilleure ligne et où tout a basculé. C'est ultra facile à commencer : si tu n'as jamais touché un échiquier, tu joues ta première partie en quelques secondes, et un enfant comprend tout de suite.
+
+Et ça suit le rythme à mesure que tu progresses. Affronte une série de bots sympathiques qui montent en force avec toi, affûte tes tactiques, et commence à repérer le meilleur coup par toi-même. C'est pensé d'abord pour les débutants, mais jamais réservé aux débutants : que ce soit ta première partie d'échecs ou ta millième, il y a toujours un meilleur coup à trouver.
+
+DES ADVERSAIRES SYMPATHIQUES
+
+Joue contre une série de bots de force croissante. En coulisses, ils sont animés par un vrai moteur d'échecs, Stockfish, réglé à la baisse pour que les bots restent battables et humains. Gagne à ton propre rythme. Pas d'horloge, aucune honte à perdre, juste un retour bienveillant qui t'aide à grandir.
+
+PUZZLES
+
+Envie de tactique pure ? Lance-toi dans une série de puzzles : de vrais puzzles de plus en plus durs, toujours en trois coups sur l'échiquier. Un seul mauvais coup y met fin ; grimpe le plus haut possible et bats ton meilleur score.
+
+GENTIL, SIMPLE ET PRIVÉ
+
+• Fonctionne entièrement hors ligne, joue partout, à tout moment
+• Pas de pub, jamais
+• Pas de compte, pas d'inscription, pas de jeu en ligne
+• Une seule sauvegarde locale sur ton appareil, rien n'est collecté sur toi
+• Un échiquier 2D épuré et soigné, avec une palette douce et des couleurs calmes, agréables pour les yeux
+• Livré avec la police OpenDyslexic, adaptée à la dyslexie pour une lecture facile
+• Disponible en anglais, français et espagnol
+
+JOUE À TA MANIÈRE
+
+• 3 parties gratuites et une série de puzzles chaque jour
+• Le Premium est un achat unique, sans aucun abonnement : parties et puzzles illimités, tous les bots débloqués, et Face à face, un mode à deux pour partager un appareil avec un ami
+
+PARFAIT POUR
+
+• Les grands débutants qui apprennent les échecs de zéro
+• Les enfants qui font leurs premiers pas sur l'échiquier
+• Toute personne qui se fige et ne sait pas quoi jouer
+• Ceux qui veulent des puzzles et des tactiques d'échecs rapides à chaque partie
+• Les échecs en solo, où que tu sois, sans connexion internet
+
+Limpid Chess est open source (GPL-3.0), développé avec Godot, et utilise le moteur d'échecs Stockfish.
+
+Ouvre l'appli, appuie sur Jouer, trouve le meilleur des trois, et commence à voir les bons coups par toi-même. ♟

@@ -1,0 +1,57 @@
+Limpid Chess te muestra solo tres jugadas en cada turno, y tu misión es encontrar la mejor. Esa es toda la idea, y es lo que hace que el ajedrez por fin tenga sentido para principiantes y niños.
+
+Se acabó quedarse mirando un tablero confuso, sin saber qué jugar. Aparecen tres opciones claras, eliges una y ya estás en el siguiente turno. Turnos rápidos, pocos toques, y sigues en racha desde tu primera jugada hasta la última. Es la forma más fácil de aprender ajedrez y disfrutar de verdad cada movimiento.
+
+CÓMO FUNCIONA
+
+En cada turno se dibujan tres jugadas sobre el tablero, como flechas numeradas y neutrales. Una es la mejor jugada, otra es "no está mal" y otra es un error grave. Al principio todas se parecen, así que tienes que descubrir cuál es la más fuerte.
+
+Elige una jugada y se revela su calidad:
+• Verde = la mejor jugada
+• Azul = una jugada correcta
+• Rojo = un error grave
+
+Ganas monedas por encontrar la mejor jugada, y una nota en lenguaje sencillo te muestra cuál era la jugada más fuerte y por qué. Aquí los errores nunca son un castigo, son la lección, así que mejoras un poco en cada turno. Pronto empezarás a ver las buenas jugadas tú solo.
+
+La mejor jugada siempre está ahí, solo tienes que verla.
+
+APRENDE JUGANDO, Y CRECE CONTIGO
+
+Esto no es un tutorial aburrido. Aprendes de la forma natural, jugando partidas reales y recibiendo comentarios amables al instante después de cada movimiento. Al terminar la partida, repásala jugada a jugada para ver la mejor línea y exactamente dónde se torció todo. Empezar es facilísimo: si nunca has tocado un tablero, puedes jugar tu primera partida en segundos, y un niño o alguien totalmente nuevo lo entiende al momento.
+
+Y te acompaña a medida que mejoras. Sube por una lista de bots amables que se vuelven más fuertes contigo, afina tus tácticas y empieza a descubrir la mejor jugada por tu cuenta. Pensado primero para principiantes, pero nunca solo para principiantes: sea esta tu primera partida de ajedrez o la número mil, siempre hay una jugada mejor por encontrar.
+
+RIVALES AMABLES
+
+Juega contra una lista de bots amables de fuerza creciente. Por dentro funcionan con un motor de ajedrez real, Stockfish, ajustado a la baja para que los bots sean vencibles y se sientan humanos. Gana a tu propio ritmo. No hay reloj ni vergüenza al perder, solo comentarios suaves que te ayudan a crecer.
+
+PUZZLES
+
+¿Buscas táctica pura? Métete en una racha de puzzles: una sucesión de puzzles reales cada vez más difíciles, siempre mostrados como tres jugadas en el tablero. Un solo error termina la racha, así que sube lo más alto que puedas y supera tu mejor marca.
+
+AMABLE, SENCILLO Y PRIVADO
+
+• Funciona totalmente sin conexión, juega donde quieras y cuando quieras
+• Sin anuncios, nunca
+• Sin cuenta, sin registro, sin juego en línea
+• Una sola partida guardada en tu dispositivo, no se recopila nada sobre ti
+• Un tablero 2D limpio y personalizado, con una paleta tranquila y colores suaves que cuidan la vista
+• Incluye la tipografía OpenDyslexic, pensada para facilitar la lectura a personas con dislexia
+• Disponible en inglés, francés y español
+
+JUEGA A TU MANERA
+
+• 3 partidas gratis y una racha de puzzles cada día
+• Premium es una compra única, sin suscripciones nunca: partidas y puzzles ilimitados, todos los bots desbloqueados, y Cara a cara, un modo local para dos jugadores para compartir un mismo dispositivo con un amigo
+
+IDEAL PARA
+
+• Principiantes que aprenden ajedrez desde cero
+• Niños que dan sus primeros pasos en el tablero
+• Cualquiera que se queda bloqueado y no sabe qué jugar
+• Quienes buscan puzzles de ajedrez y tácticas rápidas en cada partida
+• Ajedrez para un jugador donde quieras, sin internet
+
+Limpid Chess es de código abierto (GPL-3.0), está hecho con Godot y usa el motor de ajedrez Stockfish.
+
+Abre la app, toca Jugar, encuentra la mejor de tres y empieza a ver tú mismo las buenas jugadas. ♟
