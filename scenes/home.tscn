@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://limpidhome01"]
 
 [ext_resource type="Script" uid="uid://c1jx7yw5723wa" path="res://scripts/home.gd" id="1_home"]
-[ext_resource type="PackedScene" uid="uid://dup7j366xg0q3" path="res://scenes/nav_bar.tscn" id="2_nav"]
 [ext_resource type="Texture2D" uid="uid://p02tne2x1je1" path="res://assets/icons/board_blank.svg" id="3_board"]
+[ext_resource type="Texture2D" path="res://assets/icons/info_round.svg" id="11_info"]
 [ext_resource type="Texture2D" uid="uid://218lqwovgsyp" path="res://assets/icons/handshake.png" id="4_handshake"]
 [ext_resource type="Texture2D" uid="uid://boxc5a1vecvuj" path="res://assets/pieces/w_pawn.png" id="5_wpawn"]
 [ext_resource type="Texture2D" uid="uid://cw8pcxwr83nff" path="res://assets/pieces/b_pawn.png" id="6_bpawn"]
@@ -156,7 +156,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 104.0
-offset_bottom = -132.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -242,35 +242,13 @@ theme_override_font_sizes/font_size = 38
 text = "New game"
 horizontal_alignment = 1
 
-[node name="BotRow" type="HBoxContainer" parent="Center/VBox/PlayCard/Content" unique_id=1345801432]
+[node name="Sub" type="Label" parent="Center/VBox/PlayCard/Content" unique_id=1345801432]
+modulate = Color(1, 1, 1, 0.5)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_constants/separation = 10
-alignment = 1
-
-[node name="WithLabel" type="Label" parent="Center/VBox/PlayCard/Content/BotRow" unique_id=1845722901]
-modulate = Color(1, 1, 1, 0.85)
-layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "with"
-vertical_alignment = 1
-
-[node name="BotAvatar" type="TextureRect" parent="Center/VBox/PlayCard/Content/BotRow" unique_id=1437996726]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BotName" type="Label" parent="Center/VBox/PlayCard/Content/BotRow" unique_id=58262404]
-unique_name_in_owner = true
-modulate = Color(1, 1, 1, 0.85)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Biscuit"
-vertical_alignment = 1
+text = "Choose your opponent"
+horizontal_alignment = 1
 
 [node name="PuzzleRush" type="Button" parent="Center/VBox" unique_id=119226942]
 custom_minimum_size = Vector2(520, 144)
@@ -378,9 +356,6 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "with a friend"
 
-[node name="NavBar" parent="." unique_id=1060122150 instance=ExtResource("2_nav")]
-layout_mode = 1
-
 [node name="SettingsOverlay" type="Control" parent="." unique_id=1447406100]
 unique_name_in_owner = true
 visible = false
@@ -408,9 +383,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -300.0
-offset_top = -270.0
+offset_top = -290.0
 offset_right = 300.0
-offset_bottom = 270.0
+offset_bottom = 290.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
@@ -447,6 +422,20 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="AboutBtn" type="Button" parent="SettingsOverlay/Card/VBox" unique_id=731904900]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/icon_max_width = 28
+theme_override_constants/h_separation = 12
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("sb_ghost")
+theme_override_styles/pressed = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
+text = "About"
+icon = ExtResource("11_info")
+alignment = 0
+
 [node name="ResetBtn" type="Button" parent="SettingsOverlay/Card/VBox" unique_id=731904882]
 unique_name_in_owner = true
 visible = false
@@ -468,9 +457,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = 216.0
-offset_top = -256.0
+offset_top = -276.0
 offset_right = 280.0
-offset_bottom = -192.0
+offset_bottom = -212.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 0
@@ -491,5 +480,6 @@ layout_mode = 1
 [connection signal="pressed" from="Center/VBox/PassPlay" to="." method="_on_pass_play_pressed"]
 [connection signal="gui_input" from="SettingsOverlay/Dim" to="." method="_on_dim_input"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/SoundToggle" to="." method="_on_sound_pressed"]
+[connection signal="pressed" from="SettingsOverlay/Card/VBox/AboutBtn" to="." method="_on_about_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/ResetBtn" to="." method="_on_reset_pressed"]
 [connection signal="pressed" from="SettingsOverlay/CloseX" to="." method="_on_settings_close"]

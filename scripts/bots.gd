@@ -39,6 +39,11 @@ func _fit_rows() -> void:
 		row.custom_minimum_size.y = maxf(96.0, hb.get_combined_minimum_size().y + 28.0)
 
 
+## Back arrow (top-left) returns to Home, same as the Android back gesture.
+func _on_back_pressed() -> void:
+	GameManager.go_to_home()
+
+
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
 		return

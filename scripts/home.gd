@@ -1,12 +1,9 @@
 extends Control
 
-## Home screen: today's remaining games and the big Play button.
-## Play starts a quick game vs the last-picked bot (default: Coco). Choosing a
-## specific opponent happens on the Bots tab.
+## Home screen: today's remaining games and the three entry cards. "New game" opens the opponent
+## picker (Bots), so choosing who to play is the first, obvious step. About lives in the Settings dialog.
 
 @onready var games_label: Label = %GamesLabel
-@onready var bot_avatar: TextureRect = %BotAvatar
-@onready var bot_name: Label = %BotName
 @onready var puzzle_title: Label = %PuzzleTitle
 @onready var puzzle_best: Label = %PuzzleBest
 @onready var settings_overlay: Control = %SettingsOverlay
@@ -21,10 +18,6 @@ func _ready() -> void:
 	$TopBar.offset_top = max(safe.position.y, 16)
 
 	settings_overlay.visible = false
-
-	var bot := _selected_bot()
-	bot_avatar.texture = load(BotRoster.avatar_path(bot))
-	bot_name.text = bot.get("name", "a bot")
 
 	_refresh_games()
 	_refresh_puzzle_button()
@@ -67,20 +60,10 @@ func _on_games_input(event: InputEvent) -> void:
 		GameManager.go_to_premium()
 
 
-func _selected_bot() -> Dictionary:
-	return GameManager.current_bot if not GameManager.current_bot.is_empty() else BotRoster.default()
-
-
+## "New game" opens the opponent picker (Bots). The daily-games gate is enforced there, when a bot is
+## actually chosen, so browsing opponents is always free.
 func _on_play_pressed() -> void:
-	var bot := _selected_bot()
-	# A premium-only opponent (e.g. selected while premium, now lapsed) routes to Premium.
-	if BotRoster.is_premium_bot(bot) and not GameManager.is_premium:
-		GameManager.go_to_premium()
-		return
-	if GameManager.can_play_game():
-		GameManager.start_bot_game(bot, true)
-	else:
-		daily_limit.open()  # out of free games: explain the daily reload (not a silent jump to the store)
+	GameManager.go_to_bots()
 
 
 ## Android back closes the daily-limit dialog if it's open (otherwise leave Home as-is).
@@ -119,6 +102,11 @@ func _on_settings_pressed() -> void:
 
 func _on_settings_close() -> void:
 	settings_overlay.visible = false
+
+
+## About (credits, licenses, source) now lives in the Settings dialog, its own screen a tap away.
+func _on_about_pressed() -> void:
+	GameManager.go_to_about()
 
 
 ## Tap outside the Settings card (on the dim) to dismiss it. We close on RELEASE, not press: the

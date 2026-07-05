@@ -39,7 +39,6 @@ var language := ""           ## chosen UI locale code; "" = follow the device la
 var sound_enabled := true    ## sound-effect cues on/off
 var last_review_prompt_date := "" ## "YYYY-MM-DD" we last auto-showed the rating prompt (cap: once/day)
 var review_done := false           ## player engaged with rating once → stops the automatic pre-prompt
-var last_bot_id := ""        ## id of the last bot played, so Home offers it again
 var games_today := 0
 var reviews_today := 0       ## moves reviews opened today (free players are capped, see can_review_today)
 var puzzles_today := 0       ## Puzzle Rush runs started today (free players are capped, see can_puzzle_today)
@@ -126,7 +125,6 @@ func reset_save() -> void:
 	puzzle_streak = 0
 	puzzle_index = -1
 	current_bot = {}
-	last_bot_id = ""
 	_apply_locale()
 	_roll_day()
 
@@ -149,10 +147,9 @@ func go_to_about() -> void:
 ## Begin a game versus a bot. Consumes one of the day's free games for non-premium.
 func start_bot_game(bot: Dictionary, player_white := true) -> void:
 	current_bot = bot
-	last_bot_id = str(bot.get("id", ""))  # remembered so Home offers it again
 	player_is_white = player_white
 	pass_and_play = false
-	_count_game()  # persists (incl. last_bot_id)
+	_count_game()  # persists the daily counter
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
 
 
@@ -372,7 +369,6 @@ func _save() -> void:
 	cfg.set_value("player", "sound_enabled", sound_enabled)
 	cfg.set_value("player", "last_review_prompt_date", last_review_prompt_date)
 	cfg.set_value("player", "review_done", review_done)
-	cfg.set_value("player", "last_bot_id", last_bot_id)
 	cfg.set_value("daily", "games_today", games_today)
 	cfg.set_value("daily", "reviews_today", reviews_today)
 	cfg.set_value("daily", "puzzles_today", puzzles_today)
@@ -396,9 +392,6 @@ func _load() -> void:
 	sound_enabled = bool(cfg.get_value("player", "sound_enabled", true))
 	last_review_prompt_date = str(cfg.get_value("player", "last_review_prompt_date", ""))
 	review_done = bool(cfg.get_value("player", "review_done", false))
-	last_bot_id = str(cfg.get_value("player", "last_bot_id", ""))
-	if last_bot_id != "":
-		current_bot = BotRoster.get_by_id(last_bot_id)  # Home offers the last opponent
 	games_today = int(cfg.get_value("daily", "games_today", 0))
 	reviews_today = int(cfg.get_value("daily", "reviews_today", 0))
 	puzzles_today = int(cfg.get_value("daily", "puzzles_today", 0))

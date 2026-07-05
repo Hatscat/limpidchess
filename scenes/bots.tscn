@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://limpidbots01"]
 
 [ext_resource type="Script" path="res://scripts/bots.gd" id="1_bots"]
-[ext_resource type="PackedScene" path="res://scenes/nav_bar.tscn" id="2_nav"]
+[ext_resource type="Texture2D" path="res://assets/icons/chevron_left.svg" id="2_back"]
 [ext_resource type="PackedScene" uid="uid://limpiddailydlg1" path="res://scenes/daily_limit_dialog.tscn" id="3_daily"]
 
 [node name="Bots" type="Control"]
@@ -22,23 +22,40 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.1, 0.12, 1)
 
-[node name="Header" type="VBoxContainer" parent="."]
+[node name="Header" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 24.0
+offset_left = 16.0
 offset_top = 16.0
 offset_right = -24.0
 offset_bottom = 92.0
 grow_horizontal = 2
+theme_override_constants/separation = 8
+
+[node name="Back" type="Button" parent="Header"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_constants/icon_max_width = 40
+icon = ExtResource("2_back")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextVBox" type="VBoxContainer" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
 theme_override_constants/separation = 2
 
-[node name="Title" type="Label" parent="Header"]
+[node name="Title" type="Label" parent="Header/TextVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "Duels"
 
-[node name="Subtitle" type="Label" parent="Header"]
+[node name="Subtitle" type="Label" parent="Header/TextVBox"]
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
@@ -53,7 +70,7 @@ anchor_bottom = 1.0
 offset_left = 20.0
 offset_top = 108.0
 offset_right = -20.0
-offset_bottom = -136.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
@@ -66,10 +83,8 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 12
 mouse_filter = 1
 
-[node name="NavBar" parent="." instance=ExtResource("2_nav")]
-layout_mode = 1
-current_tab = "bots"
-
 [node name="DailyLimit" parent="." instance=ExtResource("3_daily")]
 unique_name_in_owner = true
 visible = false
+
+[connection signal="pressed" from="Header/Back" to="." method="_on_back_pressed"]

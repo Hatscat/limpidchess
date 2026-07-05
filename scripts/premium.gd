@@ -16,12 +16,20 @@ extends Control
 
 func _ready() -> void:
 	var safe := DisplayServer.get_display_safe_area()
-	$Content.offset_top = max(safe.position.y, 16)
+	var top: int = max(safe.position.y, 16)
+	$Content.offset_top = top
+	$Back.offset_top = top
+	$Back.offset_bottom = top + 56
 	Billing.price_updated.connect(_on_price_updated)
 	Billing.purchase_succeeded.connect(_on_purchase_succeeded)
 	Billing.purchase_failed.connect(_on_purchase_failed)
 	Billing.restore_finished.connect(_on_restore_finished)
 	_refresh()
+
+
+## Back arrow (top-left) returns to Home, same as the Android back gesture.
+func _on_back_pressed() -> void:
+	GameManager.go_to_home()
 
 
 func _notification(what: int) -> void:

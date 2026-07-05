@@ -8,7 +8,7 @@ extends SceneTree
 
 func _initialize() -> void:
 	print("=== SCENES ===")
-	for s in ["nav_bar", "home", "bots", "premium", "about", "game", "puzzle_rush"]:
+	for s in ["home", "bots", "premium", "about", "game", "puzzle_rush"]:
 		var ps: PackedScene = load("res://scenes/%s.tscn" % s)
 		if ps == null:
 			print("  ", s, "  *** LOAD FAILED ***")

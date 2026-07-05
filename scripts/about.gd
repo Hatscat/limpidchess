@@ -10,7 +10,10 @@ extends Control
 
 func _ready() -> void:
 	var safe := DisplayServer.get_display_safe_area()
-	scroll.offset_top = max(safe.position.y, 16)
+	var top: int = max(safe.position.y, 16)
+	$Header.offset_top = top
+	$Header.offset_bottom = top + 80  # room for the font-40 title (min ~73px), matching the bots header
+	scroll.offset_top = top + 96      # clear gap below the fixed back/title header
 	# Single source of truth for the version: the project setting (baked into the export and
 	# readable at runtime; export_presets.cfg is editor-only and not shipped).
 	version.text = "Limpid Chess · v%s" % ProjectSettings.get_setting("application/config/version", "")
@@ -25,6 +28,11 @@ func _ready() -> void:
 
 func _on_review_pressed() -> void:
 	Reviews.open_store_listing()
+
+
+## Back arrow (top-left) returns to Home, same as the Android back gesture.
+func _on_back_pressed() -> void:
+	GameManager.go_to_home()
 
 
 func _notification(what: int) -> void:

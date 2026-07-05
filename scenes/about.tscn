@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://drsyb8fskg3ii"]
 
 [ext_resource type="Script" uid="uid://vu7lc47l4l3o" path="res://scripts/about.gd" id="1_about"]
-[ext_resource type="PackedScene" uid="uid://dup7j366xg0q3" path="res://scenes/nav_bar.tscn" id="2_nav"]
+[ext_resource type="Texture2D" path="res://assets/icons/chevron_left.svg" id="2_back"]
 [ext_resource type="Texture2D" uid="uid://eu4o70yxeqdq" path="res://assets/icons/star.png" id="3_star"]
 
 [sub_resource type="StyleBoxFlat" id="sb_ghost"]
@@ -38,6 +38,35 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.1, 0.12, 1)
 
+[node name="Header" type="HBoxContainer" parent="." unique_id=365819300]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 96.0
+grow_horizontal = 2
+theme_override_constants/separation = 8
+
+[node name="Back" type="Button" parent="Header" unique_id=365819301]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_constants/icon_max_width = 40
+icon = ExtResource("2_back")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="Title" type="Label" parent="Header" unique_id=1694807561]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 40
+text = "About"
+
 [node name="Scroll" type="ScrollContainer" parent="." unique_id=365819371]
 unique_name_in_owner = true
 layout_mode = 1
@@ -45,9 +74,9 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = 16.0
+offset_top = 112.0
 offset_right = -24.0
-offset_bottom = -136.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
@@ -57,11 +86,6 @@ scroll_deadzone = 16
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 56
-
-[node name="Title" type="Label" parent="Scroll/VBox" unique_id=1694807561]
-layout_mode = 2
-theme_override_font_sizes/font_size = 40
-text = "About"
 
 [node name="Tagline" type="Label" parent="Scroll/VBox" unique_id=1403867006]
 modulate = Color(1, 1, 1, 0.6)
@@ -125,6 +149,4 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Limpid Chess · v0.1.0"
 
-[node name="NavBar" parent="." unique_id=1018217294 instance=ExtResource("2_nav")]
-layout_mode = 1
-current_tab = "about"
+[connection signal="pressed" from="Header/Back" to="." method="_on_back_pressed"]
