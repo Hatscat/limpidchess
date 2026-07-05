@@ -260,7 +260,7 @@ func _build_options() -> Array:
 			if wrong.size() >= 2:
 				break
 			var t := ChessRules.move_to(m)
-			if m != _solution and not used_targets.has(t):
+			if m != _solution and not used_targets.has(t) and not _move_is_mate(m):
 				used_targets[t] = true
 				wrong.append(m)
 	var opts: Array = [{"move": _solution, "quality": "best"}]
@@ -283,10 +283,22 @@ func _take_distractors(ranked: Array, used_targets: Dictionary, wrong: Array, te
 		var t := ChessRules.move_to(m)
 		if used_targets.has(t):
 			continue
+		if _move_is_mate(m):
+			continue  # an alternate checkmate is as good as the solution: never a "wrong" option
 		if tempting_only and not _is_tempting(m):
 			continue
 		used_targets[t] = true
 		wrong.append(m)
+
+
+## True if `move` delivers checkmate. A mate is the best possible result, so it is at least as good as
+## any puzzle solution and must never be offered as a "wrong" distractor: that is what turned a position
+## with two different mates-in-1 into a coin flip. Transient make / is_checkmate / undo (fully restored).
+func _move_is_mate(move: int) -> bool:
+	var undo := rules.make_move(move)
+	var mate := rules.is_checkmate()
+	rules.undo_move(move, undo)
+	return mate
 
 
 ## A move a beginner is drawn to: a capture (incl. en passant) or a move that gives check. The
