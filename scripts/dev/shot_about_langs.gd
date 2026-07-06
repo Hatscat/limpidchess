@@ -6,9 +6,9 @@ extends SceneTree
 
 var vp: SubViewport
 var steps := [
-	{"lang": "fr", "out": "/tmp/limpid_about_fr.png"},
-	{"lang": "ru", "out": "/tmp/limpid_about_ru.png"},
-	{"lang": "vi", "out": "/tmp/limpid_about_vi.png"},
+	{"lang": "uk", "out": "/tmp/limpid_about_uk.png"},
+	{"lang": "el", "out": "/tmp/limpid_about_el.png"},
+	
 ]
 var idx := -1
 var about: Node

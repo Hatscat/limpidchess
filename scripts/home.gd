@@ -175,6 +175,7 @@ const LANG_FLAGS := {
 	"en": "flag_en.png", "fr": "flag_fr.png", "es": "flag_es.png",
 	"pt": "flag_pt.png", "de": "flag_de.png", "it": "flag_it.png", "ru": "flag_ru.png",
 	"tr": "flag_tr.png", "pl": "flag_pl.png", "id": "flag_id.png", "vi": "flag_vi.png",
+	"uk": "flag_uk.png", "el": "flag_el.png",
 }
 
 

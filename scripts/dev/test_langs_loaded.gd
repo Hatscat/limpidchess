@@ -5,7 +5,7 @@ extends SceneTree
 ## the .translation files imported cleanly and project.godot lists them all.
 ##   godot --headless --path . -s res://scripts/dev/test_langs_loaded.gd
 
-const NEW := ["pt", "de", "it", "ru", "tr", "pl", "id", "vi"]
+const NEW := ["pt", "de", "it", "ru", "tr", "pl", "id", "vi", "uk", "el"]
 
 
 func _initialize() -> void:

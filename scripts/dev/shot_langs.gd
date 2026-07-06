@@ -8,11 +8,9 @@ extends SceneTree
 
 var vp: SubViewport
 var steps := [
-	{"lang": "en", "picker": true, "out": "/tmp/limpid_lang_picker.png"},
-	{"lang": "ru", "picker": false, "out": "/tmp/limpid_home_ru.png"},
-	{"lang": "vi", "picker": false, "out": "/tmp/limpid_home_vi.png"},
-	{"lang": "tr", "picker": false, "out": "/tmp/limpid_home_tr.png"},
-	{"lang": "pl", "picker": false, "out": "/tmp/limpid_home_pl.png"},
+	{"lang": "en", "picker": true, "out": "/tmp/limpid_lang_picker13.png"},
+	{"lang": "uk", "picker": false, "out": "/tmp/limpid_home_uk.png"},
+	{"lang": "el", "picker": false, "out": "/tmp/limpid_home_el.png"},
 ]
 var idx := -1
 var home: Node

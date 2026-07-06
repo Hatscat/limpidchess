@@ -12,15 +12,17 @@ later):
 
 ```
 store/
-  en-US/  fr-FR/  es-ES/  pt-BR/  de-DE/  it-IT/
-  ru-RU/  tr-TR/  pl-PL/  id/  vi/
+  en-US/  fr-FR/  es-ES/  pt-BR/  de-DE/  it-IT/  ru-RU/
+  tr-TR/  pl-PL/  id/  vi/  uk/  el/
     title.txt              # app name, max 30 chars
     short_description.txt   # one line, max 80 chars
     full_description.txt    # max 4000 chars
 ```
 
-11 locales, matching the app's in-app languages. Google Play locale codes for Indonesian and
-Vietnamese have no country suffix (`id`, `vi`); Portuguese uses `pt-BR` (Brazil).
+13 locales, matching the app's in-app languages. Google Play locale codes for Indonesian, Vietnamese,
+Ukrainian and Greek have no country suffix (`id`, `vi`, `uk`, `el`); Portuguese uses `pt-BR` (Brazil).
+The "Available in N languages" bullet in every full_description hard-codes the count, so bump it when
+the language set changes.
 
 ## Graphics (already in the repo, not duplicated here)
 
@@ -37,9 +39,10 @@ Regenerate screenshots with the `scripts/dev/shot_*.gd` harnesses (see the top o
 ## Keep in sync
 
 When a user-facing feature, price, mode name, or supported-language set changes, update the matching
-sentences here in **all 11 locales**. Current app state reflected below: three-move mechanic, the
-game review, a daily Puzzles streak, friendly Stockfish bots, Face to Face two-player, 11 languages
-(EN, FR, ES, PT, DE, IT, RU, TR, PL, ID, VI), 3 free games + 1 puzzle streak per day, one-time Premium.
+sentences here in **all 13 locales**. Current app state reflected below: three-move mechanic, the
+game review, a daily Puzzles streak, friendly Stockfish bots, Face to Face two-player, 13 languages
+(EN, FR, ES, PT, DE, IT, RU, TR, PL, ID, VI, UK, EL), 3 free games + 1 puzzle streak per day, one-time
+Premium.
 
 The Face to Face mode name in each locale matches its in-app translation (e.g. de "Zu zweit",
 ru "Лицом к лицу", vi "Đối mặt"). The non-English listings were machine-translated (Claude) and are

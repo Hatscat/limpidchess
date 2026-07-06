@@ -120,8 +120,8 @@ Shipped:
       [Lichess open puzzle database](https://database.lichess.org/) (CC0), one wrong move ends the
       run, beat your best streak, one attempt a day for free players
 - [x] Face to Face local two-player
-- [x] Localized into 11 languages (English, French, Spanish, Portuguese, German, Italian, Russian,
-      Turkish, Polish, Indonesian, Vietnamese), with a scalable language picker
+- [x] Localized into 13 languages (English, French, Spanish, Portuguese, German, Italian, Russian,
+      Turkish, Polish, Indonesian, Vietnamese, Ukrainian, Greek), with a scalable language picker
 - [x] Sound effects and settings
 - [x] One-time Premium via Google Play Billing (localized price, restore, promo codes)
 - [x] Marketing site (landing, privacy, terms)
@@ -130,9 +130,10 @@ Planned:
 
 - [X] Verify the embedded native Stockfish on real Android devices
 - [ ] Publish to Google Play (in progress)
-- [ ] Even more languages at no extra cost: the bundled font also covers **Ukrainian, Greek** and other
-      Latin/Cyrillic tongues, so they only need translating
-- [ ] Chinese / Japanese / Korean / Arabic (these need an additional font)
+- [ ] Any further Latin/Cyrillic/Greek language needs only translating (the bundled font already covers
+      the script), so more can be added cheaply on demand
+- [ ] Chinese / Japanese / Korean / Arabic (these need an additional font; Japanese is the best single
+      bet, Simplified Chinese is not worth it on Google Play)
 - [ ] Upgrade to **Godot 4.7** post-launch (checklist in [HOW_TO.md](HOW_TO.md#upgrade-godot))
 
 ## Contributing

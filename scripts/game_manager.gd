@@ -31,6 +31,8 @@ const LANGUAGES := [
 	{"code": "pl", "name": "Polski"},
 	{"code": "id", "name": "Bahasa Indonesia"},
 	{"code": "vi", "name": "Tiếng Việt"},
+	{"code": "uk", "name": "Українська"},
+	{"code": "el", "name": "Ελληνικά"},
 ]
 
 const FREE_GAMES_PER_DAY := 3
