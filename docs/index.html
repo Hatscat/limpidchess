@@ -194,7 +194,8 @@
     (function () {
       const sel = document.getElementById("langsel");
       if (sel) {
-        SUPPORTED.forEach(function (code) {
+        // Alphabetical by each language's own (native) name, so no language is privileged by position.
+        SUPPORTED.slice().sort(function (a, b) { return NAMES[a].localeCompare(NAMES[b]); }).forEach(function (code) {
           const o = document.createElement("option");
           o.value = code;
           o.textContent = (FLAGS[code] ? FLAGS[code] + " " : "") + (NAMES[code] || code);
