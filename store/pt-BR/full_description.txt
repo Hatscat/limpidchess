@@ -1,0 +1,57 @@
+Limpid Chess mostra apenas três jogadas a cada turno, e sua missão é encontrar a melhor. Essa é a ideia toda, e é o que faz o xadrez finalmente fazer sentido para iniciantes e crianças.
+
+Chega de encarar um tabuleiro confuso, travado, sem saber o que jogar. Três opções claras aparecem, você escolhe uma e já parte para o próximo turno. Turnos rápidos, poucos toques, e você fica no ritmo do primeiro lance ao último. É o jeito mais fácil de aprender xadrez e realmente curtir cada jogada.
+
+COMO FUNCIONA
+
+A cada turno, três jogadas são desenhadas no próprio tabuleiro como setas numeradas neutras. Uma é a melhor jogada, uma é "nada mal" e uma é um erro grave. Todas parecem iguais no começo, então você precisa descobrir qual é a mais forte.
+
+Escolha uma jogada e ela revela a qualidade:
+• Verde = a melhor jogada
+• Azul = uma jogada ok
+• Vermelho = um erro grave
+
+Você ganha moedas ao identificar a melhor jogada, e uma nota em linguagem simples mostra qual era a jogada mais forte e por quê. Aqui os erros nunca são punição, são a lição, então você fica um pouco melhor a cada turno. Logo você começa a enxergar as boas jogadas sozinho.
+
+A melhor jogada está sempre lá, você só precisa enxergá-la.
+
+APRENDA JOGANDO, E O JOGO CRESCE COM VOCÊ
+
+Isto não é um tutorial chato. Você aprende do jeito natural, jogando partidas de verdade e recebendo um retorno amigável e na hora depois de cada jogada. Quando a partida acaba, refaça os passos para ver a melhor linha e exatamente onde tudo mudou. Começar é facílimo: se você nunca tocou em um tabuleiro, joga sua primeira partida em segundos, e uma criança ou alguém totalmente novo entende na hora.
+
+E acompanha seu progresso. Avance por uma lista de bots amigáveis que ficam mais fortes junto com você, afie suas táticas e comece a achar a melhor jogada por conta própria. É feito para iniciantes, mas nunca só para iniciantes: seja esta sua primeira partida de xadrez ou a milésima, sempre há uma jogada melhor para encontrar.
+
+ADVERSÁRIOS AMIGÁVEIS
+
+Enfrente uma lista de bots amigáveis com força crescente. Por trás deles está um motor de xadrez de verdade, o Stockfish, reduzido para que os bots continuem vencíveis e pareçam humanos. Vença no seu próprio ritmo. Não há relógio nem vergonha em perder, só um retorno gentil que ajuda você a evoluir.
+
+DESAFIOS
+
+Quando quiser tática pura, entre em uma sequência de desafios: uma série crescente de desafios de verdade, cada um ainda mostrado como três jogadas no tabuleiro. Uma jogada errada encerra a sequência, então suba o mais alto que conseguir e supere seu recorde.
+
+GENTIL, SIMPLES E PRIVADO
+
+• Funciona totalmente offline, jogue em qualquer lugar, a qualquer hora
+• Sem anúncios, nunca
+• Sem conta, sem cadastro, sem jogo online
+• Um único save local no seu aparelho, nada é coletado sobre você
+• Um tabuleiro 2D limpo e personalizado, com paleta calma e cores suaves que descansam os olhos
+• Vem com a fonte OpenDyslexic, amigável para disléxicos, para leitura fácil
+• Disponível em 11 idiomas
+
+JOGUE DO SEU JEITO
+
+• 3 partidas grátis e uma sequência de desafios por dia
+• O Premium é uma compra única, sem nenhuma assinatura: partidas e desafios ilimitados, todos os bots liberados, além do Frente a Frente, um modo local para dois jogadores para você e um amigo compartilharem o mesmo aparelho
+
+ÓTIMO PARA
+
+• Iniciantes totais aprendendo xadrez do zero
+• Crianças dando os primeiros passos no tabuleiro
+• Qualquer um que trava e não sabe o que jogar
+• Jogadores que querem desafios e táticas de xadrez rápidos em cada partida
+• Xadrez para um jogador em qualquer lugar, sem precisar de internet
+
+O Limpid Chess é de código aberto (GPL-3.0), feito com Godot e usa o motor de xadrez Stockfish.
+
+Abra o app, toque em Jogar, encontre a melhor entre as três e comece a enxergar as boas jogadas você mesmo. ♟

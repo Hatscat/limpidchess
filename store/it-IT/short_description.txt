@@ -1,0 +1,1 @@
+Un gioco di scacchi con 3 mosse a turno: trova la più forte!

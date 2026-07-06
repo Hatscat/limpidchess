@@ -1,0 +1,57 @@
+Limpid Chess hanya menampilkan tiga langkah tiap giliran, dan tugasmu menemukan yang terbaik. Itulah inti idenya, yang akhirnya membuat catur langsung terasa mudah bagi pemula dan anak-anak.
+
+Tidak ada lagi menatap papan membingungkan, terpaku, tidak tahu harus melangkah apa. Tiga pilihan jelas muncul, kamu pilih satu, dan langsung lanjut ke giliran berikutnya. Giliran cepat, sedikit ketukan, dan kamu tetap mengalir dari langkah pertama hingga terakhir. Ini cara termudah belajar catur sambil menikmati setiap langkah.
+
+CARA KERJANYA
+
+Tiap giliran, tiga langkah digambar langsung di papan sebagai panah bernomor yang netral. Satu langkah terbaik, satu "lumayan", dan satu blunder. Awalnya semua terlihat sama, jadi kamu harus menemukan mana yang terkuat.
+
+Pilih sebuah langkah dan kualitasnya terungkap:
+• Hijau = langkah terbaik
+• Biru = langkah yang oke
+• Merah = blunder
+
+Kamu dapat koin karena menemukan langkah terbaik, dan catatan berbahasa sederhana menjelaskan langkah terkuat dan alasannya. Di sini kesalahan bukan hukuman, melainkan pelajaran, jadi kamu makin tajam tiap giliran. Tak lama, kamu mulai melihat sendiri langkah-langkah bagus itu.
+
+Langkah terbaik selalu ada, kamu hanya perlu melihatnya.
+
+BELAJAR SAMBIL BERMAIN, DAN BERKEMBANG BERSAMAMU
+
+Ini bukan tutorial membosankan. Kamu belajar secara alami, dengan memainkan permainan sungguhan dan mendapat umpan balik ramah seketika setelah tiap langkah. Saat permainan berakhir, telusuri kembali untuk melihat rangkaian langkah terbaik dan di mana tepatnya keadaan berbalik. Sangat mudah dimulai: jika belum pernah menyentuh papan catur, kamu bisa main pertama kali dalam hitungan detik, dan anak atau pemula total pun langsung paham.
+
+Permainan ini terus mengimbangi saat kamu berkembang. Naiki jajaran bot ramah yang makin kuat seiring kemajuanmu, asah taktikmu, dan mulai menemukan langkah terbaik sendiri. Mengutamakan pemula tetapi bukan hanya untuk pemula: entah ini permainan catur pertamamu atau yang keseribu, selalu ada langkah lebih baik untuk ditemukan.
+
+LAWAN YANG RAMAH
+
+Mainkan jajaran bot ramah dengan kekuatan yang terus meningkat. Di balik layar, mereka ditenagai mesin catur sungguhan, Stockfish, yang dilemahkan agar bot tetap bisa dikalahkan dan terasa manusiawi. Menanglah sesuai tempomu. Tidak ada jam dan tidak ada rasa malu saat kalah, hanya umpan balik lembut yang membantumu berkembang.
+
+TEKA-TEKI
+
+Saat ingin taktik murni, masuklah ke rentetan teka-teki: rangkaian teka-teki sungguhan yang makin menantang, masing-masing tetap tampil sebagai tiga langkah di papan. Satu langkah salah mengakhiri rentetan, jadi naiklah setinggi mungkin dan pecahkan rekor terbaikmu.
+
+RAMAH, SEDERHANA, DAN PRIBADI
+
+• Berfungsi sepenuhnya offline, mainkan di mana saja, kapan saja
+• Tanpa iklan, selamanya
+• Tanpa akun, tanpa pendaftaran, tanpa permainan online
+• Satu simpanan lokal di perangkatmu, tidak ada data tentangmu yang dikumpulkan
+• Papan 2D bersih dengan palet menenangkan dan warna lembut yang nyaman di mata
+• Dilengkapi font OpenDyslexic yang ramah disleksia agar mudah dibaca
+• Tersedia dalam 11 bahasa
+
+MAIN SESUKAMU
+
+• 3 permainan gratis dan satu rentetan teka-teki setiap hari
+• Premium adalah pembelian sekali bayar, tanpa langganan: permainan dan teka-teki tanpa batas, semua bot terbuka, plus Tatap Muka, mode dua pemain lokal agar kamu dan teman berbagi satu perangkat
+
+COCOK UNTUK
+
+• Pemula total yang belajar catur dari nol
+• Anak-anak yang mengambil langkah pertama di papan
+• Siapa pun yang terpaku dan tidak tahu harus melangkah apa
+• Pemain yang ingin teka-teki dan taktik catur cepat di setiap permainan
+• Catur pemain tunggal di mana saja, tanpa perlu internet
+
+Limpid Chess bersifat open source (GPL-3.0), dibuat dengan Godot, dan menggunakan mesin catur Stockfish.
+
+Buka aplikasinya, ketuk Main, temukan yang terbaik dari tiga, dan mulai melihat langkah-langkah bagus itu sendiri. ♟

@@ -1,0 +1,57 @@
+Limpid Chess her turda sana yalnızca üç hamle gösterir ve senin görevin en iyisini bulmaktır. Tüm fikir bu kadar basit ve satrancın yeni başlayanların ve çocukların kafasında sonunda oturmasını sağlayan şey de tam olarak bu.
+
+Kafa karıştıran bir tahtaya donup kalarak ne oynayacağını bilememek artık yok. Üç net seçenek belirir, birini seçersin ve çoktan sonraki tura geçmiş olursun. Hızlı turlar, birkaç dokunuş ve ilk hamlenden sonuncusuna kadar akışın içinde kalırsın. Satranç öğrenmenin ve her hamlenin gerçekten keyfini çıkarmanın en kolay yolu bu.
+
+NASIL ÇALIŞIR
+
+Her turda üç hamle, doğrudan tahtanın üzerine numaralı ve tarafsız oklar olarak çizilir. Biri en iyi hamle, biri "fena değil", biri de bir gaftır. İlk bakışta hepsi aynı görünür, bu yüzden hangisinin en güçlü olduğunu senin bulman gerekir.
+
+Bir hamle seç ve kalitesi ortaya çıksın:
+• Yeşil = en iyi hamle
+• Mavi = idare eder bir hamle
+• Kırmızı = bir gaf
+
+En iyi hamleyi bulduğunda madeni para kazanırsın ve sade bir dille yazılmış bir not, en güçlü hamlenin ne olduğunu ve nedenini gösterir. Burada hatalar asla bir ceza değildir, dersin ta kendisidir, böylece her turda biraz daha keskinleşirsin. Kısa süre sonra iyi hamleleri kendi başına görmeye başlarsın.
+
+En iyi hamle her zaman oradadır, onu görmen yeterlidir.
+
+OYNAYARAK ÖĞREN, SENİNLE BİRLİKTE GELİŞİR
+
+Bu, kuru bir öğretici değil. Doğal yoldan, gerçek oyunlar oynayarak ve her hamleden sonra samimi, anında geri bildirim alarak öğrenirsin. Oyun bittiğinde, en iyi varyantı ve işlerin tam olarak nerede değiştiğini görmek için oyunu adım adım geri sar. Başlaması çok kolay: daha önce hiç satranç tahtasına dokunmadıysan, ilk oyununu saniyeler içinde oynayabilirsin ve bir çocuk ya da tam bir acemi bile anında kavrar.
+
+Ve sen geliştikçe o da seninle birlikte ilerler. Sen güçlendikçe güçlenen, samimi botlardan oluşan bir listede yüksel, taktiklerini keskinleştir ve en iyi hamleyi kendi başına görmeye başla. Yeni başlayanlar için öncelikli, ama asla yalnızca onlara özel değil: ister ilk satranç oyunun olsun ister bininci, bulunacak her zaman daha iyi bir hamle vardır.
+
+SAMİMİ RAKİPLER
+
+Giderek güçlenen, samimi botlardan oluşan bir listeye karşı oyna. Arka planda gerçek bir satranç motoru olan Stockfish tarafından çalıştırılırlar, ama botların yenilebilir kalması ve insana benzer hissettirmesi için gücü kısılmıştır. Kendi hızında kazan. Saat yok ve kaybetmenin utancı yok, sadece gelişmene yardımcı olan nazik geri bildirimler var.
+
+BULMACALAR
+
+Saf taktik istediğinde bir bulmaca serisine atla: her biri yine tahtada üç hamle olarak gösterilen, giderek zorlaşan gerçek bulmacalardan oluşan bir seri. Tek bir yanlış hamle seriyi bitirir, o yüzden çıkabildiğin kadar yüksel ve en iyi serini geç.
+
+NAZİK, BASİT VE GİZLİLİĞE SAYGILI
+
+• Tamamen çevrimdışı çalışır, her yerde, her zaman oyna
+• Asla reklam yok
+• Hesap yok, kayıt yok, çevrimiçi oyun yok
+• Cihazında tek bir yerel kayıt, hakkında hiçbir şey toplanmaz
+• Sakin bir palet ve yumuşak, göz yormayan renklerle temiz, özel bir 2D tahta
+• Kolay okuma için disleksi dostu OpenDyslexic yazı tipiyle birlikte gelir
+• 11 dilde mevcut
+
+KENDİ TARZINDA OYNA
+
+• Her gün 3 ücretsiz oyun ve bir bulmaca serisi
+• Premium, tek seferlik bir satın almadır, asla abonelik yok: sınırsız oyun ve bulmaca, kilidi açılmış her bot ve ayrıca Yüz Yüze, seninle bir arkadaşının tek bir cihazı paylaşabilmesi için yerel iki oyunculu bir mod
+
+ŞUNLAR İÇİN HARİKA
+
+• Satrancı sıfırdan öğrenen tam acemiler
+• Tahtada ilk adımlarını atan çocuklar
+• Donup kalan ve ne oynayacağını bilemeyen herkes
+• Her oyunda hızlı satranç bulmacaları ve satranç taktikleri isteyen oyuncular
+• İnternet gerektirmeden, hareket halinde tek kişilik satranç
+
+Limpid Chess açık kaynaklıdır (GPL-3.0), Godot ile geliştirilmiştir ve Stockfish satranç motorunu kullanır.
+
+Uygulamayı aç, Oyna'ya dokun, üçün en iyisini bul ve iyi hamleleri kendin görmeye başla. ♟

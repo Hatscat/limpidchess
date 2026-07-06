@@ -1,0 +1,57 @@
+Limpid Chess pokazuje ci tylko trzy ruchy w każdej turze, a twoim zadaniem jest znaleźć ten najlepszy. To cała idea gry i właśnie dzięki temu szachy w końcu stają się jasne dla początkujących i dzieci.
+
+Koniec z bezradnym wpatrywaniem się w mylącą szachownicę, bez pomysłu na ruch. Pojawiają się trzy jasne opcje, wybierasz jedną i już jesteś przy kolejnej turze. Szybkie tury, kilka dotknięć i jesteś w rytmie od pierwszego do ostatniego ruchu. To najłatwiejszy sposób, by nauczyć się szachów i cieszyć się każdym ruchem.
+
+JAK TO DZIAŁA
+
+W każdej turze trzy ruchy są rysowane bezpośrednio na szachownicy jako neutralne, ponumerowane strzałki. Jeden to najlepszy ruch, jeden jest "niezły", a jeden to gafa. Na początku wszystkie wyglądają tak samo, więc musisz znaleźć ten najsilniejszy.
+
+Wybierz ruch, a odsłoni się jego jakość:
+• Zielony = najlepszy ruch
+• Niebieski = ruch w porządku
+• Czerwony = gafa
+
+Zdobywasz monety za wypatrzenie najlepszego ruchu, a prosta notatka wyjaśnia, jaki ruch był najsilniejszy i dlaczego. Błędy nigdy nie są tu karą, są lekcją, więc z każdą turą idzie ci coraz lepiej. Wkrótce zaczynasz samodzielnie dostrzegać dobre ruchy.
+
+Najlepszy ruch jest zawsze na szachownicy, musisz go tylko dostrzec.
+
+UCZ SIĘ PRZEZ GRĘ, A GRA ROŚNIE RAZEM Z TOBĄ
+
+To nie jest suchy samouczek. Uczysz się w naturalny sposób, grając prawdziwe partie i otrzymując przyjazną, natychmiastową informację zwrotną po każdym ruchu. Gdy partia się kończy, przejdź ją krok po kroku, by zobaczyć najlepszą linię i miejsce, gdzie sprawy się odwróciły. Zacząć jest banalnie prosto: jeśli szachownica jest ci zupełnie obca, pierwszą partię zagrasz w kilka sekund, a dziecko lub nowicjusz zrozumie od razu.
+
+I gra dotrzymuje ci kroku, gdy się rozwijasz. Wspinaj się po liście przyjaznych botów, które stają się silniejsze razem z tobą, wyostrzaj taktykę i zacznij samodzielnie wypatrywać najlepszego ruchu. Gra stawia początkujących na pierwszym miejscu, ale nie jest tylko dla nich: czy to twoja pierwsza partia szachów, czy tysięczna, zawsze jest lepszy ruch do znalezienia.
+
+PRZYJAŹNI PRZECIWNICY
+
+Graj z listą przyjaznych botów o rosnącej sile. Pod maską napędza je prawdziwy silnik szachowy, Stockfish, celowo osłabiony, by boty były do pokonania i sprawiały wrażenie ludzkich. Wygrywaj we własnym tempie. Nie ma zegara ani wstydu po przegranej, tylko łagodna informacja zwrotna, która pomaga ci się rozwijać.
+
+ŁAMIGŁÓWKI
+
+Gdy masz ochotę na czystą taktykę, wskocz w serię łamigłówek: rosnący ciąg prawdziwych zagadek, każda pokazana jako trzy ruchy na szachownicy. Jeden zły ruch kończy serię, więc wspinaj się jak najwyżej i pobij swój rekord.
+
+MIŁE, PROSTE I PRYWATNE
+
+• Działa w pełni offline, graj wszędzie i o każdej porze
+• Nigdy żadnych reklam
+• Bez konta, bez rejestracji, bez gry online
+• Jeden lokalny zapis na twoim urządzeniu, nie zbieramy o tobie żadnych danych
+• Czysta, własna szachownica 2D ze spokojną paletą i miękkimi, przyjaznymi dla oczu kolorami
+• Zawiera przyjazną dla dyslektyków czcionkę OpenDyslexic dla łatwego czytania
+• Dostępna w 11 językach
+
+GRAJ PO SWOJEMU
+
+• 3 darmowe partie i jedna seria łamigłówek każdego dnia
+• Premium to jednorazowy zakup, nigdy żadnej subskrypcji: nieograniczone partie i łamigłówki, wszystkie boty odblokowane, plus Twarzą w twarz, lokalny tryb dla dwóch graczy, dzięki czemu ty i znajomy dzielicie jedno urządzenie
+
+ŚWIETNE DLA
+
+• Zupełnych początkujących uczących się szachów od zera
+• Dzieci stawiających pierwsze kroki na szachownicy
+• Każdego, kto zastyga i nie wie, co zagrać
+• Graczy, którzy chcą szybkich łamigłówek i taktyki szachowej w każdej partii
+• Szachów dla jednego gracza w podróży, bez potrzeby internetu
+
+Limpid Chess jest oprogramowaniem open source (GPL-3.0), zbudowanym w Godot i wykorzystuje silnik szachowy Stockfish.
+
+Otwórz aplikację, dotknij Graj, znajdź najlepszy z trzech i zacznij samodzielnie dostrzegać dobre ruchy. ♟

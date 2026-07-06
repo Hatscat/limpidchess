@@ -1,0 +1,57 @@
+Limpid Chess chỉ hiện ba nước đi mỗi lượt, và việc của bạn là tìm ra nước hay nhất. Đó là toàn bộ ý tưởng, và chính điều đó giúp người mới lẫn trẻ em cuối cùng cũng vỡ ra cờ vua.
+
+Không còn cảnh nhìn chằm chằm vào bàn cờ rối rắm, đơ người ra vì chẳng biết đi nước nào. Ba lựa chọn rõ ràng hiện lên, bạn chọn một, và thế là đã sang lượt tiếp theo. Lượt đi nhanh, ít thao tác, bạn luôn giữ được mạch chơi mượt mà từ nước đầu tiên đến nước cuối cùng. Đây là cách dễ nhất để học cờ vua và thực sự tận hưởng từng nước đi.
+
+CÁCH CHƠI
+
+Mỗi lượt, ba nước đi được vẽ ngay trên bàn cờ dưới dạng những mũi tên đánh số trung tính. Một nước là hay nhất, một nước "không tệ", và một nước là sai lầm nặng. Ban đầu trông chúng giống hệt nhau, nên bạn phải tìm ra nước nào mạnh nhất.
+
+Chọn một nước và chất lượng của nó sẽ hiện ra:
+• Xanh lá = nước hay nhất
+• Xanh dương = nước tạm ổn
+• Đỏ = nước sai lầm nặng
+
+Bạn nhận được xu khi phát hiện ra nước hay nhất, và một lời ghi chú dễ hiểu sẽ cho bạn biết nước mạnh nhất là gì và tại sao. Ở đây, sai lầm không bao giờ là hình phạt, mà là bài học, nên mỗi lượt bạn lại tinh ý hơn một chút. Chẳng mấy chốc bạn sẽ tự mình nhìn ra những nước đi hay.
+
+Nước đi hay nhất luôn ở đó, bạn chỉ cần nhìn ra nó.
+
+HỌC BẰNG CÁCH CHƠI, VÀ LỚN LÊN CÙNG BẠN
+
+Đây không phải một bài hướng dẫn khô khan. Bạn học theo cách tự nhiên nhất, bằng cách chơi những ván cờ thật và nhận phản hồi thân thiện, tức thì sau mỗi nước đi. Khi ván cờ kết thúc, hãy xem lại từng nước để thấy chuỗi nước đi hay nhất và chính xác chỗ nào cục diện xoay chuyển. Bắt đầu cực kỳ dễ: nếu bạn chưa từng chạm vào bàn cờ, bạn có thể chơi ván đầu tiên chỉ trong vài giây, và một đứa trẻ hay người hoàn toàn mới cũng hiểu ngay.
+
+Và nó luôn theo kịp khi bạn tiến bộ. Hãy chinh phục dàn bot thân thiện ngày càng mạnh lên cùng bạn, mài giũa chiến thuật, và bắt đầu tự mình phát hiện nước đi hay nhất. Trò chơi ưu tiên người mới nhưng không chỉ dành riêng cho người mới: dù đây là ván cờ đầu tiên hay ván thứ một nghìn của bạn, luôn có một nước đi hay hơn để tìm.
+
+ĐỐI THỦ THÂN THIỆN
+
+Chơi với một dàn bot thân thiện có sức mạnh tăng dần. Bên trong, chúng được vận hành bởi một engine cờ vua thật sự là Stockfish, được giảm sức mạnh xuống để các bot vẫn dễ đánh bại và mang cảm giác như người thật. Thắng theo nhịp độ của riêng bạn. Không có đồng hồ và chẳng có gì phải xấu hổ khi thua, chỉ có những phản hồi nhẹ nhàng giúp bạn tiến bộ.
+
+CÂU ĐỐ
+
+Khi bạn muốn chiến thuật thuần túy, hãy lao vào một chuỗi câu đố: một chặng câu đố thật sự khó dần lên, mỗi câu vẫn hiện ba nước đi trên bàn cờ. Chỉ một nước sai là kết thúc chặng, nên hãy leo càng cao càng tốt và phá kỷ lục chuỗi của chính mình.
+
+TỬ TẾ, ĐƠN GIẢN, RIÊNG TƯ
+
+• Hoạt động hoàn toàn ngoại tuyến, chơi mọi lúc, mọi nơi
+• Không bao giờ có quảng cáo
+• Không tài khoản, không đăng ký, không chơi trực tuyến
+• Một tệp lưu cục bộ trên máy bạn, không thu thập bất cứ điều gì về bạn
+• Bàn cờ 2D thiết kế riêng, gọn gàng với bảng màu dịu và những gam màu mềm mại, dễ chịu cho mắt
+• Đi kèm phông chữ OpenDyslexic thân thiện với người mắc chứng khó đọc, giúp đọc dễ dàng
+• Có sẵn bằng 11 ngôn ngữ
+
+CHƠI THEO CÁCH CỦA BẠN
+
+• 3 ván miễn phí và một chuỗi câu đố mỗi ngày
+• Bản Premium chỉ mua một lần, không bao giờ có thuê bao: chơi không giới hạn số ván và câu đố, mở khóa mọi bot, cùng với Đối mặt, chế độ hai người chơi cục bộ để bạn và bạn bè cùng dùng chung một thiết bị
+
+TUYỆT VỜI CHO
+
+• Người mới hoàn toàn học cờ vua từ số không
+• Trẻ em chập chững những bước đầu trên bàn cờ
+• Bất cứ ai bị đơ và không biết đi nước nào
+• Người chơi muốn câu đố cờ vua nhanh và chiến thuật cờ vua trong mỗi ván
+• Chơi cờ vua một mình khi di chuyển, không cần internet
+
+Limpid Chess là phần mềm mã nguồn mở (GPL-3.0), được xây dựng bằng Godot, và sử dụng engine cờ vua Stockfish.
+
+Hãy mở ứng dụng, chạm Chơi, tìm nước hay nhất trong ba nước, và bắt đầu tự mình nhìn ra những nước đi hay. ♟

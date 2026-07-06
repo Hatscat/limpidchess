@@ -1,0 +1,57 @@
+Limpid Chess ti mostra solo tre mosse a ogni turno, e il tuo compito è trovare la migliore. È tutta qui l'idea, ed è ciò che fa finalmente scattare la scintilla degli scacchi per principianti e bambini.
+
+Basta fissare una scacchiera confusa, bloccato, senza sapere cosa giocare. Compaiono tre scelte chiare, ne scegli una e sei già al turno successivo. Turni veloci, pochi tap e resti nel flusso dalla prima all'ultima mossa. È il modo più facile per imparare gli scacchi e goderti davvero ogni mossa.
+
+COME FUNZIONA
+
+A ogni turno, tre mosse vengono disegnate direttamente sulla scacchiera come frecce numerate e neutre. Una è la mossa migliore, una è "niente male" e una è un errore grave. All'inizio sembrano tutte uguali, quindi devi scoprire quale sia la più forte.
+
+Scegli una mossa e si rivela la qualità:
+• Verde = la mossa migliore
+• Blu = una mossa ok
+• Rosso = un errore grave
+
+Guadagni monete quando individui la mossa migliore, e una nota in parole semplici ti mostra qual era la mossa più forte e perché. Qui gli errori non sono mai una punizione, sono la lezione, così migliori a ogni singolo turno. Presto inizierai a vedere le mosse buone tutto da solo.
+
+La mossa migliore è sempre lì, devi solo vederla.
+
+IMPARA GIOCANDO, E CRESCE CON TE
+
+Questo non è un tutorial noioso. Impari nel modo naturale, giocando partite vere e ricevendo un feedback amichevole e immediato dopo ogni mossa. Quando la partita finisce, ripercorrila per vedere la linea migliore e dove le cose sono cambiate. Iniziare è facilissimo: se non hai mai toccato una scacchiera, puoi giocare la tua prima partita in pochi secondi, e un bambino o un neofita lo capisce all'istante.
+
+E sta al passo con te man mano che migliori. Scala una serie di bot amichevoli che diventano più forti insieme a te, affina la tua tattica e inizia a individuare la mossa migliore da solo. È pensato prima di tutto per i principianti ma non solo per loro: che sia la tua prima partita a scacchi o la millesima, c'è sempre una mossa migliore da trovare.
+
+AVVERSARI AMICHEVOLI
+
+Gioca contro una serie di bot amichevoli di forza crescente. Dietro le quinte c'è un vero motore scacchistico, Stockfish, ridimensionato così che i bot restino battibili e sembrino umani. Vinci al tuo ritmo. Non c'è orologio né vergogna nel perdere, solo un feedback delicato che ti aiuta a crescere.
+
+PUZZLE
+
+Quando vuoi tattica pura, tuffati in una serie di puzzle: una sequenza crescente di puzzle reali, ognuno mostrato sempre come tre mosse sulla scacchiera. Una mossa sbagliata chiude la serie, quindi sali più in alto che puoi e batti il tuo record.
+
+GENTILE, SEMPLICE E PRIVATO
+
+• Funziona completamente offline, gioca ovunque e sempre
+• Nessuna pubblicità, mai
+• Nessun account, nessuna registrazione, nessun gioco online
+• Un solo salvataggio locale sul tuo dispositivo, non viene raccolto nulla su di te
+• Una scacchiera 2D personalizzata e pulita, con una palette calma e colori morbidi e riposanti per gli occhi
+• Include il font OpenDyslexic adatto a chi ha dislessia per una lettura facile
+• Disponibile in 11 lingue
+
+GIOCA A MODO TUO
+
+• 3 partite gratis e una serie di puzzle ogni giorno
+• Il Premium è un acquisto una tantum, mai un abbonamento: partite e puzzle illimitati, ogni bot sbloccato, più Faccia a Faccia, una modalità locale a due giocatori così tu e un amico potete condividere lo stesso dispositivo
+
+PERFETTO PER
+
+• Principianti assoluti che imparano gli scacchi da zero
+• Bambini che muovono i primi passi sulla scacchiera
+• Chiunque si blocchi e non sappia cosa giocare
+• Chi vuole puzzle e tattica scacchistica veloci in ogni partita
+• Scacchi per giocatore singolo in movimento, senza bisogno di internet
+
+Limpid Chess è open source (GPL-3.0), realizzato con Godot e usa il motore scacchistico Stockfish.
+
+Apri l'app, tocca Gioca, trova la migliore delle tre e inizia a vedere le mosse buone da solo. ♟

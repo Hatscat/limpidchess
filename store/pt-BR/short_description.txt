@@ -1,0 +1,1 @@
+Xadrez com 3 lances por turno: encontre o mais forte!

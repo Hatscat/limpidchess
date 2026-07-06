@@ -1,0 +1,57 @@
+Limpid Chess zeigt dir jede Runde nur drei Züge, und deine Aufgabe ist es, den besten zu finden. Das ist die ganze Idee, und genau dadurch macht es bei Anfängern und Kindern endlich Klick.
+
+Kein ratloses Starren mehr auf ein verwirrendes Brett, ohne zu wissen, was du ziehen sollst. Drei klare Optionen erscheinen, du wählst eine, und schon geht es zur nächsten Runde. Schnelle Züge, wenige Taps, und du bleibst im Fluss, vom ersten bis zum letzten Zug. Es ist der einfachste Weg, Schach zu lernen und dabei jeden Zug wirklich zu genießen.
+
+SO FUNKTIONIERT ES
+
+Jede Runde werden drei Züge direkt auf dem Brett als neutrale, nummerierte Pfeile eingezeichnet. Einer ist der beste Zug, einer ist "nicht schlecht", und einer ist ein Patzer. Zuerst sehen sie alle gleich aus, du musst herausfinden, welcher der stärkste ist.
+
+Wähle einen Zug, und er zeigt seine Qualität:
+• Grün = der beste Zug
+• Blau = ein passabler Zug
+• Rot = ein Patzer
+
+Du verdienst Münzen, wenn du den besten Zug findest, und eine leicht verständliche Notiz zeigt dir, welcher Zug der stärkste war und warum. Fehler sind hier nie eine Strafe, sondern die Lektion, so wirst du mit jeder Runde ein bisschen besser. Bald erkennst du die guten Züge ganz von allein.
+
+Der beste Zug ist immer da, du musst ihn nur sehen.
+
+LERNEN DURCH SPIELEN, UND ES WÄCHST MIT DIR
+
+Das ist kein trockenes Tutorial. Du lernst auf natürliche Weise, indem du echte Partien spielst und nach jedem Zug freundliches, sofortiges Feedback bekommst. Nach der Partie geh sie noch einmal durch, um die beste Variante zu sehen und genau die Stelle, an der es kippte. Der Einstieg ist kinderleicht: Hast du noch nie ein Schachbrett berührt, spielst du deine erste Partie in Sekunden, und jedes Kind versteht es sofort.
+
+Und es hält mit, während du besser wirst. Klettere eine Reihe freundlicher Bots hinauf, die mit dir stärker werden, schärfe deine Taktik und finde den besten Zug immer öfter selbst. Es ist für Anfänger gemacht, aber nicht nur für sie: Ob es deine erste Schachpartie ist oder deine tausendste, es gibt immer einen besseren Zug zu finden.
+
+FREUNDLICHE GEGNER
+
+Spiele gegen freundliche Bots mit steigender Stärke. Unter der Haube treibt sie eine echte Schach-Engine an, Stockfish, heruntergeregelt, damit die Bots schlagbar bleiben und menschlich wirken. Es gibt keine Uhr und keine Schande beim Verlieren, nur sanftes Feedback, das dir hilft, besser zu werden.
+
+PUZZLES
+
+Wenn du reine Taktik willst, starte eine Puzzle-Serie: eine ansteigende Folge echter Aufgaben, jede als drei Züge auf dem Brett. Ein falscher Zug beendet die Serie, also klettere so hoch du kannst und übertriff deine beste Serie.
+
+FREUNDLICH, EINFACH UND PRIVAT
+
+• Funktioniert komplett offline, spiele überall und jederzeit
+• Keine Werbung, niemals
+• Kein Konto, keine Anmeldung, kein Online-Spiel
+• Ein lokaler Spielstand, nichts wird über dich gesammelt
+• Ein aufgeräumtes 2D-Brett mit ruhiger Palette und sanften, augenfreundlichen Farben
+• Mit der legasthenie-freundlichen Schriftart OpenDyslexic für leichtes Lesen
+• Verfügbar in 11 Sprachen
+
+SPIELE, WIE DU WILLST
+
+• 3 kostenlose Partien und eine Puzzle-Serie pro Tag
+• Premium ist ein einmaliger Kauf, niemals ein Abo: unbegrenzte Partien und Puzzles, alle Bots freigeschaltet, dazu Zu zweit, ein lokaler Zwei-Spieler-Modus, damit du und ein Freund euch ein Gerät teilen könnt
+
+IDEAL FÜR
+
+• Absolute Anfänger, die Schach von Grund auf lernen
+• Kinder, die ihre ersten Schritte auf dem Brett machen
+• Alle, die erstarren und nicht wissen, was sie ziehen sollen
+• Spieler, die schnelle Schachaufgaben und Schachtaktik in jeder Partie wollen
+• Einzelspieler-Schach für unterwegs, ohne Internet
+
+Limpid Chess ist Open Source (GPL-3.0), mit Godot entwickelt und nutzt die Schach-Engine Stockfish.
+
+Öffne die App, tippe auf Spielen, finde den besten von dreien und beginne, die guten Züge selbst zu sehen. ♟

@@ -1,0 +1,1 @@
+Schach mit 3 Zügen pro Runde: Finde den stärksten!

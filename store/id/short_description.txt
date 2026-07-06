@@ -1,0 +1,1 @@
+Game catur dengan 3 langkah tiap giliran: temukan yang terkuat!
