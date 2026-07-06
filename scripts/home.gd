@@ -206,7 +206,10 @@ func _build_lang_picker() -> void:
 	for c in lang_picker_list.get_children():
 		c.queue_free()
 	var current := GameManager.current_language()
-	for lang in GameManager.LANGUAGES:
+	# Alphabetical by each language's own (native) name, so no language is privileged by list position.
+	var langs := GameManager.LANGUAGES.duplicate()
+	langs.sort_custom(func(a, b): return String(a["name"]) < String(b["name"]))
+	for lang in langs:
 		var b := Button.new()
 		b.text = lang["name"]  # shown in its OWN language, never translated
 		b.auto_translate_mode = Control.AUTO_TRANSLATE_MODE_DISABLED

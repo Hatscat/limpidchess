@@ -29,7 +29,7 @@ const LANGUAGES := [
 	{"code": "ru", "name": "Русский"},
 	{"code": "tr", "name": "Türkçe"},
 	{"code": "pl", "name": "Polski"},
-	{"code": "id", "name": "Bahasa Indonesia"},
+	{"code": "id", "name": "Indonesia"},
 	{"code": "vi", "name": "Tiếng Việt"},
 	{"code": "uk", "name": "Українська"},
 	{"code": "el", "name": "Ελληνικά"},
