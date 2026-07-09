@@ -4,6 +4,9 @@ Versioned source for the Google Play **store listing text**, so it stays in sync
 never lives only in the Play Console. Publishing is still manual (copy/paste into the Play Console),
 but this is the single source of truth to copy from and to edit when features change.
 
+The one-time Premium in-app product copy (title + 200-char description) is versioned separately in
+[`premium_unlock.md`](premium_unlock.md).
+
 ## Layout
 
 One folder per Play Console locale, with plain-text files named to match the
