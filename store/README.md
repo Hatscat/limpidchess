@@ -36,6 +36,9 @@ The listing images live under [`docs/img/`](../docs/img) (shared with the websit
   `Screenshot_puzzle_x3.png`, `Screenshot_facetoface_x3.png`, `Screenshot_review_x3.png`
 - **Feature graphic** (1024×500): `feature_graphic.png`
 - **App icon** (512×512): `icon.png`
+- **Promo video** (Play listing links a YouTube URL, not a file): a 21 s vertical 1080×1920
+  gameplay montage, regenerable with `scripts/dev/promo_video.gd` (see HOW_TO.md, "Promo /
+  store video"). Final + sources in `~/Videos/` on the dev box.
 
 Regenerate screenshots with the `scripts/dev/shot_*.gd` harnesses (see the top of each file).
 

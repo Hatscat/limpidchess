@@ -35,6 +35,30 @@ Needs a real display (`$DISPLAY` set). Renders each scene to `/tmp/limpid_*.png`
 godot --path ~/limpid-chess -s res://scripts/dev/screenshot.gd
 ```
 
+## Promo / store video (scripted gameplay recording)
+
+[`scripts/dev/promo_video.gd`](scripts/dev/promo_video.gd) plays the REAL app hands-free
+(scripted taps drawn as touch ripples) while Godot's Movie Maker records exact-30fps PNG
+frames + a WAV of the game sounds. One segment per run, on a display, against a sandboxed
+save (never the real one):
+
+```bash
+XDG_DATA_HOME=/tmp/promo_save PROMO_SEG=game godot --path ~/limpid-chess \
+  --resolution 540x960 --write-movie /tmp/promo/game/f.png --fixed-fps 30 \
+  res://scripts/dev/promo_video.tscn
+```
+
+- `PROMO_SEG`: `game` (home → bots → Biscuit → win → moves review) · `puzzles` (a rapid
+  streak) · `facetoface` (premium, the piece flip) · `endcard` (static outro).
+- **`--resolution 540x960` matters**: the WM clamps a 720×1280 window on a 1080p screen,
+  which silently stretches the canvas and shifts every scripted tap. Same 9:16 aspect at
+  540×960 keeps the canvas exactly 720×1280 (the driver also maps taps through the
+  viewport's final transform).
+- Stitch/trim/music/captions with ffmpeg: the cut list + full pipeline used for the 2026
+  store video live in `~/Videos/limpid_promo_sources/assemble2.py` (raw segment archives,
+  caption strips and the final video sit next to it / in `~/Videos/`). Music: Roa "Haru"
+  (chosic.com, credit required in the YouTube description).
+
 ## Upgrade Godot
 
 Single binary behind a symlink — upgrading = swapping the binary file.
