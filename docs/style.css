@@ -65,7 +65,7 @@ footer.site a { color: var(--dim); }
 footer.site a:hover { color: var(--text); }
 footer.site .credits { margin-top: 14px; font-size: .82rem; line-height: 1.7; }
 
-/* teaser video */
+/* promo video */
 .video-wrap { text-align: center; margin: 26px 0 6px; }
 .video-wrap video { width: 300px; max-width: 86%; border-radius: 26px; border: 1px solid var(--line); box-shadow: 0 12px 44px rgba(0, 0, 0, .55); background: #000; }
 
