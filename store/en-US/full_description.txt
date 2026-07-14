@@ -23,7 +23,7 @@ And it keeps up as you improve. Climb a roster of friendly bots that get stronge
 
 FRIENDLY OPPONENTS
 
-Play a roster of friendly bots of increasing strength. Under the hood they are powered by a real chess engine, Stockfish, dialled down so the bots stay beatable and feel human. Win at your own pace. There is no clock and no shame in losing, just gentle feedback that helps you grow.
+Play a roster of friendly bots of increasing strength. Under the hood they are powered by a real chess engine, Stockfish, dialed down so the bots stay beatable and feel human. Win at your own pace. There is no clock and no shame in losing, just gentle feedback that helps you grow.
 
 PUZZLES
 
@@ -35,7 +35,7 @@ KIND, SIMPLE, AND PRIVATE
 • No ads, ever
 • No account, no sign-up, no online play
 • One local save on your device, nothing is collected about you
-• A clean, custom 2D board with a calm palette and soft, easy-on-the-eyes colours
+• A clean, custom 2D board with a calm palette and soft, easy-on-the-eyes colors
 • Ships with the OpenDyslexic dyslexia-friendly font for easy reading
 • Available in 13 languages
 

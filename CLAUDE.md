@@ -42,6 +42,12 @@ and explain what the best move was. Errors are the lesson, not the punishment.
 > Play listing, taglines) the word that qualifies the experience is **smooth**, not
 > "calm". Calm / kind / no-shame are real values but supporting notes; lead with smooth.
 
+> **Spelling: US English for user-facing text.** All player-facing strings (the game UI via
+> `assets/i18n/ui.csv`, the Play listing, the landing site, marketing copy) use American
+> spelling: color, center, dialed, analyze, license. When you add or edit a UI string, follow
+> US spelling. Internal code comments and dev docs (including this file) are NOT swept and may
+> still read British; that is fine, it is not user-facing.
+
 ## 🧩 Architecture
 
 The **rules layer is plain GDScript**; the **brain is Stockfish** (driven over

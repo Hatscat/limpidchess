@@ -1641,7 +1641,7 @@ func _render_review_view() -> void:
 	var rv: Dictionary = _review[_review_ply] if _review_ply < _review.size() else {}
 	if rv.is_empty():
 		# Analysis in flight: show the played move with an hourglass on its arrow (so it reads without
-		# the "Analysing…" header). _analyse_review_ply redraws with the real quality when it lands.
+		# the "Analyzing…" header). _analyse_review_ply redraws with the real quality when it lands.
 		board.set_options([{"move": played, "quality": "loading"}], false)
 		board.reveal()
 		return
@@ -1710,7 +1710,7 @@ func _update_review_panel() -> void:
 	if is_player_row:
 		var side := "w" if mover == ChessRules.WHITE else "b"
 		review_pawn.texture = load("res://assets/pieces/%s_pawn.png" % side)
-	review_analyse_icon.visible = false  # only shown beside "Analysing…"
+	review_analyse_icon.visible = false  # only shown beside "Analyzing…"
 	# The opening is always a fine first move: no quality / best line for it.
 	if _review_ply == 0:
 		review_quality.visible = false
@@ -1726,8 +1726,8 @@ func _update_review_panel() -> void:
 		review_line_best.disabled = true
 		review_line_played.visible = false
 		review_quality.visible = true
-		review_analyse_icon.visible = true  # the magnifier beside "Analysing…"
-		review_quality.text = tr("Analysing…")
+		review_analyse_icon.visible = true  # the magnifier beside "Analyzing…"
+		review_quality.text = tr("Analyzing…")
 		review_quality.modulate = Color(1, 1, 1, 0.5)
 		_analyse_review_ply(_review_ply)
 		return

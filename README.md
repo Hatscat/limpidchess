@@ -28,7 +28,7 @@
 Most chess apps drop a beginner onto a blank board of thirty legal moves, and they freeze.
 Limpid Chess removes that friction: **every turn it surfaces exactly three moves**, the best, a
 "not bad" one, and a blunder, drawn as plain numbered arrows. You don't get told which is which.
-You pick, and only then do the colours, a symbol, and a coin reveal how you did. Mistakes are the
+You pick, and only then do the colors, a symbol, and a coin reveal how you did. Mistakes are the
 lesson, never the punishment.
 
 > "The move is there, but you must see it."
@@ -41,14 +41,14 @@ is fun at any level.
 ## How it works
 
 <p align="center">
-  <img src="docs/img/mechanic_neutral.png" width="220" alt="Three moves shown in one neutral colour">
+  <img src="docs/img/mechanic_neutral.png" width="220" alt="Three moves shown in one neutral color">
   &nbsp;
   <img src="docs/img/mechanic_revealed.png" width="220" alt="The same moves revealed as best / OK / blunder">
 </p>
 
-1. **Find the best.** Three moves, one colour, no hints.
+1. **Find the best.** Three moves, one color, no hints.
 2. **See why.** Pick one and the qualities reveal: green is best, blue is OK, red is the blunder,
-   each with a clear symbol so it reads without relying on colour.
+   each with a clear symbol so it reads without relying on color.
 3. **Learn.** Collect a coin, see what the best move was, and slowly start spotting the good moves
    yourself.
 
@@ -70,11 +70,11 @@ is fun at any level.
 - **Review every game.** Step through afterwards to see the best line, replay where your move went
   wrong, and watch the evaluation swing, so every game teaches you something.
 - **Calm and kind.** Soft palette, no clocks, no shame on losing. Feedback teaches, it never scolds.
-- **Bots that grow with you.** Stockfish dialled down for real beginners and kids, climbing to a
+- **Bots that grow with you.** Stockfish dialed down for real beginners and kids, climbing to a
   genuine challenge, with a relative difficulty meter instead of a scary rating.
 - **Face to Face.** Local two-player on one device, with the same three-move guidance for both sides.
 - **Offline, no ads, no accounts, no tracking.** One small save file on your device.
-- **Accessible.** OpenDyslexic typeface, colour-blind-safe move symbols, board coordinates.
+- **Accessible.** OpenDyslexic typeface, color-blind-safe move symbols, board coordinates.
 - **Free**, with an optional one-time Premium (no subscription, ever) for unlimited games, all bots,
   and Face to Face.
 
@@ -151,7 +151,7 @@ is licensed under GPL-3.0 (below).
 
 Limpid Chess is **free software under [GPL-3.0](LICENSE)**, because it ships Stockfish (GPL-3.0).
 You may use, study, modify, and redistribute it, including selling the binary, as long as you also
-make the corresponding source available under the same licence.
+make the corresponding source available under the same license.
 
 ### Credits
 

@@ -728,7 +728,7 @@ func _draw_quality_symbol(c: Vector2, quality: String) -> void:
 		"blunder":  # cross
 			draw_line(c + Vector2(-s, -s), c + Vector2(s, s), white, w, true)
 			draw_line(c + Vector2(-s, s), c + Vector2(s, -s), white, w, true)
-		"loading":  # analysis in flight: an hourglass, so it reads without the "Analysing…" text
+		"loading":  # analysis in flight: an hourglass, so it reads without the "Analyzing…" text
 			var hs := _cell * 0.25
 			draw_texture_rect(HOURGLASS, Rect2(c - Vector2(hs, hs), Vector2(hs * 2.0, hs * 2.0)), false)
 

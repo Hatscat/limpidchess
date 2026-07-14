@@ -14,7 +14,7 @@ REG = os.path.join(FONTS, "OpenDyslexic-Regular.otf")
 W, H = 1270, 760
 ACCENT = (102, 189, 217)
 WHITE = (237, 242, 247)
-GREY = (176, 190, 202)
+GRAY = (176, 190, 202)
 # feature-graphic gradient endpoints
 G0 = (13, 15, 23)      # top-left  (0.05,0.06,0.09)
 G1 = (23, 41, 54)      # bottom-right (0.09,0.16,0.21)
@@ -22,7 +22,7 @@ G1 = (23, 41, 54)      # bottom-right (0.09,0.16,0.21)
 # (screenshot, eyebrow, headline, subline)
 CARDS = [
     ("home",         "LIMPID CHESS", "Smooth, relaxing chess",   "Find the best move each turn"),
-    ("before_move",  "EVERY TURN",   "Three moves, one colour",  "No hints. Which one is best?"),
+    ("before_move",  "EVERY TURN",   "Three moves, one color",   "No hints. Which one is best?"),
     ("after_move",   "THE REVEAL",   "See why",                  "Green best, blue OK, red blunder"),
     ("puzzle",       "PUZZLES",      "A streak that climbs",     "Go as far as you can"),
     ("facetoface",   "FACE TO FACE", "Play a friend",            "Two players, one device"),
@@ -106,7 +106,7 @@ def build(name, eyebrow, headline, sub, idx):
     head_lines = wrap(draw, headline, f_head, tw)
     sub_lines = wrap(draw, sub, f_sub, tw)
 
-    # measure total block height (line boxes + gaps) to vertically centre it
+    # measure total block height (line boxes + gaps) to vertically center it
     EYE_LH, HEAD_LH, SUB_LH = 32, 66, 40
     GAP1, GAP2 = 26, 26
     total = EYE_LH + GAP1 + HEAD_LH * len(head_lines) + GAP2 + SUB_LH * len(sub_lines)
@@ -119,7 +119,7 @@ def build(name, eyebrow, headline, sub, idx):
         y += HEAD_LH
     y += GAP2
     for ln in sub_lines:
-        draw.text((tx, y), ln, font=f_sub, fill=GREY)
+        draw.text((tx, y), ln, font=f_sub, fill=GRAY)
         y += SUB_LH
 
     out = os.path.join(HERE, f"gallery_{idx:02d}_{name}.png")
