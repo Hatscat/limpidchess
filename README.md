@@ -16,11 +16,10 @@
 ### Download
 
 <a href="https://play.google.com/store/apps/details?id=game.limpidchess">
-  <img alt="Get it on Google Play" height="64"
-       src="https://play.google.com/intl/en_us/badges/static/images/badges/en_us_badge_web_generic.png">
+  <img alt="Get it on Google Play" height="64" src="docs/img/google-play-badge.png">
 </a>
 
-<sub>Android. Free, with an optional one-time Premium. Coming soon to Google Play (currently in testing).</sub>
+<sub>Android. Free, with an optional one-time Premium.</sub>
 
 </div>
 
@@ -128,8 +127,13 @@ Shipped:
 
 Planned:
 
-- [X] Verify the embedded native Stockfish on real Android devices
-- [ ] Publish to Google Play (in progress)
+- [x] Verify the embedded native Stockfish on real Android devices
+- [ ] Publish to Google Play (in review)
+- [ ] **More bots**, for a smoother difficulty climb: extra opponents between the current tiers so the
+      jump from one to the next is gentler as you improve
+- [ ] **Historic Games**, a new mode: replay famous games by stepping into a protagonist's shoes (say
+      White in Morphy's Opera Game) with the same three-move mechanic each turn, where "best" is the
+      move actually played. A health bar counts your mistakes, and the game ends when it runs out.
 - [ ] Any further Latin/Cyrillic/Greek language needs only translating (the bundled font already covers
       the script), so more can be added cheaply on demand
 - [ ] Chinese / Japanese / Korean / Arabic (these need an additional font; Japanese is the best single
