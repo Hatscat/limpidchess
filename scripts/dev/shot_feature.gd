@@ -4,6 +4,12 @@ extends SceneTree
 ## one centered top row, then two LARGE Scholar's-mate boards (Your move -> The answer) with a real
 ## arrow between them, so the boards dominate the image.
 ##   godot --path . -s res://scripts/dev/shot_feature.gd   (needs a display) -> /tmp/limpid_feature.png
+##
+## Size + output are env-overridable so the SAME layout can render other aspect ratios (e.g. a 1270x760
+## Product Hunt social/gallery card) without touching the Play Store 1024x500 default. The design scales
+## off the WIDTH (so the one-line title always fits) and the whole block is vertically centred:
+##   LIMPID_FEAT_W / LIMPID_FEAT_H  -> canvas size   (default 1024 x 500)
+##   LIMPID_FEAT_OUT                -> output png     (default /tmp/limpid_feature.png)
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
 const BoardScript := preload("res://scripts/ui/chess_board.gd")
@@ -14,10 +20,13 @@ const BEST := 39 | (53 << 6)
 const DECENT := 1 | (18 << 6)
 const BLUNDER := 39 | (36 << 6)
 
-const W := 1024
-const H := 500
-const BOARD := 314
-const GAP := 92          ## space between the two boards (holds the arrow)
+var W := 1024
+var H := 500
+var OUT := "/tmp/limpid_feature.png"
+var scale := 1.0        ## sized off the width, 1024 == the original design (keeps the title one line)
+var y_off := 0.0        ## vertical centring offset when the canvas is taller than the scaled design
+var BOARD := 314.0
+var GAP := 92.0          ## space between the two boards (holds the arrow)
 
 var vp: SubViewport
 var frames := 0
@@ -29,7 +38,7 @@ class Arrow extends Control:
 	func _draw() -> void:
 		var col: Color = UI.ACCENT
 		var mid := size.y * 0.5
-		var shaft_h := 15.0
+		var shaft_h := size.y * (15.0 / 56.0)  # keeps the 1024x500 default's 15px shaft exact, scales up
 		var head_w := size.x * 0.44
 		var head_h := size.y * 0.86
 		draw_rect(Rect2(0.0, mid - shaft_h * 0.5, size.x - head_w + 2.0, shaft_h), col)
@@ -42,11 +51,20 @@ class Arrow extends Control:
 
 ## A small filled dot separator (OpenDyslexic's "•" glyph renders as an odd bar, so draw our own).
 class Dot extends Control:
+	var radius := 6.0
 	func _draw() -> void:
-		draw_circle(size * 0.5, 6.0, Color(0.50, 0.57, 0.63))
+		draw_circle(size * 0.5, radius, Color(0.50, 0.57, 0.63))
 
 
 func _initialize() -> void:
+	W = int(OS.get_environment("LIMPID_FEAT_W")) if OS.has_environment("LIMPID_FEAT_W") else 1024
+	H = int(OS.get_environment("LIMPID_FEAT_H")) if OS.has_environment("LIMPID_FEAT_H") else 500
+	OUT = OS.get_environment("LIMPID_FEAT_OUT") if OS.has_environment("LIMPID_FEAT_OUT") else "/tmp/limpid_feature.png"
+	scale = float(W) / 1024.0
+	y_off = (float(H) - 500.0 * scale) / 2.0
+	BOARD = 314.0 * scale
+	GAP = 92.0 * scale
+
 	vp = SubViewport.new()
 	vp.size = Vector2i(W, H)
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -73,24 +91,25 @@ func _initialize() -> void:
 
 	# Row 1: "Limpid Chess  •  find the best move" on a single centred line.
 	var cc := CenterContainer.new()
-	cc.position = Vector2(0, 10)
-	cc.size = Vector2(W, 86)
+	cc.position = Vector2(0, 10.0 * scale + y_off)
+	cc.size = Vector2(W, 86.0 * scale)
 	host.add_child(cc)
 	var hb := HBoxContainer.new()
-	hb.add_theme_constant_override("separation", 18)
+	hb.add_theme_constant_override("separation", int(round(18 * scale)))
 	hb.alignment = BoxContainer.ALIGNMENT_CENTER
 	cc.add_child(hb)
-	hb.add_child(_lbl("Limpid Chess", 34, Color(0.93, 0.95, 0.97)))
+	hb.add_child(_lbl("Limpid Chess", int(round(34 * scale)), Color(0.93, 0.95, 0.97)))
 	var dot := Dot.new()
-	dot.custom_minimum_size = Vector2(24, 48)
+	dot.radius = 6.0 * scale
+	dot.custom_minimum_size = Vector2(24, 48) * scale
 	dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(dot)
-	hb.add_child(_lbl("find the best move", 32, UI.ACCENT))
+	hb.add_child(_lbl("find the best move", int(round(32 * scale)), UI.ACCENT))
 
 	# Row 2: two large boards, centred, with the arrow in the gap.
 	var total := BOARD * 2 + GAP
 	var left := (W - total) / 2.0
-	var top := 118.0
+	var top := 118.0 * scale + y_off
 	var bx := left + BOARD + GAP
 
 	var ba := _board(false)
@@ -103,13 +122,15 @@ func _initialize() -> void:
 	host.add_child(bb)
 
 	var arrow := Arrow.new()
-	arrow.size = Vector2(76, 56)
-	arrow.position = Vector2(left + BOARD + (GAP - 76) * 0.5, top + BOARD * 0.5 - 28.0)
+	arrow.size = Vector2(76, 56) * scale
+	arrow.position = Vector2(left + BOARD + (GAP - 76 * scale) * 0.5, top + BOARD * 0.5 - 28.0 * scale)
 	host.add_child(arrow)
 	arrow.queue_redraw()
 
-	_text(host, "Your move", 22, Color(0.80, 0.84, 0.88), Vector2(left, top + BOARD + 12.0), BOARD, HORIZONTAL_ALIGNMENT_CENTER)
-	_text(host, "The answer", 22, Color(0.80, 0.84, 0.88), Vector2(bx, top + BOARD + 12.0), BOARD, HORIZONTAL_ALIGNMENT_CENTER)
+	var cap_sz := int(round(22 * scale))
+	var cap_col := Color(0.80, 0.84, 0.88)
+	_text(host, "Your move", cap_sz, cap_col, Vector2(left, top + BOARD + 12.0 * scale), BOARD, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(host, "The answer", cap_sz, cap_col, Vector2(bx, top + BOARD + 12.0 * scale), BOARD, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _lbl(s: String, sz: int, col: Color) -> Label:
@@ -121,7 +142,7 @@ func _lbl(s: String, sz: int, col: Color) -> Label:
 	return l
 
 
-func _text(parent: Node, s: String, sz: int, col: Color, pos: Vector2, w: int, align: int) -> void:
+func _text(parent: Node, s: String, sz: int, col: Color, pos: Vector2, w: float, align: int) -> void:
 	var l := Label.new()
 	l.text = s
 	l.add_theme_font_size_override("font_size", sz)
@@ -151,7 +172,7 @@ func _board(reveal: bool) -> Control:
 func _process(_d: float) -> bool:
 	frames += 1
 	if frames >= 12:
-		vp.get_texture().get_image().save_png("/tmp/limpid_feature.png")
-		print("saved /tmp/limpid_feature.png")
+		vp.get_texture().get_image().save_png(OUT)
+		print("saved ", OUT, " (", W, "x", H, ")")
 		quit()
 	return false
