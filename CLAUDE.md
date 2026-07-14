@@ -5,8 +5,10 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 ## ♟️ Project Overview
 
 **Limpid Chess** is a 2D single-player mobile chess game built with **Godot 4.6**,
-**Android-first** (iOS later). It is made for **chess beginners who freeze each
-turn**, not knowing what to play.
+**Android-first** (iOS later). It is **beginner-first but fun at any level**: a smooth,
+relaxing take on chess that needs less focus and calculation than a full game. Beginners
+who freeze each turn, not knowing what to play, get unstuck; stronger players get a chill
+way to play.
 
 The core idea (inspired by *Lazy Chess*): instead of a blank board of 30 legal
 moves, **every turn we surface exactly three** — the **best** move, a **"not
