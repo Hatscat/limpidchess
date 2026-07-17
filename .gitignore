@@ -10,6 +10,7 @@
 # Export artifacts
 *.apk
 *.aab
+/build/
 
 # Signing keys & credentials — never commit these
 *.keystore

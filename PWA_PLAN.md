@@ -178,12 +178,25 @@ attribution carries over via the in-game About screen. Nothing else changes.
 
 ## Step-by-step
 
-**Phase 0: spike (~1 day)**
+**Phase 0: spike (~1 day)** ✅ done 2026-07-17
 1. Add the Web export preset: threads OFF, PWA off for now, release template,
-   exclude `addons/stockfish/*`.
+   exclude `addons/stockfish/*`. ✅ (`[preset.1]` in export_presets.cfg; the exclude
+   does prevent the "no suitable library" GDExtension export error)
 2. Export, serve locally, confirm the game boots and plays with the GDScript fallback
-   (add the one-frame yield so the analysis label paints).
+   (add the one-frame yield so the analysis label paints). ✅ Export:
+   `godot --headless --path . --export-release "Web" build/web/index.html`.
+   Gotcha: a terminal spawned by the VS Code *snap* exports a snap-remapped
+   `XDG_DATA_HOME`, so Godot can't find the export templates; prefix with
+   `XDG_DATA_HOME=$HOME/.local/share` in that case. Serve with
+   `python3 -m http.server 8765` from `build/web/`.
+   Verified in headless Chrome (CDP-driven): boots to Home, bots roster, full game
+   loop vs Coco with options, "Best move!" reveal, bot reply, next-turn options.
+   Result: 37.7 MB wasm (9.4 MB gzipped) + 2.3 MB pck (2.1 MB gzipped).
+   Fallback-quality artifact noticed: the auto-opening picked h3/a3 (the depth-3
+   PST eval ranks edge pushes near the top); the phase 1 web Stockfish transport
+   fixes this, same as it fixes option quality.
 3. Test on a desktop browser and an iPhone on the LAN. Go/no-go on feel.
+   ⬜ remaining: a human pass (desktop feel + a real iPhone).
 
 **Phase 1: real Stockfish on web (~2-3 days)**
 4. Ship `stockfish-18-lite-single.js/.wasm` beside `index.html`; spawn the Worker from
@@ -209,11 +222,17 @@ attribution carries over via the in-game About screen. Nothing else changes.
     bug #100518 still bites. Wire `pwa_update_available` → `pwa_update()`.
 13. Deploy to `docs/play/`, link it from the landing page ("Play in your browser",
     with the smooth-first copy), add the source & licenses link to the page.
-14. Announce; watch whether people play and click the Play badge.
+14. Update the **Product Hunt launch draft** (assets in
+    [docs/img/producthunt/](docs/img/producthunt/README.md)): non-Android visitors
+    now have an answer. Add "Play in your browser, on iPhone too, installable as an
+    app" to the tagline/first-comment copy with the `/play/` link, and consider a
+    gallery card showing the game in a browser. PH traffic is mostly desktop + iOS,
+    so this turns the launch's biggest dead-end into a playable demo.
+15. Announce; watch whether people play and click the Play badge.
 
 **Phase 4: later, optional**
-15. Custom domain + Cloudflare/R2 if bandwidth approaches the Pages cap.
-16. Lemon Squeezy premium + "Redeem key" dialog if web demand shows up.
-17. Save export/import as storage-eviction insurance.
+16. Custom domain + Cloudflare/R2 if bandwidth approaches the Pages cap.
+17. Lemon Squeezy premium + "Redeem key" dialog if web demand shows up.
+18. Save export/import as storage-eviction insurance.
 
 Total for a solid v1 (phases 0-3): **roughly 6-9 dev days**, $0 running cost.

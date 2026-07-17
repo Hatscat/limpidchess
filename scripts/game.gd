@@ -607,6 +607,9 @@ func _rank_position(r: ChessRules = null) -> Array:
 		var ranked := _ranked_from_sf(lines, r)
 		if not ranked.is_empty():
 			return ranked
+	# The fallback ranker is synchronous and can block for seconds (esp. wasm on web):
+	# yield once so the "Reading the position…" status actually paints first.
+	await get_tree().process_frame
 	return bot.rank_moves(r, ChessBotScript.ANALYSIS_DEPTH)
 
 
