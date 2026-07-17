@@ -209,11 +209,18 @@ ships **Stockfish** (GPL-3.0). This was a deliberate reversal of the earlier
 - Chess pieces: JohnPablok improved Cburnett set (CC0). OpenDyslexic: free. Godot: MIT.
 
 ### Shipping Stockfish per platform
-[`StockfishEngine`](scripts/chess/stockfish_engine.gd) has two transports, picked
+[`StockfishEngine`](scripts/chess/stockfish_engine.gd) has three transports, picked
 automatically by `start()`: the native **`StockfishGD` GDExtension** (`ext`, polled
-each frame) and a **subprocess** (`pipe`, worker thread). Neither → GDScript fallback.
+each frame), **stockfish.js in a Web Worker** (`js`, web builds, polled each frame),
+and a **subprocess** (`pipe`, worker thread). None → GDScript fallback.
 - **Desktop / dev:** uses the system / bundled Stockfish subprocess (resolved via
   `CANDIDATES` / the `LIMPID_STOCKFISH` env var).
+- **Web:** Stockfish 18 "lite" single-threaded wasm (~7 MB, from the `stockfish` npm
+  package) in a plain Web Worker — no SharedArrayBuffer / COOP-COEP needed, works on
+  GitHub Pages and iOS Safari. Files live in [`web/engine/`](web/README.md)
+  (`.gdignore`d); the `limpid_export` plugin copies them beside `index.html` on Web
+  export. The Web preset must keep excluding `addons/stockfish/*` (the GDExtension
+  has no wasm build and errors the export). See [PWA_PLAN.md](PWA_PLAN.md).
 - **Android:** can't spawn a subprocess (W^X), so Stockfish is compiled in via the
   GDExtension under [`native/`](native/NATIVE_BUILD.md) — a godot-cpp binding
   embedding **Stockfish 11** (classical, no NNUE net → tiny). Build with

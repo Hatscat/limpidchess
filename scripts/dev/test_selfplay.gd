@@ -15,6 +15,10 @@ func _initialize() -> void:
 	# Auto opening for White (random good move).
 	var open_lines: Array = await sf.analyse(rules.get_fen(), 6, 10)
 	var opening := _pick_good(_ranked(rules, open_lines))
+	if opening < 0:
+		print(">>> SELF-PLAY FAILED: opening analyse returned no usable moves")
+		quit(1)
+		return
 	print("opening move: ", rules.to_san(opening))
 	rules.make_move(opening)
 
@@ -26,6 +30,10 @@ func _initialize() -> void:
 		var lines: Array = await sf.analyse(rules.get_fen(), mini(legal.size(), 40), 12)
 		var ms := Time.get_ticks_msec() - t0
 		var ranked := _ranked(rules, lines)
+		if ranked.is_empty():
+			print(">>> SELF-PLAY FAILED: analyse returned no usable moves at ply ", ply)
+			quit(1)
+			return
 		var picks: Dictionary = CB.select_options(ranked)
 		var b := _san(rules, picks["best"])
 		var d := _san(rules, picks["decent"])
@@ -36,7 +44,9 @@ func _initialize() -> void:
 		var uci: String = await sf.best_move(rules.get_fen(), {"skill": 8, "movetime": 150})
 		var m := rules.move_from_uci(uci)
 		if m == -1:
-			print("  bad uci ", uci); break
+			print(">>> SELF-PLAY FAILED: engine reply was not a legal move: \"", uci, "\"")
+			quit(1)
+			return
 		rules.make_move(m)
 
 	sf.stop()

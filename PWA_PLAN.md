@@ -206,15 +206,31 @@ attribution carries over via the in-game About screen. Nothing else changes.
    disappears: GitHub Pages / any host serves HTTPS.)
    ⬜ remaining: the real-iPhone pass over HTTPS.
 
-**Phase 1: real Stockfish on web (~2-3 days)**
-4. Ship `stockfish-18-lite-single.js/.wasm` beside `index.html`; spawn the Worker from
-   a custom HTML shell (or `JavaScriptBridge.eval`) at boot.
-5. Add the `js` transport to [stockfish_engine.gd](scripts/chess/stockfish_engine.gd)
-   (postMessage out, `create_callback` in, keep the callback referenced, gate on
-   `uciok`/`readyok`, Hash 16-32 MB).
-6. Benchmark the per-turn analysis on a mid-range phone; cap with movetime if needed.
-7. Self-play test the option/grading bands against SF 18's normalized centipawns;
-   nudge constants if the spreads feel off. Run the headless checks + a web self-play.
+**Phase 1: real Stockfish on web (~2-3 days)** — core done 2026-07-17
+4. Ship `stockfish-18-lite-single.js/.wasm` beside `index.html`. ✅ Engine files
+   (npm `stockfish` 18.0.8, lite single-threaded, ~7 MB wasm + GPL Copying.txt) live
+   in `web/engine/` (`.gdignore`d, see [web/README.md](web/README.md)); a new
+   `web_export_plugin.gd` in the `limpid_export` addon copies them beside
+   `index.html` on every Web export. No custom HTML shell needed.
+5. Add the `js` transport to [stockfish_engine.gd](scripts/chess/stockfish_engine.gd). ✅
+   Worker spawned via `JavaScriptBridge.eval` at `start()`; commands go out with
+   `postMessage` (the wrapper queues them until the wasm is compiled), lines come
+   back through kept-alive `create_callback`s into a buffer polled each frame
+   (mirrors the `ext` transport). Readiness gated on the handshake's `readyok`
+   (20 s first-search budget for the phone wasm fetch+compile); a Worker `error`
+   marks the transport dead so the game falls back per-call instead of stalling.
+   Hash 16 MB. Verified in Chrome via CDP: no fallback warning, live eval bar,
+   honest option spreads (a real Bxh3 trap), reveal + bot reply cycling.
+6. Benchmark the per-turn analysis. ✅ desktop (node, same wasm): wide depth-10
+   pass 207-528 ms (~800 kN/s single-thread; worst case Kiwipete MultiPV 48);
+   movetime passes are bounded by design. Phone extrapolation ~1-2.5 s worst case.
+   ⬜ remaining: confirm on a real mid-range phone; cap the wide pass with movetime
+   only if reality is worse.
+7. Option/grading bands vs SF 18's normalized centipawns: spreads look sane in live
+   play (believable blunder traps, plausible decent gaps); note the desktop `ext`
+   dev engine is SF 11 classical while web is SF 18, and the bands already span
+   both scales. ⬜ remaining: watch band feel during real play-testing; nudge
+   `DECENT_*`/`BLUNDER_*` only if spreads feel off in practice.
 
 **Phase 2: web polish (~2-3 days)**
 8. Max-width clamps (premium, bots, about, in-game chrome, puzzle header).
@@ -227,7 +243,10 @@ attribution carries over via the in-game About screen. Nothing else changes.
 11. Enable the PWA export option (standalone display, portrait preference, icons,
     background color; "ensure cross-origin isolation headers" OFF).
 12. Verify offline relaunch; patch the service worker cache list in a build script if
-    bug #100518 still bites. Wire `pwa_update_available` → `pwa_update()`.
+    bug #100518 still bites. Also add the Stockfish engine files to that cache list:
+    Godot's generated service worker precaches only its own exports, so without the
+    patch an offline relaunch would silently lose the engine (game still works via
+    the GDScript fallback, but weaker). Wire `pwa_update_available` → `pwa_update()`.
 13. Deploy to `docs/play/`, link it from the landing page ("Play in your browser",
     with the smooth-first copy), add the source & licenses link to the page.
 14. Update the **Product Hunt launch draft** (assets in
