@@ -196,7 +196,15 @@ attribution carries over via the in-game About screen. Nothing else changes.
    PST eval ranks edge pushes near the top); the phase 1 web Stockfish transport
    fixes this, same as it fixes option quality.
 3. Test on a desktop browser and an iPhone on the LAN. Go/no-go on feel.
-   ⬜ remaining: a human pass (desktop feel + a real iPhone).
+   Desktop: ✅ plays fine; wide-window layout rough as predicted (Phase 2 clamps).
+   Phone-over-LAN gotcha: Godot web exports need a **secure context**, and only
+   `localhost` is exempt, so plain HTTP on a LAN IP shows "Secure Context - Check
+   web server configuration (use HTTPS)". Recipe: self-signed cert with the LAN IP
+   in `subjectAltName` (`openssl req -x509 ... -addext "subjectAltName=IP:<lan-ip>"`)
+   + a small python `http.server` wrapped in `ssl.SSLContext`, then accept the
+   certificate warning once on the phone. (Once deployed to real hosting this
+   disappears: GitHub Pages / any host serves HTTPS.)
+   ⬜ remaining: the real-iPhone pass over HTTPS.
 
 **Phase 1: real Stockfish on web (~2-3 days)**
 4. Ship `stockfish-18-lite-single.js/.wasm` beside `index.html`; spawn the Worker from
