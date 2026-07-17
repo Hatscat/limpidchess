@@ -177,6 +177,10 @@ Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**).
 ## 💸 Business model (keep it generous)
 
 - 3 free games per day (`GameManager.FREE_GAMES_PER_DAY`), tracked locally by date.
+- A one-time **welcome credit** (`WELCOME_BONUS_GAMES` / `WELCOME_BONUS_PUZZLES`, +2 each)
+  on top: spent only after the day's allowance, so day one offers 5 games + 3 puzzle
+  runs and any leftover survives to later days. Granted through the save-load defaults
+  (fresh installs, and once to existing saves on update).
 - **Premium**: one-time ~$3.99 → unlimited games + Face to Face. Entitlement is a local
   flag (`GameManager.is_premium`), granted by the [`Billing`](scripts/billing.gd) autoload
   (Google Play Billing) on a successful buy / restore / promo-code redemption. The price is

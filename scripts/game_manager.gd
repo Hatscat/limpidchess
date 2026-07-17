@@ -40,6 +40,13 @@ const FREE_GAMES_PER_DAY := 3
 ## is unlimited for both.
 const FREE_REVIEWS_PER_DAY := 1
 const FREE_PUZZLE_RUNS_PER_DAY := 1
+## One-time welcome credit on top of the daily allowances, so the first day can hook:
+## 3+2 games and 1+2 puzzle runs. Spent only AFTER the day's free allowance, so any
+## leftover survives to later days (an extra reason to come back) instead of expiring
+## at midnight. Granted via the save-load defaults: a fresh save starts with the full
+## credit, and existing players get it once when they update — a small gift, on brand.
+const WELCOME_BONUS_GAMES := 2
+const WELCOME_BONUS_PUZZLES := 2
 ## Sentinel "remaining games" for premium players (any value > 0 unlocks play).
 const UNLIMITED_GAMES := 999
 
@@ -53,6 +60,9 @@ var games_today := 0
 var reviews_today := 0       ## moves reviews opened today (free players are capped, see can_review_today)
 var puzzles_today := 0       ## Puzzle Rush runs started today (free players are capped, see can_puzzle_today)
 var last_play_date := ""     ## "YYYY-MM-DD" of the last counted game
+# Remaining welcome credit (see WELCOME_BONUS_*). Survives _roll_day on purpose.
+var bonus_games := WELCOME_BONUS_GAMES
+var bonus_puzzles := WELCOME_BONUS_PUZZLES
 
 # Lifetime counters kept for game logic only (no stats are shown to the player).
 var games_played := 0         ## gates the review prompt + reset reminder; refunded by cancel_game
@@ -171,6 +181,8 @@ func reset_save() -> void:
 	reviews_today = 0
 	puzzles_today = 0
 	last_play_date = ""
+	bonus_games = WELCOME_BONUS_GAMES
+	bonus_puzzles = WELCOME_BONUS_PUZZLES
 	games_played = 0
 	bot_wins.clear()
 	puzzle_highscore = 0
@@ -279,7 +291,13 @@ func games_remaining_today() -> int:
 	if is_premium:
 		return UNLIMITED_GAMES
 	_roll_day()
-	return max(0, FREE_GAMES_PER_DAY - games_today)
+	return max(0, FREE_GAMES_PER_DAY - games_today) + bonus_games
+
+
+## Today's full free allowance (the daily baseline plus any welcome credit left) —
+## the denominator of the Home pill, so it reads "5 / 5" on day one, not "5 / 3".
+func games_allowance_today() -> int:
+	return FREE_GAMES_PER_DAY + bonus_games
 
 
 ## A free player can open the moves review FREE_REVIEWS_PER_DAY times a day; premium is unlimited.
@@ -304,20 +322,27 @@ func can_puzzle_today() -> bool:
 	if is_premium:
 		return true
 	_roll_day()
-	return puzzles_today < FREE_PUZZLE_RUNS_PER_DAY
+	return puzzles_today < FREE_PUZZLE_RUNS_PER_DAY or bonus_puzzles > 0
 
 
-## Count one Puzzle Rush run against the day's free allowance (no-op accounting for premium).
+## Count one Puzzle Rush run against the day's free allowance (no-op accounting for
+## premium). The daily allowance is spent first; the welcome credit covers overflow.
 func count_puzzle() -> void:
 	if is_premium:
 		return
 	_roll_day()
-	puzzles_today += 1
+	if puzzles_today < FREE_PUZZLE_RUNS_PER_DAY:
+		puzzles_today += 1
+	else:
+		bonus_puzzles = max(0, bonus_puzzles - 1)
 	_save()
 
 
 ## Undo the start-time count for a run the player left before the 4th puzzle (barely played), so it
 ## doesn't burn the daily free run, mirroring cancel_game(). The streak is still saved on leave.
+## Refunding the daily side is equivalent even when the spend hit the welcome credit:
+## the total remaining (daily left + credit) changes by the same +1 either way, and a
+## credit spend implies the daily side is full, so the decrement always has room.
 func cancel_puzzle() -> void:
 	if not is_premium:
 		puzzles_today = max(0, puzzles_today - 1)
@@ -328,7 +353,12 @@ func _count_game() -> void:
 	games_played += 1
 	if not is_premium:
 		_roll_day()
-		games_today += 1
+		# The daily allowance is spent first; the welcome credit covers overflow (and
+		# thereby survives every day the player stays within the daily baseline).
+		if games_today < FREE_GAMES_PER_DAY:
+			games_today += 1
+		else:
+			bonus_games = max(0, bonus_games - 1)
 	_save()
 	# Free players get a daily "your free games are back" reminder (the games reset every day), so a
 	# player who forgets a day still gets nudged the next. Re-anchored to tomorrow on each game, and
@@ -382,6 +412,8 @@ func record_puzzle_score(streak: int) -> void:
 func cancel_game() -> void:
 	games_played = max(0, games_played - 1)
 	if not is_premium:
+		# Refunding the daily side is equivalent even when the spend hit the welcome
+		# credit (see cancel_puzzle): total remaining changes by the same +1.
 		games_today = max(0, games_today - 1)
 	_save()
 
@@ -425,6 +457,8 @@ func _save() -> void:
 	cfg.set_value("daily", "reviews_today", reviews_today)
 	cfg.set_value("daily", "puzzles_today", puzzles_today)
 	cfg.set_value("daily", "last_play_date", last_play_date)
+	cfg.set_value("daily", "bonus_games", bonus_games)
+	cfg.set_value("daily", "bonus_puzzles", bonus_puzzles)
 	cfg.set_value("stats", "games_played", games_played)
 	cfg.set_value("stats", "puzzle_highscore", puzzle_highscore)
 	cfg.set_value("stats", "puzzle_streak", puzzle_streak)
@@ -448,6 +482,10 @@ func _load() -> void:
 	reviews_today = int(cfg.get_value("daily", "reviews_today", 0))
 	puzzles_today = int(cfg.get_value("daily", "puzzles_today", 0))
 	last_play_date = str(cfg.get_value("daily", "last_play_date", ""))
+	# Defaults = the full grant: that's how the welcome credit is handed out, both to
+	# fresh installs and (once) to existing saves that predate the feature.
+	bonus_games = int(cfg.get_value("daily", "bonus_games", WELCOME_BONUS_GAMES))
+	bonus_puzzles = int(cfg.get_value("daily", "bonus_puzzles", WELCOME_BONUS_PUZZLES))
 	games_played = int(cfg.get_value("stats", "games_played", 0))
 	puzzle_highscore = int(cfg.get_value("stats", "puzzle_highscore", 0))
 	puzzle_streak = int(cfg.get_value("stats", "puzzle_streak", 0))

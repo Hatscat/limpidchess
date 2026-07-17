@@ -35,7 +35,7 @@ func _refresh_games() -> void:
 	if GameManager.is_premium:
 		games_label.text = "Premium · ∞"
 	else:
-		games_label.text = tr("%d / %d today") % [GameManager.games_remaining_today(), GameManager.FREE_GAMES_PER_DAY]
+		games_label.text = tr("%d / %d today") % [GameManager.games_remaining_today(), GameManager.games_allowance_today()]
 
 
 ## The Puzzles button has two states: resume a parked run (a streak left in progress) or start a new
