@@ -77,6 +77,13 @@ func _ready() -> void:
 	_load()
 	_apply_locale()
 	_roll_day()
+	# Web/PWA: the service worker downloads new releases in the background but keeps
+	# serving the cached version until told otherwise. Activate a waiting update at
+	# boot only — the page just opened, so the reload is invisible; mid-session
+	# reloads (what pwa_update() does) would be rude. Worst case we run one version
+	# behind until the next launch, the standard PWA pattern.
+	if OS.has_feature("web") and JavaScriptBridge.pwa_needs_update():
+		JavaScriptBridge.pwa_update()
 
 
 # --- Language ---
