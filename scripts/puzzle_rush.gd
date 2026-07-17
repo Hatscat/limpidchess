@@ -113,11 +113,6 @@ func _layout() -> void:
 		return  # size not established yet; size_changed calls us again
 	var safe: float = maxf(DisplayServer.get_display_safe_area().position.y, 16.0)
 	var top: float = safe + 6.0
-	# Top bar: the menu button (left) and the title card beside it.
-	menu_btn.offset_top = top
-	menu_btn.offset_bottom = top + 80.0
-	$Title.offset_top = top
-	$Title.offset_bottom = top + 80.0
 
 	# Like the chess game: a full-width square board biased into the lower-middle, with the streak/best
 	# stats and the status line HUGGING its top edge, so the whole caption block reads as one unit above
@@ -127,6 +122,22 @@ func _layout() -> void:
 	var board_size: float = minf(vp.x - 16.0, vp.y - area_top - caption_block - 24.0)
 	board_size = maxf(board_size, 0.0)
 	var bx: float = (vp.x - board_size) * 0.5
+
+	# Top bar: the menu button (left) and the title card beside it. In wide windows
+	# (desktop web) the chrome hugs the board's column, like the game scene; phone
+	# geometry is unchanged (bx is smaller than the scene margins there). The 12.0
+	# floor and the +92 title inset mirror puzzle_rush.tscn's MenuBtn (12..92) and
+	# Title (104) offsets — keep them in sync.
+	var cx: float = maxf(bx, 12.0)
+	menu_btn.offset_left = cx
+	menu_btn.offset_right = cx + 80.0
+	menu_btn.offset_top = top
+	menu_btn.offset_bottom = top + 80.0
+	$Title.offset_left = cx + 92.0
+	$Title.offset_right = -cx
+	$Title.offset_top = top
+	$Title.offset_bottom = top + 80.0
+
 	var extra: float = maxf(0.0, vp.y - area_top - caption_block - board_size - 24.0)
 	var board_top: float = area_top + extra * 0.5 + caption_block  # biased down (half the slack above)
 	board.offset_left = bx
@@ -136,6 +147,8 @@ func _layout() -> void:
 
 	status_label.offset_bottom = board_top - _BOARD_GAP
 	status_label.offset_top = status_label.offset_bottom - _STATUS_H
+	$Header.offset_left = maxf(bx, 100.0)
+	$Header.offset_right = -maxf(bx, 100.0)
 	$Header.offset_bottom = status_label.offset_top - _STATS_GAP
 	$Header.offset_top = $Header.offset_bottom - _HEADER_H
 

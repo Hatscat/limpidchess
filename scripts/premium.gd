@@ -38,17 +38,22 @@ func _notification(what: int) -> void:
 
 
 ## Reflect the current entitlement + latest price. Buy/restore/redeem hide once Premium.
+## On web there is no Play Billing, so the screen becomes the funnel: it explains that
+## Premium comes with the Android app and the button links to the Play listing.
 func _refresh() -> void:
-	price_label.text = tr("%s · one-time, forever") % Billing.price_text
+	var web := OS.has_feature("web")
 	var premium := GameManager.is_premium
+	price_label.text = tr("Premium comes with the Android app") if web \
+		else tr("%s · one-time, forever") % Billing.price_text
 	get_button.visible = not premium
-	restore_button.visible = not premium
+	restore_button.visible = not premium and not web
 	status_label.visible = premium
 	if premium:
 		_set_status(tr("✓ You're Premium. Thank you!"))
 	else:
 		get_button.disabled = false
-		get_button.text = tr("Unlock Premium  ·  %s") % Billing.price_text
+		get_button.text = tr("Get it on Google Play") if web \
+			else tr("Unlock Premium  ·  %s") % Billing.price_text
 
 
 ## Show a one-line status message (green for good news, soft red for a problem).
@@ -59,6 +64,16 @@ func _set_status(msg: String, ok := true) -> void:
 
 
 func _on_get_pressed() -> void:
+	if OS.has_feature("web"):
+		# No Play Billing in a browser: the button is the funnel to the Android app.
+		# Direct listing link, not Reviews.open_store_listing() (that would also
+		# silence the rate-this-app prompt as a side effect). window.open runs outside
+		# the DOM click event here, so strict popup blockers (Safari) may swallow it;
+		# fall back to navigating this tab rather than leaving a dead button.
+		JavaScriptBridge.eval(
+			"if (!window.open('%s', '_blank')) location.assign('%s');"
+			% [Reviews.LISTING_URL, Reviews.LISTING_URL], true)
+		return
 	get_button.disabled = true
 	get_button.text = tr("Processing…")
 	Billing.buy()

@@ -232,12 +232,31 @@ attribution carries over via the in-game About screen. Nothing else changes.
    both scales. ⬜ remaining: watch band feel during real play-testing; nudge
    `DECENT_*`/`BLUNDER_*` only if spreads feel off in practice.
 
-**Phase 2: web polish (~2-3 days)**
-8. Max-width clamps (premium, bots, about, in-game chrome, puzzle header).
-9. Platform gating: premium screen message + Play badge, reviews flow off,
-   `beforeunload` guard, pointing-hand cursor.
-10. Visual pass on desktop + iPhone Safari (screenshot script won't cover this; test
-    by hand).
+**Phase 2: web polish (~2-3 days)** — core done 2026-07-17
+8. Max-width clamps. ✅ premium/bots/about: content column centered via anchors
+   (664-680 px, pixel-identical on phone; note `SIZE_SHRINK_CENTER` inside a
+   ScrollContainer does NOT center, hence the anchor approach). Game scene: top bar,
+   feedback/status, review info band, review nav and Done button all hug the board's
+   column in wide windows (`_layout_for_safe_area` / `_position_review_ui`); puzzle
+   scene: menu, title card and streak/best header likewise (`_layout`). Face to Face
+   wide-window chrome left as is (premium mode, phone-first).
+9. Platform gating. ✅ Premium screen on web: "Premium comes with the Android app" +
+   a "Get it on Google Play" button (both localized in ui.csv, 13 locales), Restore
+   hidden; the button opens the listing popup-blocker-safely (window.open with a
+   same-tab navigation fallback). Rate-this-app auto-prompt and the About "Review
+   game" button are off on web. `beforeunload` leave-confirmation rides the
+   `_game_over` setter (armed during a live game, cleared on end/scene exit).
+   Known limitation: iOS Safari (and installed iOS web apps) never show
+   beforeunload dialogs, so iPhone tab-closes still lose a live game silently;
+   the real cure would be mid-game state persistence (a possible Phase 4 item),
+   not more handlers. Board shows a pointing-hand cursor while options are
+   tappable; the Home daily-games pill and the two Home dim overlays are
+   touch-only handlers now (mouse arrives as emulated touch), ending the
+   mouse+touch double-fire pattern.
+10. Visual pass. ✅ desktop-wide (1600x1000) and phone-narrow (720x1280) verified in
+    Chrome via CDP screenshots for home, bots, premium, about, game, puzzle: wide
+    windows read as one centered column, narrow is pixel-identical to before.
+    ⬜ remaining: a human feel-pass on desktop + a real iPhone.
 
 **Phase 3: PWA + release (~1-2 days)**
 11. Enable the PWA export option (standalone display, portrait preference, icons,

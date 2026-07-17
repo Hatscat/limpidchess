@@ -124,7 +124,12 @@ var _busy := false:
 		if menu_overlay != null and menu_overlay.visible:
 			undo_btn.disabled = not _can_undo()
 			restart_btn.disabled = value or not _can_restart()
-var _game_over := false
+# The web leave-guard rides the game-over flips (see _web_leave_guard): every path that
+# ends or (re)starts a game goes through this var, so the guard can never go stale.
+var _game_over := false:
+	set(v):
+		_game_over = v
+		_web_leave_guard(not v)
 var _pending_action := ""
 ## Bumped on every new game; async turn coroutines bail if it changed under them
 ## (e.g. the player restarts mid-animation or mid-bot-think).
@@ -255,6 +260,23 @@ func _ready() -> void:
 		_begin()
 
 
+## On web, the browser back button / tab close bypasses NOTIFICATION_WM_GO_BACK_REQUEST
+## (Android-only), so a live game arms the browser's native leave-confirmation instead.
+## Armed while a game is in progress, disarmed the moment it ends (the _game_over setter)
+## and when the scene is left (_exit_tree). No-op off web.
+func _web_leave_guard(on: bool) -> void:
+	if not OS.has_feature("web"):
+		return
+	if on:
+		JavaScriptBridge.eval("window.onbeforeunload = (e) => { e.preventDefault(); return ''; }", true)
+	else:
+		JavaScriptBridge.eval("window.onbeforeunload = null", true)
+
+
+func _exit_tree() -> void:
+	_web_leave_guard(false)
+
+
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
 		return
@@ -331,6 +353,18 @@ func _layout_for_safe_area() -> void:
 	board.offset_top = board_top
 	board.offset_bottom = (board_top + board_size) - vp.y
 
+	# Wide windows (desktop web): full-width chrome would smear across the canvas, so
+	# the top bar and captions hug the board's column instead. Phone geometry is
+	# unchanged (bx is smaller than the scene margins there). The 20.0 floor mirrors
+	# game.tscn's TopBar/Feedback/Status offset_left/right — keep them in sync.
+	var cx: float = maxf(bx, 20.0)
+	$TopBar.offset_left = cx
+	$TopBar.offset_right = -cx
+	feedback.offset_left = cx
+	feedback.offset_right = -cx
+	status_label.offset_left = cx
+	status_label.offset_right = -cx
+
 	# Status hugs the board top; feedback (can wrap to 2 lines) just above it.
 	status_label.offset_bottom = board_top - 12.0
 	status_label.offset_top = status_label.offset_bottom - _STATUS_H
@@ -372,6 +406,16 @@ var _pp_top: Label = null      ## "Black to move" area, fixed above the board at
 func _layout_face_to_face(vp: Vector2, top: float) -> void:
 	$TopBar.offset_top = top
 	$TopBar.offset_bottom = top + _BAR_H
+	# Restore the scene's horizontal margins (20 mirrors game.tscn TopBar/Feedback/
+	# Status): the normal layout path runs while the F2F *review* is open and clamps
+	# these to the board's column, so without this reset that clamp would leak into
+	# the live F2F chrome after the review closes (stale, even negative-width bars).
+	$TopBar.offset_left = 20.0
+	$TopBar.offset_right = -20.0
+	feedback.offset_left = 20.0
+	feedback.offset_right = -20.0
+	status_label.offset_left = 20.0
+	status_label.offset_right = -20.0
 	var side_reserve: float = _CAP_TOP_GAP + _PP_MSG_H + _CAP_GAP + _CAP_STRIP_H + 8.0  # label + strip, one side
 	var pad: float = maxf(top + _BAR_H, top + side_reserve)  # keep the menu button clear of the board too
 	var board_size: float = minf(vp.x - 16.0, vp.y - 2.0 * pad)
@@ -1594,16 +1638,27 @@ func _position_review_ui() -> void:
 		bar_top = board.offset_top - _EVAL_H - 6.0
 		eval_bar.position = Vector2(board.offset_left, bar_top)
 		eval_bar.size = Vector2(board.size.x, _EVAL_H)
+	# Hug the board's column only when the window is wider than the board (desktop
+	# web); on phones the board spans the full width (bx = 8) and the bands keep
+	# their scene geometry, pixel-identical to the shipped app.
+	var hug: bool = board.offset_left > 8.5
 	var info := review_step.get_parent() as Control
 	if info != null:
+		info.offset_left = board.offset_left if hug else 0.0
+		info.offset_right = board.offset_right if hug else 0.0
 		info.offset_top = safe_top + 8.0
 		info.offset_bottom = maxf(info.offset_top + 132.0, bar_top - 8.0)
+	# Floors mirror the scene literals (Nav 20/-20, Done -16) — keep them in sync.
+	var nav := review_prev.get_parent() as Control
+	if nav != null:
+		nav.offset_left = maxf(board.offset_left, 20.0)
+		nav.offset_right = minf(board.offset_right, -20.0)
 	# Match the menu button (80x80, vertically centred in the top bar) but on the RIGHT, so quitting the
 	# review is as big and easy to hit as opening the menu (the small button was hard for kids to tap).
 	review_done.offset_top = safe_top + (_BAR_H - 80.0) * 0.5
 	review_done.offset_bottom = review_done.offset_top + 80.0
-	review_done.offset_left = -96.0
-	review_done.offset_right = -16.0
+	review_done.offset_right = minf(board.offset_right, -16.0)
+	review_done.offset_left = review_done.offset_right - 80.0
 
 
 ## Step the review to ply `i`. A single-step transition gets a quick slide (forward for Next, in

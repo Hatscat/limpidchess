@@ -17,9 +17,11 @@ func _ready() -> void:
 	# Single source of truth for the version: the project setting (baked into the export and
 	# readable at runtime; export_presets.cfg is editor-only and not shipped).
 	version.text = "Limpid Chess · v%s" % ProjectSettings.get_setting("application/config/version", "")
-	# Always available: the Play review API never tells us whether the player actually rated, so we
-	# can't (and don't) hide this. It opens the store listing, where they can rate or change their
-	# review whenever (the in-app review card is quota-limited and can't be reliably re-shown).
+	# Always available on Android: the Play review API never tells us whether the player actually
+	# rated, so we can't (and don't) hide this. It opens the store listing, where they can rate or
+	# change their review whenever (the in-app review card is quota-limited and can't be reliably
+	# re-shown). Hidden on web: rating an app the browser player doesn't have makes no sense.
+	review_button.visible = not OS.has_feature("web")
 	review_button.pressed.connect(_on_review_pressed)
 	# Wire every credit link: tapping a [url] opens it in the system browser.
 	for label in _find_rich_labels(self):

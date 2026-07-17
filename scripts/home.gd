@@ -55,10 +55,8 @@ func _refresh_puzzle_button() -> void:
 ## The daily-games pill is tappable: it routes to Premium (which explains the daily limit and
 ## offers unlimited play), so a player puzzled by the counter learns what it means.
 func _on_games_input(event: InputEvent) -> void:
-	var mb := event as InputEventMouseButton
-	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-		GameManager.go_to_premium()
-		return
+	# Touch only: emulate_touch_from_mouse guarantees mouse clicks arrive here as an
+	# emulated touch too, so a separate mouse branch would fire this twice per click.
 	var touch := event as InputEventScreenTouch
 	if touch != null and touch.pressed:
 		GameManager.go_to_premium()
@@ -127,10 +125,8 @@ func _on_about_pressed() -> void:
 ## (or, on touch, the emulated mouse press that follows) fall through to the Play / Face to Face
 ## buttons and start a game.
 func _on_dim_input(event: InputEvent) -> void:
-	var mb := event as InputEventMouseButton
-	if mb != null and not mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-		_on_settings_close()
-		return
+	# Touch only, same convention as _on_games_input: with emulate_touch_from_mouse,
+	# mouse releases arrive as emulated touch releases too, so one branch covers all.
 	var touch := event as InputEventScreenTouch
 	if touch != null and not touch.pressed:
 		_on_settings_close()
@@ -243,10 +239,7 @@ func _on_lang_picker_close() -> void:
 
 ## Tap the dim outside the picker card to dismiss it (close on RELEASE, like the Settings dim).
 func _on_lang_picker_dim_input(event: InputEvent) -> void:
-	var mb := event as InputEventMouseButton
-	if mb != null and not mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-		_on_lang_picker_close()
-		return
+	# Touch only — see _on_dim_input.
 	var touch := event as InputEventScreenTouch
 	if touch != null and not touch.pressed:
 		_on_lang_picker_close()

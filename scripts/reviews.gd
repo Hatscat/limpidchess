@@ -33,6 +33,8 @@ func _ready() -> void:
 ## the native review card on the player unannounced: first show our own gentle "do you enjoy it?"
 ## dialog, and only launch the real flow if they tap "Rate it". Safe to call any time.
 func maybe_ask() -> void:
+	if OS.has_feature("web"):
+		return  # browser players aren't Play users; don't ask them to rate the Android app
 	if not GameManager.should_ask_review():
 		return
 	# Spend today's single slot only if the dialog actually appeared (so a failed show can retry).

@@ -34,7 +34,12 @@ var _check_shake := 0.0          ## elapsed time while in check; drives the shak
 # Options: Array of { move:int, quality:String("best"|"decent"|"blunder") }.
 var _options: Array = []
 var _revealed := false
-var _interactive := false
+# Setter keeps the mouse cursor honest on desktop/web: a pointing hand exactly while
+# the option arrows are tappable (touch never sees it, so phones are unaffected).
+var _interactive := false:
+	set(v):
+		_interactive = v
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if v else Control.CURSOR_ARROW
 var _chosen_move := -1  # the move the player tapped; drawn on top after the reveal
 
 # Piece-slide animation (used during the reveal).
