@@ -262,16 +262,45 @@ attribution carries over via the in-game About screen. Nothing else changes.
     windows read as one centered column, narrow is pixel-identical to before.
     ⬜ remaining: a human feel-pass on desktop + a real iPhone.
 
-**Phase 3: PWA + release (~1-2 days)**
-11. Enable the PWA export option (standalone display, portrait preference, icons,
-    background color; "ensure cross-origin isolation headers" OFF).
-12. Verify offline relaunch; patch the service worker cache list in a build script if
-    bug #100518 still bites. Also add the Stockfish engine files to that cache list:
-    Godot's generated service worker precaches only its own exports, so without the
-    patch an offline relaunch would silently lose the engine (game still works via
-    the GDScript fallback, but weaker). Wire `pwa_update_available` → `pwa_update()`.
-13. Deploy to `docs/play/`, link it from the landing page ("Play in your browser",
-    with the smooth-first copy), add the source & licenses link to the page.
+**Phase 3: PWA + release (~1-2 days)** — core done 2026-07-17
+11. Enable the PWA export option. ✅ standalone display, portrait, icons
+    (`assets/icon/pwa_144/180.png` generated from the launcher art + `launcher_512`),
+    boot-splash background color, isolation headers OFF.
+12. Verify offline relaunch + service worker patches. ✅ All releases go through
+    **`web/build_web.sh`** (export → patch SW → optional `--deploy` to `docs/play/`).
+    Findings from the real 4.6.3 template: bug #100518 (bad filename) is fixed
+    upstream, but TWO patches are still needed, both applied by the script with
+    loud assertions if the template ever changes:
+    (a) the Stockfish files are added to `CACHEABLE_FILES` (else offline silently
+    loses the engine); (b) directory-URL navigations ("/", "/play/") are mapped to
+    the cached `index.html` — the stock worker looks up the bare URL, misses,
+    hits the dead network and shows the browser error page instead of the game.
+    Offline drill verified in Chrome end-to-end: install → kill server → reload →
+    home boots → a game plays with REAL Stockfish from the SW cache.
+    Update flow: a waiting new version activates at next boot
+    (`pwa_needs_update()` → `pwa_update()` in GameManager._ready, web-only) —
+    never mid-session, so no surprise reloads. `build/` carries a `.gdignore`
+    (the editor was importing exported artifacts back in as resources).
+    Post-review hardening (all re-verified in the offline drill, including a
+    query-string URL): engine filenames in the cache patch are derived from
+    `web/engine/` and asserted to exist (a future engine bump can't silently kill
+    offline); navigations map to `index.html` only at the exact scope root and
+    with `ignoreSearch` (tracking-param links work offline; nested paths don't
+    mis-serve); only OK responses are cached (a captive portal can't poison the
+    cache); the boot splash (`index.png`) is cached; `build/web` is wiped before
+    each export; the boot update runs only when this is the sole open tab (Web
+    Locks headcount — activating reloads every tab) and only online (offline it
+    would strand the player on the offline page); the PWA icon PNGs are excluded
+    from both pcks.
+13. Deploy to `docs/play/`, link it from the landing page. ✅ `web/build_web.sh
+    --deploy` populates `docs/play/` (46 MB, mostly the wasm — GitHub Pages gzips it
+    to ~10 MB on the wire; note the repo grows by roughly this much per release
+    while Pages hosts it). The landing hero has a second "Play in your browser"
+    ghost CTA (localized in all 10 landing languages) beside the Play badge; the
+    footer's existing Source-code link covers the GPL §6(d) obligation. Verified:
+    landing → CTA → game boots from `play/`. ⬜ remaining: Lucien commits + pushes
+    to publish, then a quick pass on the live URL (and an iPhone
+    "Add to Home Screen" install test on the real HTTPS origin).
 14. Update the **Product Hunt launch draft** (assets in
     [docs/img/producthunt/](docs/img/producthunt/README.md)): non-Android visitors
     now have an answer. Add "Play in your browser, on iPhone too, installable as an

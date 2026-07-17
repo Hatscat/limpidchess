@@ -42,6 +42,10 @@ nav.top a:hover { color: var(--text); text-decoration: none; }
   padding: 14px 28px; border-radius: 14px;
 }
 .cta:hover { text-decoration: none; filter: brightness(1.07); }
+.cta.cta-web {
+  background: var(--surface); color: inherit; border: 1px solid var(--line);
+  margin-left: 10px;
+}
 .cta-note { display: block; color: var(--dim); font-size: .82rem; margin-top: 12px; }
 
 /* features */

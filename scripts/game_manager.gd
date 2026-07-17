@@ -77,12 +77,47 @@ func _ready() -> void:
 	_load()
 	_apply_locale()
 	_roll_day()
-	# Web/PWA: the service worker downloads new releases in the background but keeps
-	# serving the cached version until told otherwise. Activate a waiting update at
-	# boot only — the page just opened, so the reload is invisible; mid-session
-	# reloads (what pwa_update() does) would be rude. Worst case we run one version
-	# behind until the next launch, the standard PWA pattern.
-	if OS.has_feature("web") and JavaScriptBridge.pwa_needs_update():
+	_check_web_update()
+
+
+# --- Web/PWA update-at-boot ---
+
+# Kept referenced for the whole app or the bridge silently drops the callback.
+var _pwa_solo_cb: JavaScriptObject = null
+
+
+## The service worker downloads new releases in the background but keeps serving the
+## cached version until activated. Activating (pwa_update) reloads EVERY open tab of
+## the game, so we do it only at boot, only when this is the sole running instance
+## (Web Locks headcount — a second tab could be mid-game), and only online (offline,
+## the new version's cache starts empty and the reload would strand the player on
+## the offline page instead of the playable cached game). Worst case we run one
+## version behind until the next solo online launch: the standard PWA pattern.
+func _check_web_update() -> void:
+	if not OS.has_feature("web"):
+		return
+	_pwa_solo_cb = JavaScriptBridge.create_callback(_on_pwa_solo_boot)
+	var window: JavaScriptObject = JavaScriptBridge.get_interface("window")
+	if window == null or _pwa_solo_cb == null:
+		return
+	window.set("_limpidPwaSolo", _pwa_solo_cb)
+	# Every instance holds the shared lock for its lifetime; querying from inside our
+	# own grant means the headcount always includes us, so "1" really means solo.
+	JavaScriptBridge.eval("""
+		if (navigator.locks) {
+			navigator.locks.request('limpid-alive', { mode: 'shared' }, () => {
+				navigator.locks.query().then((q) => {
+					const held = q.held.filter((l) => l.name === 'limpid-alive').length;
+					if (held <= 1 && navigator.onLine) window._limpidPwaSolo();
+				});
+				return new Promise(() => {});
+			});
+		}
+	""", true)
+
+
+func _on_pwa_solo_boot(_args: Array) -> void:
+	if JavaScriptBridge.pwa_needs_update():
 		JavaScriptBridge.pwa_update()
 
 
