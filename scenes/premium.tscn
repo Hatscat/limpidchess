@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cwkkvw7g6s8lc"]
 
 [ext_resource type="Script" uid="uid://ctrl7ehxmhjtu" path="res://scripts/premium.gd" id="1_premium"]
-[ext_resource type="Texture2D" path="res://assets/icons/chevron_left.svg" id="2_back"]
+[ext_resource type="Texture2D" uid="uid://cbckurxxoom7n" path="res://assets/icons/chevron_left.svg" id="2_back"]
 [ext_resource type="Texture2D" uid="uid://cn4xvwxwrw4l2" path="res://assets/icons/crown.png" id="3_crown"]
 
 [sub_resource type="StyleBoxFlat" id="sb_primary"]
@@ -161,10 +161,12 @@ autowrap_mode = 2
 [node name="Back" type="Button" parent="." unique_id=1370521294]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 0
-offset_left = 12.0
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -348.0
 offset_top = 16.0
-offset_right = 92.0
+offset_right = -268.0
 offset_bottom = 96.0
 focus_mode = 0
 theme_override_constants/icon_max_width = 48

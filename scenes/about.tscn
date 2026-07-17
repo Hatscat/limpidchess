@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://drsyb8fskg3ii"]
 
 [ext_resource type="Script" uid="uid://vu7lc47l4l3o" path="res://scripts/about.gd" id="1_about"]
-[ext_resource type="Texture2D" path="res://assets/icons/chevron_left.svg" id="2_back"]
+[ext_resource type="Texture2D" uid="uid://cbckurxxoom7n" path="res://assets/icons/chevron_left.svg" id="2_back"]
 [ext_resource type="Texture2D" uid="uid://eu4o70yxeqdq" path="res://assets/icons/star.png" id="3_star"]
 
 [sub_resource type="StyleBoxFlat" id="sb_ghost"]
@@ -40,11 +40,12 @@ color = Color(0.09, 0.1, 0.12, 1)
 
 [node name="Header" type="HBoxContainer" parent="." unique_id=365819300]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 16.0
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -344.0
 offset_top = 16.0
-offset_right = -24.0
+offset_right = 336.0
 offset_bottom = 96.0
 grow_horizontal = 2
 theme_override_constants/separation = 8
@@ -63,7 +64,6 @@ expand_icon = true
 [node name="Title" type="Label" parent="Header" unique_id=1694807561]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 40
 text = "About"
 

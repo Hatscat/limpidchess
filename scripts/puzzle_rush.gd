@@ -106,6 +106,7 @@ const _HEADER_H := 92.0        ## streak / best stats row
 const _STATUS_H := 44.0        ## "Find the best move!" line
 const _STATS_GAP := 22.0       ## gap between the stats and the status
 const _BOARD_GAP := 16.0       ## gap between the status and the board top
+const _TITLE_CLEAR := 32.0     ## reserved under the title row in height-limited windows
 
 func _layout() -> void:
 	var vp := get_viewport_rect().size
@@ -119,7 +120,11 @@ func _layout() -> void:
 	# the board (not floating up by the title). The remaining slack falls above the stats.
 	var area_top: float = top + 80.0
 	var caption_block: float = _HEADER_H + _STATS_GAP + _STATUS_H + _BOARD_GAP
-	var board_size: float = minf(vp.x - 16.0, vp.y - area_top - caption_block - 24.0)
+	# _TITLE_CLEAR keeps the streak/best captions off the title card when the board is
+	# height-limited (wide desktop windows drive `extra` to zero, which would put the
+	# caption block flush under the title). Width-limited phone layouts have surplus
+	# height, so their geometry is untouched.
+	var board_size: float = minf(vp.x - 16.0, vp.y - (area_top + _TITLE_CLEAR) - caption_block - 24.0)
 	board_size = maxf(board_size, 0.0)
 	var bx: float = (vp.x - board_size) * 0.5
 

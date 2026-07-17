@@ -235,11 +235,15 @@ attribution carries over via the in-game About screen. Nothing else changes.
 **Phase 2: web polish (~2-3 days)** — core done 2026-07-17
 8. Max-width clamps. ✅ premium/bots/about: content column centered via anchors
    (664-680 px, pixel-identical on phone; note `SIZE_SHRINK_CENTER` inside a
-   ScrollContainer does NOT center, hence the anchor approach). Game scene: top bar,
-   feedback/status, review info band, review nav and Done button all hug the board's
-   column in wide windows (`_layout_for_safe_area` / `_position_review_ui`); puzzle
-   scene: menu, title card and streak/best header likewise (`_layout`). Face to Face
-   wide-window chrome left as is (premium mode, phone-first).
+   ScrollContainer does NOT center, hence the anchor approach). Page headers too
+   (QA feedback): home top bar, bots/about headers and premium's back button use the
+   same centered anchors. Game scene: top bar, feedback/status, review info band,
+   review nav and Done button all hug the board's column in wide windows
+   (`_layout_for_safe_area` / `_position_review_ui`); puzzle scene: menu, title card
+   and streak/best header likewise (`_layout`), plus a `_TITLE_CLEAR` reserve so the
+   streak/best captions can't ride up flush against the title card in height-limited
+   windows (QA feedback; phone layouts are width-limited and unaffected). Face to
+   Face wide-window chrome left as is (premium mode, phone-first).
 9. Platform gating. ✅ Premium screen on web: "Premium comes with the Android app" +
    a "Get it on Google Play" button (both localized in ui.csv, 13 locales), Restore
    hidden; the button opens the listing popup-blocker-safely (window.open with a

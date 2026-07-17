@@ -1,10 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://limpidbots01"]
+[gd_scene format=3 uid="uid://limpidbots01"]
 
-[ext_resource type="Script" path="res://scripts/bots.gd" id="1_bots"]
-[ext_resource type="Texture2D" path="res://assets/icons/chevron_left.svg" id="2_back"]
-[ext_resource type="PackedScene" uid="uid://limpiddailydlg1" path="res://scenes/daily_limit_dialog.tscn" id="3_daily"]
+[ext_resource type="Script" uid="uid://dor8axigrmfma" path="res://scripts/bots.gd" id="1_bots"]
+[ext_resource type="Texture2D" uid="uid://cbckurxxoom7n" path="res://assets/icons/chevron_left.svg" id="2_back"]
+[ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="3_daily"]
 
-[node name="Bots" type="Control"]
+[node name="Bots" type="Control" unique_id=1857781049]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +13,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_bots")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1847626248]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,18 +22,19 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.1, 0.12, 1)
 
-[node name="Header" type="HBoxContainer" parent="."]
+[node name="Header" type="HBoxContainer" parent="." unique_id=1159097824]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 12.0
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -348.0
 offset_top = 16.0
-offset_right = -24.0
+offset_right = 336.0
 offset_bottom = 100.0
 grow_horizontal = 2
 theme_override_constants/separation = 6
 
-[node name="Back" type="Button" parent="Header"]
+[node name="Back" type="Button" parent="Header" unique_id=1275016295]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 size_flags_vertical = 4
@@ -44,24 +45,24 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextVBox" type="VBoxContainer" parent="Header"]
+[node name="TextVBox" type="VBoxContainer" parent="Header" unique_id=1633448465]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_constants/separation = 2
 
-[node name="Title" type="Label" parent="Header/TextVBox"]
+[node name="Title" type="Label" parent="Header/TextVBox" unique_id=1919689540]
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "New chess game"
 
-[node name="Subtitle" type="Label" parent="Header/TextVBox"]
+[node name="Subtitle" type="Label" parent="Header/TextVBox" unique_id=387910079]
 modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Pick your opponent."
 
-[node name="Scroll" type="ScrollContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=365493646]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -77,15 +78,15 @@ grow_vertical = 2
 horizontal_scroll_mode = 0
 scroll_deadzone = 16
 
-[node name="List" type="VBoxContainer" parent="Scroll"]
+[node name="List" type="VBoxContainer" parent="Scroll" unique_id=1700774102]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 20
-mouse_filter = 1
 
-[node name="DailyLimit" parent="." instance=ExtResource("3_daily")]
+[node name="DailyLimit" parent="." unique_id=1880655915 instance=ExtResource("3_daily")]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
 
 [connection signal="pressed" from="Header/Back" to="." method="_on_back_pressed"]

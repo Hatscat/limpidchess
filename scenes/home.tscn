@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://c1jx7yw5723wa" path="res://scripts/home.gd" id="1_home"]
 [ext_resource type="Texture2D" uid="uid://p02tne2x1je1" path="res://assets/icons/board_blank.svg" id="3_board"]
-[ext_resource type="Texture2D" path="res://assets/icons/info_round.svg" id="11_info"]
 [ext_resource type="Texture2D" uid="uid://218lqwovgsyp" path="res://assets/icons/handshake.png" id="4_handshake"]
 [ext_resource type="Texture2D" uid="uid://boxc5a1vecvuj" path="res://assets/pieces/w_pawn.png" id="5_wpawn"]
 [ext_resource type="Texture2D" uid="uid://cw8pcxwr83nff" path="res://assets/pieces/b_pawn.png" id="6_bpawn"]
@@ -10,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://ovf8opbnaxrt" path="res://assets/icons/close.png" id="8_close"]
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="9_daily"]
 [ext_resource type="Texture2D" uid="uid://dx6lvqxgecy1e" path="res://assets/icons/puzzle.png" id="10_puzzle"]
+[ext_resource type="Texture2D" uid="uid://b45tyfks031n7" path="res://assets/icons/info_round.svg" id="11_info"]
 
 [sub_resource type="StyleBoxFlat" id="sb_pill"]
 content_margin_left = 14.0
@@ -101,11 +101,12 @@ color = Color(0.09, 0.1, 0.12, 1)
 
 [node name="TopBar" type="HBoxContainer" parent="." unique_id=1685567873]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 24.0
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -336.0
 offset_top = 16.0
-offset_right = -24.0
+offset_right = 336.0
 offset_bottom = 84.0
 grow_horizontal = 2
 theme_override_constants/separation = 28
@@ -415,8 +416,8 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 focus_mode = 0
-theme_override_constants/icon_max_width = 34
 theme_override_constants/h_separation = 12
+theme_override_constants/icon_max_width = 34
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_ghost")
 theme_override_styles/pressed = SubResource("sb_ghost")
@@ -428,8 +429,8 @@ alignment = 0
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 focus_mode = 0
-theme_override_constants/icon_max_width = 28
 theme_override_constants/h_separation = 12
+theme_override_constants/icon_max_width = 28
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("sb_ghost")
 theme_override_styles/pressed = SubResource("sb_ghost")
@@ -525,7 +526,6 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
-mouse_filter = 1
 
 [node name="CloseX" type="Button" parent="LanguagePicker" unique_id=1995633607]
 layout_mode = 1
@@ -560,7 +560,7 @@ layout_mode = 1
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/SoundToggle" to="." method="_on_sound_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/LanguageBtn" to="." method="_on_language_btn_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/AboutBtn" to="." method="_on_about_pressed"]
-[connection signal="gui_input" from="LanguagePicker/Dim" to="." method="_on_lang_picker_dim_input"]
-[connection signal="pressed" from="LanguagePicker/CloseX" to="." method="_on_lang_picker_close"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/ResetBtn" to="." method="_on_reset_pressed"]
 [connection signal="pressed" from="SettingsOverlay/CloseX" to="." method="_on_settings_close"]
+[connection signal="gui_input" from="LanguagePicker/Dim" to="." method="_on_lang_picker_dim_input"]
+[connection signal="pressed" from="LanguagePicker/CloseX" to="." method="_on_lang_picker_close"]
