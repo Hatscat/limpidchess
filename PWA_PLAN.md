@@ -330,6 +330,42 @@ attribution carries over via the in-game About screen. Nothing else changes.
     Cloudflare/R2 hosting stays the later option if bandwidth approaches the
     Pages soft cap; the domain living at Cloudflare makes that move trivial.
 17. Lemon Squeezy premium + "Redeem key" dialog if web demand shows up.
+    Implementation plan (~2-3 dev days code + ~1h store setup):
+    - **Store (dashboard)**: create the LS store + a one-time "Limpid Chess
+      Premium" product at $3.99, license keys ON (activation limit ~5, generous
+      multi-device), checkout success URL → `https://limpidchess.com/play/?ls=ok`.
+      Do everything in TEST MODE first (test cards + test license keys).
+    - **Code, in [billing.gd](scripts/billing.gd)** (stay the single entitlement
+      façade; web branch gated on `OS.has_feature("web")`, mirroring how
+      stockfish_engine.gd hosts its transports):
+      `buy()` on web → open the hosted checkout (popup-blocker-safe opener, like
+      premium.gd's Play funnel). New `redeem_key(key)` → POST
+      `api.lemonsqueezy.com/v1/licenses/activate` (form-encoded, key-authenticated,
+      CORS-open, 60 req/min; official fallback proxy
+      `api-cors-anywhere.lemonsqueezy.com` if a browser balks) via HTTPRequest;
+      on success: store `{license_key, instance_id}` in the save, set premium,
+      emit `purchase_succeeded` (premium.gd already listens).
+      "Restore purchase" on web = the same redeem flow.
+    - **Key entry**: `JavaScriptBridge.eval("window.prompt(...)")`, the native
+      browser dialog. Works everywhere including iOS Safari with paste support,
+      and sidesteps Godot-web virtual-keyboard issues (the game has no LineEdit
+      anywhere, keep it that way).
+    - **Re-validation**: on web boot, if a key is saved, silently POST
+      `/v1/licenses/validate` at most once a day; offline or API errors keep
+      premium (never punish offline), only an explicit "invalid/disabled" answer
+      (refund/chargeback) clears it.
+    - **Checkout return**: on `?ls=ok`, show a gentle "Your key is in your email,
+      tap Redeem when it arrives" note (query-string URLs are offline-safe since
+      the Phase 3 SW patch).
+    - **Premium screen on web** becomes: [Unlock Premium · $3.99] (checkout) +
+      [I have a key] (redeem) + the existing Play-badge line as a secondary path.
+      Price stays a static string (LS localizes at checkout; MoR handles VAT).
+    - **i18n**: ~6 new ui.csv strings × 13 locales (redeem prompt, checking,
+      success, key-rejected, key-arrives-by-email, I-have-a-key).
+    - **Known risk** (researched 2026-07): LS is Stripe-owned and migrating
+      merchants to Stripe Managed Payments; the license-key flow is expected to
+      carry over, and the in-game surface (redeem dialog + validate call) is
+      small enough to swap providers if not.
 18. Save export/import as storage-eviction insurance.
 
 Total for a solid v1 (phases 0-3): **roughly 6-9 dev days**, $0 running cost.
