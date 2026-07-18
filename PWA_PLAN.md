@@ -310,7 +310,25 @@ attribution carries over via the in-game About screen. Nothing else changes.
 15. Announce; watch whether people play and click the Play badge.
 
 **Phase 4: later, optional**
-16. Custom domain + Cloudflare/R2 if bandwidth approaches the Pages cap.
+16. Custom domain. ✅ **limpidchess.com** bought on Cloudflare Registrar (2026-07-18),
+    deliberately before any promotion: browser saves and installed PWAs are bound to
+    the origin, so launching on the final address avoids ever stranding players.
+    Setup (needs BOTH sides):
+    - Cloudflare DNS (start **DNS-only**, grey cloud): apex `limpidchess.com`
+      CNAME → `hatscat.github.io` (Cloudflare flattens apex CNAMEs), plus
+      `www` CNAME → `hatscat.github.io`.
+    - GitHub: repo → Settings → Pages → Custom domain = `limpidchess.com`
+      (checks the committed `docs/CNAME`), wait for the certificate, then tick
+      **Enforce HTTPS**. Optionally also verify the domain under Settings → Pages →
+      verified domains (TXT record) against takeover.
+    - Only AFTER the GitHub certificate exists, optionally flip the Cloudflare
+      records to Proxied (orange) with SSL mode "Full (strict)" for brotli + edge
+      caching; proxying earlier breaks GitHub's certificate provisioning.
+    - GitHub 301-redirects `hatscat.github.io/limpidchess/*` to the custom domain,
+      so early links keep working (their browser-local saves do NOT carry over —
+      another reason the domain came before the launch).
+    Cloudflare/R2 hosting stays the later option if bandwidth approaches the
+    Pages soft cap; the domain living at Cloudflare makes that move trivial.
 17. Lemon Squeezy premium + "Redeem key" dialog if web demand shows up.
 18. Save export/import as storage-eviction insurance.
 

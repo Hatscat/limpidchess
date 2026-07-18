@@ -11,7 +11,7 @@
 ![Engine: Godot 4.6](https://img.shields.io/badge/Made%20with-Godot%204.6-478cbf.svg)
 ![Chess brain: Stockfish](https://img.shields.io/badge/Chess%20brain-Stockfish-769656.svg)
 
-[Website](https://hatscat.github.io/limpidchess/) · [Privacy](https://hatscat.github.io/limpidchess/privacy.html) · [Terms](https://hatscat.github.io/limpidchess/terms.html)
+[Website](https://limpidchess.com/) · [Play in your browser](https://limpidchess.com/play/) · [Privacy](https://limpidchess.com/privacy.html) · [Terms](https://limpidchess.com/terms.html)
 
 ### Download
 
