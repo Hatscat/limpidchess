@@ -332,7 +332,7 @@ attribution carries over via the in-game About screen. Nothing else changes.
 17. Lemon Squeezy premium + "Redeem key" dialog if web demand shows up.
     Implementation plan (~2-3 dev days code + ~1h store setup):
     - **Store (dashboard)**: create the LS store + a one-time "Limpid Chess
-      Premium" product at $3.99, license keys ON (activation limit ~5, generous
+      Premium" product at €4.99, license keys ON (activation limit ~5, generous
       multi-device), checkout success URL → `https://limpidchess.com/play/?ls=ok`.
       Do everything in TEST MODE first (test cards + test license keys).
     - **Code, in [billing.gd](scripts/billing.gd)** (stay the single entitlement
@@ -357,7 +357,7 @@ attribution carries over via the in-game About screen. Nothing else changes.
     - **Checkout return**: on `?ls=ok`, show a gentle "Your key is in your email,
       tap Redeem when it arrives" note (query-string URLs are offline-safe since
       the Phase 3 SW patch).
-    - **Premium screen on web** becomes: [Unlock Premium · $3.99] (checkout) +
+    - **Premium screen on web** becomes: [Unlock Premium · €4.99] (checkout) +
       [I have a key] (redeem) + the existing Play-badge line as a secondary path.
       Price stays a static string (LS localizes at checkout; MoR handles VAT).
     - **i18n**: ~6 new ui.csv strings × 13 locales (redeem prompt, checking,
