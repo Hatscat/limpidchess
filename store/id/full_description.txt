@@ -52,6 +52,6 @@ COCOK UNTUK
 • Pemain yang ingin teka-teki dan taktik catur cepat di setiap permainan
 • Catur pemain tunggal di mana saja, tanpa perlu internet
 
-Limpid Chess bersifat open source (GPL-3.0), dibuat dengan Godot, dan menggunakan mesin catur Stockfish.
+Limpid Chess bersifat open source (GPL-3.0), dibuat dengan Godot, dan menggunakan mesin catur Stockfish. Kode sumber: https://github.com/Hatscat/limpidchess
 
 Buka aplikasinya, ketuk Main, temukan yang terbaik dari tiga, dan mulai melihat langkah-langkah bagus itu sendiri. ♟

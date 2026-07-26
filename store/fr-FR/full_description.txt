@@ -52,6 +52,6 @@ PARFAIT POUR
 • Ceux qui veulent des puzzles et des tactiques d'échecs rapides à chaque partie
 • Les échecs en solo, où que tu sois, sans connexion internet
 
-Limpid Chess est open source (GPL-3.0), développé avec Godot, et utilise le moteur d'échecs Stockfish.
+Limpid Chess est open source (GPL-3.0), développé avec Godot, et utilise le moteur d'échecs Stockfish. Code source : https://github.com/Hatscat/limpidchess
 
 Ouvre l'appli, appuie sur Jouer, trouve le meilleur des trois, et commence à voir les bons coups par toi-même. ♟

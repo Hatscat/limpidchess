@@ -52,6 +52,6 @@ GRAJ PO SWOJEMU
 • Graczy, którzy chcą szybkich łamigłówek i taktyki szachowej w każdej partii
 • Szachów dla jednego gracza w podróży, bez potrzeby internetu
 
-Limpid Chess jest oprogramowaniem open source (GPL-3.0), zbudowanym w Godot i wykorzystuje silnik szachowy Stockfish.
+Limpid Chess jest oprogramowaniem open source (GPL-3.0), zbudowanym w Godot i wykorzystuje silnik szachowy Stockfish. Kod źródłowy: https://github.com/Hatscat/limpidchess
 
 Otwórz aplikację, dotknij Graj, znajdź najlepszy z trzech i zacznij samodzielnie dostrzegać dobre ruchy. ♟

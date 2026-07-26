@@ -16,16 +16,39 @@ later):
 ```
 store/
   en-US/  fr-FR/  es-ES/  pt-BR/  de-DE/  it-IT/  ru-RU/
-  tr-TR/  pl-PL/  id/  vi/  uk/  el/
+  tr-TR/  pl-PL/  id/  vi/  uk/  el-GR/
+  es-419/  fr-CA/  pt-PT/        # regional variants: changelogs only, see below
     title.txt              # app name, max 30 chars
     short_description.txt   # one line, max 80 chars
     full_description.txt    # max 4000 chars
+    changelogs/
+      <versionCode>.txt     # "What's new" release notes, max 500 chars
 ```
 
-13 locales, matching the app's in-app languages. Google Play locale codes for Indonesian, Vietnamese,
-Ukrainian and Greek have no country suffix (`id`, `vi`, `uk`, `el`); Portuguese uses `pt-BR` (Brazil).
-The "Available in N languages" bullet in every full_description hard-codes the count, so bump it when
-the language set changes.
+**Folder names are Play Console locale codes, and the Console is the authority.** Indonesian,
+Vietnamese and Ukrainian have no country suffix (`id`, `vi`, `uk`); Greek is `el-GR` (not bare `el`).
+
+13 of these match the app's in-app languages. The Console listing additionally carries three
+**regional variants** the app does not translate separately: `es-419` (Latin American Spanish),
+`fr-CA` and `pt-PT`. They have changelogs here but **no `full_description.txt` yet**: the live
+listing text for them was not authored in this repo, so it is untracked and, notably, still missing
+the GPL source URL that the other 13 carry. Write them (adapting es-ES / fr-FR / pt-BR to regional
+vocabulary: celular, casse-têtes, telemóvel) or drop the languages from the Console.
+
+To check the real set, open a release in the Console: the release-notes box pre-fills one `<tag>`
+per listing language. That list, in that order, is what a paste must match.
+
+The "Available in N languages" bullet in every full_description hard-codes the count (the app's 13,
+not the listing's 16), so bump it when the app's language set changes.
+
+Several full_descriptions sit within ~25 chars of the 4000 limit (fr-FR is the tightest), so measure
+before adding a sentence. Every one of them ends with the GPL-3.0 credit **and the source URL** —
+that link is a GPLv3 §6(d) obligation ("clear directions next to the object code"), not a nicety.
+Don't drop it to win back characters.
+
+`changelogs/` is named by Android `versionCode` (see `version/code` in
+[`export_presets.cfg`](../export_presets.cfg)), per the Fastlane convention. Play falls back to the
+default language when a locale has no changelog, so only en-US is strictly required.
 
 ## Graphics (already in the repo, not duplicated here)
 

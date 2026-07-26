@@ -52,6 +52,6 @@ IDEAL FÜR
 • Spieler, die schnelle Schachaufgaben und Schachtaktik in jeder Partie wollen
 • Einzelspieler-Schach für unterwegs, ohne Internet
 
-Limpid Chess ist Open Source (GPL-3.0), mit Godot entwickelt und nutzt die Schach-Engine Stockfish.
+Limpid Chess ist Open Source (GPL-3.0), mit Godot entwickelt und nutzt die Schach-Engine Stockfish. Quellcode: https://github.com/Hatscat/limpidchess
 
 Öffne die App, tippe auf Spielen, finde den besten von dreien und beginne, die guten Züge selbst zu sehen. ♟

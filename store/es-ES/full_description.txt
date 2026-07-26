@@ -52,6 +52,6 @@ IDEAL PARA
 • Quienes buscan puzzles de ajedrez y tácticas rápidas en cada partida
 • Ajedrez para un jugador donde quieras, sin internet
 
-Limpid Chess es de código abierto (GPL-3.0), está hecho con Godot y usa el motor de ajedrez Stockfish.
+Limpid Chess es de código abierto (GPL-3.0), está hecho con Godot y usa el motor de ajedrez Stockfish. Código fuente: https://github.com/Hatscat/limpidchess
 
 Abre la app, toca Jugar, encuentra la mejor de tres y empieza a ver tú mismo las buenas jugadas. ♟
