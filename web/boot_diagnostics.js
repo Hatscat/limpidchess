@@ -25,6 +25,27 @@
 	var DIM = '#b0beca';
 	var BG = '#171a1f';
 
+	// Patched first, before anything else registers, so we capture exactly which input
+	// events the engine subscribes to and on which element. Everything else says the
+	// event reaches the canvas; this says whether Godot ever asked to hear about it.
+	// `selfProbe` excludes our own listeners from the tally.
+	var bound = { canvas: {}, document: {}, window: {} };
+	var selfProbe = false;
+	var aelOrig = EventTarget.prototype.addEventListener;
+	EventTarget.prototype.addEventListener = function (type, fn, opts) {
+		try {
+			if (!selfProbe && /^(touch|pointer|mouse|click|key)/.test(type)) {
+				var tag = this === window ? 'window'
+					: this === document ? 'document'
+						: (this && this.id === 'canvas' ? 'canvas' : null);
+				if (tag) {
+					bound[tag][type] = true;
+				}
+			}
+		} catch (e) { /* never let the probe break registration */ }
+		return aelOrig.call(this, type, fn, opts);
+	};
+
 	var errors = [];
 	var touches = 0;          // seen at window, capture phase
 	var canvasTouches = 0;    // actually delivered to the canvas element
@@ -75,6 +96,7 @@
 
 	// Passive capture probe: did the tap reach the page at all, and at what coords?
 	// Compare against the canvas rect below to spot a hit-test offset.
+	selfProbe = true;
 	['touchstart', 'pointerdown'].forEach(function (type) {
 		window.addEventListener(type, function (e) {
 			touches++;
@@ -86,11 +108,13 @@
 			render();
 		}, { passive: true, capture: true });
 	});
+	selfProbe = false;
 
 	// Same probe, but bound to the canvas itself. window sees the capture phase, so a
 	// nonzero `touches` with a zero `canvas` count means the event never reached
 	// Godot's own listeners: something is swallowing it in between.
 	function probeCanvas(c) {
+		selfProbe = true;
 		['touchstart', 'pointerdown'].forEach(function (type) {
 			c.addEventListener(type, function () {
 				canvasTouches++;
@@ -122,6 +146,12 @@
 		c.addEventListener('webglcontextrestored', function () {
 			note('webgl', 'context restored');
 		}, false);
+		selfProbe = false;
+	}
+
+	function boundList(tag) {
+		var keys = Object.keys(bound[tag]);
+		return keys.length ? keys.join(',') : 'NONE';
 	}
 
 	// Two separate frame counters, and the difference between them is the whole point.
@@ -183,7 +213,11 @@
 		var r = c ? c.getBoundingClientRect() : null;
 		var vv = window.visualViewport;
 		var lines = [
-			'ua       ' + navigator.userAgent,
+			'ua       ' + navigator.userAgent.slice(0, 78),
+			'engine subscribes to:',
+			'  canvas ' + boundList('canvas'),
+			'  doc    ' + boundList('document'),
+			'  window ' + boundList('window'),
 			'window   ' + window.innerWidth + 'x' + window.innerHeight
 				+ ' dpr' + (window.devicePixelRatio || 1),
 			'visual   ' + (vv ? Math.round(vv.width) + 'x' + Math.round(vv.height)

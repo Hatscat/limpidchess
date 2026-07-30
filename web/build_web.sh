@@ -132,6 +132,10 @@ assert "limpid:boot_diagnostics" not in page, "boot diagnostics already injected
 css = (
     "\t\t<style>\n"
     "#canvas {\n"
+    # iOS Safari has long withheld synthesized mouse/click events from elements it
+    # does not consider interactive; cursor:pointer is the standard way to opt in.
+    # Harmless elsewhere, and PWA_PLAN already wants a pointing hand on the board.
+    "\tcursor: pointer;\n"
     "\ttouch-action: none;\n"
     "\t-webkit-user-select: none;\n"
     "\tuser-select: none;\n"
