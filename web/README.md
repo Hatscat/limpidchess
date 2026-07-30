@@ -19,6 +19,24 @@ where the game fails to boot can never receive the fix that would make it boot, 
 single bad deploy strands those users permanently, with no remote way to reach them.
 Costs one ~4 KB request per online launch. Do not revert it to save that request.
 
+## ⚠️ boot_diagnostics.js is currently load-bearing on iOS
+
+**Do not strip it as "just diagnostics" until this note is gone.** iOS Safari showed a
+total input freeze: the game rendered, the engine ticked at 60 fps, taps reached the
+canvas and completed cleanly, and Godot's touch handlers were registered — yet nothing
+responded. Adding the handler-invocation wrapper made it work, and the only behavior that
+wrapper changes is that Godot registers a *different* function object than it later hands
+to `removeEventListener`, so **its touch listeners can no longer be removed**.
+
+Working theory: something tears those listeners down after registration. Chromium is
+unaffected because it synthesizes a full mouse-event stream from touch and Godot also
+binds `mousedown` on the canvas, so the UI keeps working through the mouse path; iOS
+Safari does not synthesize those, so touch is the only path and removing it is fatal.
+
+Unconfirmed. The `removeEL` line exists to confirm or kill it. Once we know what calls
+remove and why, replace this accident with a deliberate, narrow guard and delete this
+section.
+
 ## boot_diagnostics.js — making iOS failures visible
 
 Inlined into `<head>` of the exported `index.html` by `build_web.sh` (step 4), ahead of
