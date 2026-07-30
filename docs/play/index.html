@@ -562,11 +562,48 @@ body {
 			probeCanvas(c);
 		}
 		watchServiceWorker();
-		if (q.indexOf('debug=1') !== -1) {
+		// iOS plays correctly with ?debug=1 and is frozen without it, so something in
+		// the overlay path is the accidental cure. These modes isolate the candidates,
+		// one variable each, so a tester only has to answer "can you tap New Game?".
+		//
+		//   ?d=late     no overlay, no timer — panel appears after 20 s showing what
+		//               the engine was doing WHILE frozen (the reading we cannot
+		//               otherwise capture, because observing it cures it)
+		//   ?d=overlay  overlay element only, no periodic timer
+		//   ?d=rect     periodic canvas.getBoundingClientRect(), no overlay
+		//   ?d=est      periodic navigator.storage.estimate(), no overlay
+		//   ?d=noop     an empty periodic timer, nothing else
+		var m = /[?&]d=([a-z]+)/.exec(q);
+		var mode = m ? m[1] : (q.indexOf('debug=1') !== -1 ? 'full' : '');
+
+		if (mode === 'full' || mode === 'overlay') {
 			passThrough = true;
 			build('Limpid Chess diagnostics',
 				'Tap the screen a few times, then screenshot this panel.');
+		}
+		if (mode === 'full') {
 			setInterval(render, 1000);
+		} else if (mode === 'rect') {
+			setInterval(function () {
+				var el = document.getElementById('canvas');
+				if (el) {
+					el.getBoundingClientRect();
+				}
+			}, 1000);
+		} else if (mode === 'est') {
+			setInterval(function () {
+				if (navigator.storage && navigator.storage.estimate) {
+					navigator.storage.estimate().then(function () {}, function () {});
+				}
+			}, 1000);
+		} else if (mode === 'noop') {
+			setInterval(function () { /* deliberately empty */ }, 1000);
+		} else if (mode === 'late') {
+			setTimeout(function () {
+				passThrough = true;
+				build('Frozen-state reading',
+					'These numbers cover the last 20 s, while it was stuck.');
+			}, 20000);
 		}
 		watch();
 	}
