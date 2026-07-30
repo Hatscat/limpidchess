@@ -5,6 +5,20 @@ inside the pck. The whole folder is `.gdignore`d; on a Web export the
 `limpid_export` plugin copies `engine/*` into the export directory
 (see `addons/limpid_export/web_export_plugin.gd`).
 
+## Service worker: navigations are network-first
+
+`build_web.sh` patch 4 makes **navigations only** network-first, with a 2.5 s timeout and
+the cached shell as fallback. Everything else stays cache-first, and offline still
+launches from cache.
+
+This is a safety valve, not a performance choice. The stock worker returns the cached
+`index.html` without ever consulting the network once the cache is complete, and the only
+thing that promotes a newly installed worker out of `waiting` is the `'update'` message
+posted by `GameManager._check_web_update()` — from inside the running game. So a device
+where the game fails to boot can never receive the fix that would make it boot, and a
+single bad deploy strands those users permanently, with no remote way to reach them.
+Costs one ~4 KB request per online launch. Do not revert it to save that request.
+
 ## boot_diagnostics.js — making iOS failures visible
 
 Inlined into `<head>` of the exported `index.html` by `build_web.sh` (step 4), ahead of

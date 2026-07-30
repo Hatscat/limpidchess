@@ -75,9 +75,44 @@ assert put_plain in src, "cache.put guard not found — did the Godot web templa
 src = src.replace(put_plain, put_guarded, 1)
 print("service worker: only OK responses are cached")
 
+# 4. Network-first for navigations (the HTML shell only; everything else stays
+#    cache-first). The stock worker returns the cached index.html without ever
+#    consulting the network once the cache is complete, and the only thing that
+#    promotes a newly installed worker out of "waiting" is the 'update' message
+#    posted by GameManager._check_web_update() — from inside the running game.
+#    So a device where the game fails to boot can never receive the fix that
+#    would make it boot, and one bad deploy strands those users permanently.
+#    A short timeout keeps offline and flaky-network launches instant.
+anchor = "// Check if we have full cache during HTML page request."
+assert anchor in src, "navigate branch not found — did the Godot web template change?"
+line = next(ln for ln in src.splitlines() if anchor in ln)
+pad = line[:len(line) - len(line.lstrip())]
+block = "\n".join(pad + ln if ln else "" for ln in [
+    "// Network-first for the shell, falling back to the cached copy below.",
+    "// Without this, a cached index.html that fails to boot is unfixable:",
+    "// the running game is what promotes a waiting worker, so a device that",
+    "// cannot start can never be updated. See build_web.sh patch 4.",
+    "let fresh = null;",
+    "try {",
+    "\tfresh = await Promise.race([",
+    "\t\tself.fetch(event.request.url, { cache: 'reload' }),",
+    "\t\tnew Promise((resolve) => { setTimeout(() => resolve(null), 2500); }),",
+    "\t]);",
+    "} catch (e) {",
+    "\tfresh = null;  // offline or blocked: the cache path below still launches",
+    "}",
+    "if (fresh != null && fresh.ok) {",
+    "\tevent.waitUntil(cache.put(CACHED_FILES[0], fresh.clone()));",
+    "\treturn fresh;",
+    "}",
+    "",
+])
+src = src.replace(pad + anchor, block + pad + anchor, 1)
+print("service worker: navigations are network-first (2.5 s timeout, cache fallback)")
+
 sw.write_text(src)
 
-# 4. Inline web/boot_diagnostics.js into <head>, ahead of index.js, so it is already
+# 5. Inline web/boot_diagnostics.js into <head>, ahead of index.js, so it is already
 #    listening when the engine boots. Inlined rather than shipped as a file so it needs
 #    no service-worker cache entry and can never itself 404 offline. See its header for
 #    why: a stalled iOS boot leaves nothing in the DOM to report, and there is no Apple
