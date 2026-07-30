@@ -123,9 +123,25 @@ diag = pathlib.Path("web/boot_diagnostics.js").read_text()
 assert "</head>" in page, "no </head> in the export — did the Godot web template change?"
 assert "limpid:boot_diagnostics" in diag, "marker missing from web/boot_diagnostics.js"
 assert "limpid:boot_diagnostics" not in page, "boot diagnostics already injected"
-page = page.replace("</head>", "\t\t<script>\n" + diag + "\t\t</script>\n\t</head>", 1)
+#    Same injection also hardens the canvas for iOS. Godot's stock shell puts
+#    `touch-action: none` on <body> only, but the property is not inherited, and
+#    Safari has let its gesture recognizer steal touch sequences from a canvas that
+#    does not set it itself. A stolen sequence ends in touchcancel instead of
+#    touchend, so a Godot button receives a press with no matching release and never
+#    activates — which looks exactly like "the buttons do nothing".
+css = (
+    "\t\t<style>\n"
+    "#canvas {\n"
+    "\ttouch-action: none;\n"
+    "\t-webkit-user-select: none;\n"
+    "\tuser-select: none;\n"
+    "\t-webkit-touch-callout: none;\n"
+    "}\n"
+    "\t\t</style>\n")
+page = page.replace("</head>", css + "\t\t<script>\n" + diag + "\t\t</script>\n\t</head>", 1)
 html.write_text(page)
-print("index.html: inlined boot diagnostics (?debug=1 overlay, ?reset=1 wipe)")
+print("index.html: canvas touch-action hardening + boot diagnostics "
+      "(?debug=1 overlay, ?reset=1 wipe)")
 EOF
 
 if [[ "${1:-}" == "--deploy" ]]; then
