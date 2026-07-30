@@ -166,6 +166,22 @@ body {
 		return aelOrig.call(this, type, wrapped, opts);
 	};
 
+	// Counts attempted removals of the canvas's input listeners. Purely observational:
+	// the wrapper above already registers a different function object than the engine
+	// holds, so these removals silently fail to match either way. If this reads
+	// nonzero, something tears Godot's touch handlers down after registration, and
+	// that accidental non-removal is what made iOS start working.
+	var removed = {};
+	var relOrig = EventTarget.prototype.removeEventListener;
+	EventTarget.prototype.removeEventListener = function (type, fn, opts) {
+		try {
+			if (this && this.id === 'canvas' && /^(touch|pointer|mouse)/.test(type)) {
+				removed[type] = (removed[type] || 0) + 1;
+			}
+		} catch (e) { /* never let the probe break removal */ }
+		return relOrig.call(this, type, fn, opts);
+	};
+
 	var errors = [];
 	var touches = 0;          // seen at window, capture phase
 	var canvasTouches = 0;    // actually delivered to the canvas element
@@ -339,6 +355,11 @@ body {
 				+ '   win ' + boundList('window'),
 			'ENGINE handler ran: touchstart ' + (engCalls.touchstart || 0)
 				+ '  touchend ' + (engCalls.touchend || 0),
+			'removeEL ' + (Object.keys(removed).length
+				? Object.keys(removed).map(function (k) {
+					return k + ' x' + removed[k];
+				}).join(', ')
+				: 'none'),
 			'window   ' + window.innerWidth + 'x' + window.innerHeight
 				+ ' dpr' + (window.devicePixelRatio || 1),
 			'visual   ' + (vv ? Math.round(vv.width) + 'x' + Math.round(vv.height)
