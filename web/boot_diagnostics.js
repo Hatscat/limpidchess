@@ -30,9 +30,11 @@
 	// event reaches the canvas; this says whether Godot ever asked to hear about it.
 	// `selfProbe` excludes our own listeners from the tally.
 	var bound = { canvas: {}, document: {}, window: {} };
+	var engCalls = {};   // times the ENGINE's own handler actually ran
 	var selfProbe = false;
 	var aelOrig = EventTarget.prototype.addEventListener;
 	EventTarget.prototype.addEventListener = function (type, fn, opts) {
+		var wrapped = fn;
 		try {
 			if (!selfProbe && /^(touch|pointer|mouse|click|key)/.test(type)) {
 				var tag = this === window ? 'window'
@@ -41,9 +43,21 @@
 				if (tag) {
 					bound[tag][type] = true;
 				}
+				// Wrap the engine's touch handlers so we can count invocations, not
+				// just registrations. Everything else here proves the event reaches
+				// the element; only this proves Godot's code runs on it. Functions
+				// only (never an EventListener object), and the return value is passed
+				// through untouched.
+				if (tag === 'canvas' && typeof fn === 'function'
+						&& (type === 'touchstart' || type === 'touchend')) {
+					wrapped = function (e) {
+						engCalls[type] = (engCalls[type] || 0) + 1;
+						return fn.apply(this, arguments);
+					};
+				}
 			}
 		} catch (e) { /* never let the probe break registration */ }
-		return aelOrig.call(this, type, fn, opts);
+		return aelOrig.call(this, type, wrapped, opts);
 	};
 
 	var errors = [];
@@ -214,10 +228,11 @@
 		var vv = window.visualViewport;
 		var lines = [
 			'ua       ' + navigator.userAgent.slice(0, 78),
-			'engine subscribes to:',
-			'  canvas ' + boundList('canvas'),
-			'  doc    ' + boundList('document'),
-			'  window ' + boundList('window'),
+			'bound    canvas ' + (bound.canvas.touchstart ? 'touch+' : 'touch-')
+				+ (bound.canvas.mousedown ? 'mouse' : 'NOMOUSE')
+				+ '   win ' + boundList('window'),
+			'ENGINE handler ran: touchstart ' + (engCalls.touchstart || 0)
+				+ '  touchend ' + (engCalls.touchend || 0),
 			'window   ' + window.innerWidth + 'x' + window.innerHeight
 				+ ' dpr' + (window.devicePixelRatio || 1),
 			'visual   ' + (vv ? Math.round(vv.width) + 'x' + Math.round(vv.height)
