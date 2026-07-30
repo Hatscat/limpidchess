@@ -76,6 +76,21 @@ src = src.replace(put_plain, put_guarded, 1)
 print("service worker: only OK responses are cached")
 
 sw.write_text(src)
+
+# 4. Inline web/boot_diagnostics.js into <head>, ahead of index.js, so it is already
+#    listening when the engine boots. Inlined rather than shipped as a file so it needs
+#    no service-worker cache entry and can never itself 404 offline. See its header for
+#    why: a stalled iOS boot leaves nothing in the DOM to report, and there is no Apple
+#    device here to reproduce on.
+html = pathlib.Path("build/web/index.html")
+page = html.read_text()
+diag = pathlib.Path("web/boot_diagnostics.js").read_text()
+assert "</head>" in page, "no </head> in the export — did the Godot web template change?"
+assert "limpid:boot_diagnostics" in diag, "marker missing from web/boot_diagnostics.js"
+assert "limpid:boot_diagnostics" not in page, "boot diagnostics already injected"
+page = page.replace("</head>", "\t\t<script>\n" + diag + "\t\t</script>\n\t</head>", 1)
+html.write_text(page)
+print("index.html: inlined boot diagnostics (?debug=1 overlay, ?reset=1 wipe)")
 EOF
 
 if [[ "${1:-}" == "--deploy" ]]; then

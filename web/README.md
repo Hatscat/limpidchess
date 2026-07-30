@@ -5,6 +5,30 @@ inside the pck. The whole folder is `.gdignore`d; on a Web export the
 `limpid_export` plugin copies `engine/*` into the export directory
 (see `addons/limpid_export/web_export_plugin.gd`).
 
+## boot_diagnostics.js — making iOS failures visible
+
+Inlined into `<head>` of the exported `index.html` by `build_web.sh` (step 4), ahead of
+`index.js`. Inlined rather than shipped as a file so it needs no service-worker cache
+entry and can never 404 offline. It only adds **passive capture** listeners and never
+calls `preventDefault`/`stopPropagation`, so it cannot alter how input reaches the canvas.
+
+Godot's stock shell only reports *thrown* errors. The two iOS failures reported from the
+field produce nothing in the DOM at all: a tab killed mid-wasm-compile just sits at a
+full progress bar, and a poisoned service-worker cache survives every refresh. There is
+no Apple device on this box, so the only way forward is to instrument.
+
+| URL | Behavior |
+|---|---|
+| `/play/` | Watchdog only. After 40 s stalled, shows a panel with diagnostics and a **Reset and reload** button (unregisters the service worker, deletes every cache, reloads clean). |
+| `/play/?debug=1` | Live pass-through overlay from boot: UA, window vs `visualViewport`, canvas pixel size vs CSS rect vs offset, a tap counter with last coordinates, storage usage/quota, service-worker control, captured errors. |
+| `/play/?reset=1` | Wipes service worker + caches immediately, then boots clean. Sendable to anyone stuck. |
+
+Reading the `?debug=1` dump: if **touches** increments but the game does not respond, the
+taps reach the page and the problem is coordinate mapping, so compare the `canvas` line
+(pixel size, CSS size, offset) against `window`/`visual`. If **touches** stays at 0, the
+events never reach the page at all. If `storage` sits near its quota, the ~47 MB of
+cacheable files is being evicted, which points at the payload rather than the code.
+
 ## engine/ — Stockfish for the browser
 
 `stockfish-18-lite-single.js` + `.wasm`: Stockfish 18, "lite" NNUE net,
