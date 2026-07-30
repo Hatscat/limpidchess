@@ -19,23 +19,33 @@ where the game fails to boot can never receive the fix that would make it boot, 
 single bad deploy strands those users permanently, with no remote way to reach them.
 Costs one ~4 KB request per online launch. Do not revert it to save that request.
 
-## ⚠️ boot_diagnostics.js is currently load-bearing on iOS
+## The iOS input freeze (July 2026): what it was not, and what it probably was
 
-**Do not strip it as "just diagnostics" until this note is gone.** iOS Safari showed a
-total input freeze: the game rendered, the engine ticked at 60 fps, taps reached the
-canvas and completed cleanly, and Godot's touch handlers were registered — yet nothing
-responded. Adding the handler-invocation wrapper made it work, and the only behavior that
-wrapper changes is that Godot registers a *different* function object than it later hands
-to `removeEventListener`, so **its touch listeners can no longer be removed**.
+iOS Safari showed a total input freeze on some iPhones while Android and other iPhones
+were fine: the game rendered, the engine ticked at 60 fps, taps reached the canvas and
+completed cleanly (`down N up N CANCEL 0`), Godot's touch handlers were registered *and
+ran*, audio ran, focus was correct. Every browser-level probe was healthy, because the
+browser genuinely was healthy.
 
-Working theory: something tears those listeners down after registration. Chromium is
-unaffected because it synthesizes a full mouse-event stream from touch and Godot also
-binds `mousedown` on the canvas, so the UI keeps working through the mouse path; iOS
-Safari does not synthesize those, so touch is the only path and removing it is fatal.
+**Ruled out by measurement**, in order: canvas/viewport offset, storage quota exhaustion,
+memory pressure and WebGL context loss, `touch-action` gesture stealing, missing mouse
+synthesis (`cursor: pointer`), and listener teardown (`removeEL` reads `none` on both
+platforms, so nothing removes Godot's handlers).
 
-Unconfirmed. The `removeEL` line exists to confirm or kill it. Once we know what calls
-remove and why, replace this accident with a deliberate, narrow guard and delete this
-section.
+**Leading explanation: service-worker version skew.** Patch 4 makes `index.html`
+network-first, but `index.pck` and `index.wasm` stay cache-first. A newly installed
+worker sits in `waiting` until something promotes it, so the page shell can be brand new
+while the game data it loads is still the previous build's — or a bad first fetch that
+got cached. That is invisible to every probe above and matches every symptom, including
+why only some devices were hit and why `sw: controlled` was the single line that ever
+differed between a broken iPhone and a working Android.
+
+`boot_diagnostics.js` now reports `sw state` and lists cache versions (two caches = skew),
+and promotes a held-back worker itself via the `'claim'` message. It uses `'claim'` rather
+than `'update'` deliberately: it activates the new worker without navigating clients, so
+it cannot interrupt a game in another tab. `GameManager._check_web_update()` only promotes
+when it is the sole tab and online, which strands a worker indefinitely for anyone
+browsing with other tabs open.
 
 ## boot_diagnostics.js — making iOS failures visible
 

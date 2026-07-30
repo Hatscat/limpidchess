@@ -91,6 +91,8 @@
 	var engFrames = 0;   // rAF callbacks from anyone else, i.e. Godot's main loop
 	var engFps = 0;
 	var audioCtx = null;
+	var swState = 'checking';
+	var cacheList = '?';
 	var started = false;
 	var overlay = null;
 	var pre = null;
@@ -288,7 +290,7 @@
 		if (!pre) {
 			return;
 		}
-		var base = diagnostics();
+		var base = diagnostics() + '\nsw state ' + swState + '\ncaches   ' + cacheList;
 		pre.textContent = base;
 		if (navigator.storage && navigator.storage.estimate) {
 			navigator.storage.estimate().then(function (e) {
@@ -297,6 +299,69 @@
 					+ mb(e.quota) + ' quota';
 			}, function () { /* Safari private mode rejects; the rest still reads fine */ });
 		}
+	}
+
+	// index.html is network-first but the pck and wasm stay cache-first, so a newly
+	// installed worker sitting in `waiting` means the page is fresh while the game data
+	// it loads is not. That skew is invisible to every other probe here: the browser
+	// looks perfectly healthy because it is. More than one cache listed = skew present.
+	function watchServiceWorker() {
+		if (!navigator.serviceWorker || !navigator.serviceWorker.getRegistration) {
+			swState = 'unsupported';
+			return;
+		}
+		if (window.caches && caches.keys) {
+			caches.keys().then(function (ks) {
+				cacheList = ks.length
+					? ks.map(function (k) {
+						return k.replace(/^.*sw-cache-/, '');
+					}).join(' + ') + (ks.length > 1 ? '   <-- SKEW' : '')
+					: 'none';
+				render();
+			}, function () { /* ignore */ });
+		}
+		navigator.serviceWorker.getRegistration().then(function (reg) {
+			if (!reg) {
+				swState = 'no registration';
+				render();
+				return;
+			}
+			function report() {
+				swState = (reg.active ? 'active' : 'no active')
+					+ (reg.waiting ? '  WAITING (new build held back)' : '')
+					+ (reg.installing ? '  installing' : '');
+				render();
+			}
+			// Promote a held-back worker. 'claim' makes the SW skipWaiting + claim
+			// without navigating clients, unlike 'update', so it cannot interrupt a
+			// game in another tab: this page keeps the data it already loaded and the
+			// next launch gets the new cache. GameManager._check_web_update() only
+			// does this when it is the sole tab and online, which leaves a worker
+			// stranded indefinitely for anyone browsing with other tabs open.
+			function promote() {
+				if (reg.waiting && navigator.serviceWorker.controller) {
+					reg.waiting.postMessage('claim');
+				}
+				report();
+			}
+			reg.addEventListener('updatefound', function () {
+				var inst = reg.installing;
+				if (!inst) {
+					return;
+				}
+				inst.addEventListener('statechange', function () {
+					if (inst.state === 'installed') {
+						promote();
+					}
+				});
+			});
+			try {
+				reg.update();
+			} catch (e) { /* offline */ }
+			promote();
+		}, function () {
+			swState = 'lookup failed';
+		});
 	}
 
 	/** Drop the service worker and every cache, then reload clean. */
@@ -390,6 +455,7 @@
 		if (c) {
 			probeCanvas(c);
 		}
+		watchServiceWorker();
 		if (q.indexOf('debug=1') !== -1) {
 			passThrough = true;
 			build('Limpid Chess diagnostics',
