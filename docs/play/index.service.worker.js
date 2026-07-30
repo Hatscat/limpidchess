@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1785425577|4910678';
+const CACHE_VERSION = '1785432250|3802756';
 /** @type {string} */
 const CACHE_PREFIX = 'Limpid Chess-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
@@ -105,6 +105,23 @@ self.addEventListener(
 				// Try to use cache first
 				const cache = await caches.open(CACHE_NAME);
 				if (isNavigate) {
+					// Network-first for the shell, falling back to the cached copy below.
+					// Without this, a cached index.html that fails to boot is unfixable:
+					// the running game is what promotes a waiting worker, so a device that
+					// cannot start can never be updated. See build_web.sh patch 4.
+					let fresh = null;
+					try {
+						fresh = await Promise.race([
+							self.fetch(event.request.url, { cache: 'reload' }),
+							new Promise((resolve) => { setTimeout(() => resolve(null), 2500); }),
+						]);
+					} catch (e) {
+						fresh = null;  // offline or blocked: the cache path below still launches
+					}
+					if (fresh != null && fresh.ok) {
+						event.waitUntil(cache.put(CACHED_FILES[0], fresh.clone()));
+						return fresh;
+					}
 					// Check if we have full cache during HTML page request.
 					/** @type {Response[]} */
 					const fullCache = await Promise.all(FULL_CACHE.map((name) => cache.match(name)));

@@ -123,8 +123,14 @@ body {
 	var BG = '#171a1f';
 
 	var errors = [];
-	var touches = 0;
-	var lastTouch = '';
+	var touches = 0;          // seen at window, capture phase
+	var canvasTouches = 0;    // actually delivered to the canvas element
+	var lastX = -1;
+	var lastY = -1;
+	var glLost = 0;
+	var frames = 0;
+	var fps = 0;
+	var fpsAt = 0;
 	var started = false;
 	var overlay = null;
 	var pre = null;
@@ -146,6 +152,18 @@ body {
 		note('rejection', (r && (r.message || String(r))) || 'unknown');
 	});
 
+	// Godot prints its own failures (shader/context/script) to the console, which is
+	// invisible on a phone. Mirror them into the panel.
+	['error', 'warn'].forEach(function (level) {
+		var orig = console[level];
+		console[level] = function () {
+			try {
+				note(level, Array.prototype.join.call(arguments, ' ').slice(0, 200));
+			} catch (e) { /* never let logging break the page */ }
+			return orig.apply(console, arguments);
+		};
+	});
+
 	// Passive capture probe: did the tap reach the page at all, and at what coords?
 	// Compare against the canvas rect below to spot a hit-test offset.
 	['touchstart', 'pointerdown'].forEach(function (type) {
@@ -153,11 +171,53 @@ body {
 			touches++;
 			var p = (e.touches && e.touches[0]) ? e.touches[0] : e;
 			if (typeof p.clientX === 'number') {
-				lastTouch = ' last ' + Math.round(p.clientX) + ',' + Math.round(p.clientY);
+				lastX = Math.round(p.clientX);
+				lastY = Math.round(p.clientY);
 			}
 			render();
 		}, { passive: true, capture: true });
 	});
+
+	// Same probe, but bound to the canvas itself. window sees the capture phase, so a
+	// nonzero `touches` with a zero `canvas` count means the event never reached
+	// Godot's own listeners: something is swallowing it in between.
+	function probeCanvas(c) {
+		['touchstart', 'pointerdown'].forEach(function (type) {
+			c.addEventListener(type, function () {
+				canvasTouches++;
+				render();
+			}, { passive: true });
+		});
+		c.addEventListener('webglcontextlost', function () {
+			glLost++;
+			note('webgl', 'context lost');
+		}, false);
+		c.addEventListener('webglcontextrestored', function () {
+			note('webgl', 'context restored');
+		}, false);
+	}
+
+	// Is the browser still painting? Godot drives its main loop from rAF, so a frozen
+	// rAF and a frozen game are the same failure.
+	function tick(t) {
+		frames++;
+		if (t - fpsAt >= 1000) {
+			fps = Math.round((frames * 1000) / (t - fpsAt));
+			frames = 0;
+			fpsAt = t;
+		}
+		requestAnimationFrame(tick);
+	}
+	requestAnimationFrame(tick);
+
+	function describe(el) {
+		if (!el) {
+			return 'none';
+		}
+		return el.tagName + (el.id ? '#' + el.id : '')
+			+ (el.className && el.className.baseVal === undefined && el.className
+				? '.' + String(el.className).split(' ')[0] : '');
+	}
 
 	function diagnostics() {
 		var c = document.getElementById('canvas');
@@ -172,7 +232,14 @@ body {
 			'canvas   ' + (c ? c.width + 'x' + c.height
 				+ ' css ' + Math.round(r.width) + 'x' + Math.round(r.height)
 				+ ' @' + Math.round(r.left) + ',' + Math.round(r.top) : 'MISSING'),
-			'touches  ' + touches + lastTouch,
+			'touches  win ' + touches + ' canvas ' + canvasTouches
+				+ (lastX < 0 ? '' : ' last ' + lastX + ',' + lastY),
+			// What the browser thinks is on top at the tap point. Anything other than
+			// CANVAS#canvas means an element is intercepting taps.
+			'hitTest  ' + (lastX < 0 ? 'no tap yet' : describe(
+				document.elementFromPoint(lastX, lastY))),
+			'raf      ' + fps + 'fps' + (glLost ? '  GL CONTEXT LOST x' + glLost : ''),
+			'focus    ' + describe(document.activeElement),
 			'sw       ' + (navigator.serviceWorker
 				? (navigator.serviceWorker.controller ? 'controlled' : 'not controlling')
 				: 'unsupported'),
@@ -286,6 +353,10 @@ body {
 		if (q.indexOf('reset=1') !== -1) {
 			hardReset();
 			return;
+		}
+		var c = document.getElementById('canvas');
+		if (c) {
+			probeCanvas(c);
 		}
 		if (q.indexOf('debug=1') !== -1) {
 			passThrough = true;
