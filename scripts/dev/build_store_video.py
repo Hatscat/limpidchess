@@ -30,6 +30,7 @@ W, H = 1920, 1080
 ACCENT = (102, 189, 217)
 WHITE = (237, 242, 247)
 GRAY = (176, 190, 202)
+MOVE_BEST = (92, 199, 133)   # UI.MOVE_BEST, the green the game reveals a best move in
 G0 = (13, 15, 23)      # gradient top-left, matches shot_feature.gd
 G1 = (23, 41, 54)      # gradient bottom-right
 
@@ -138,6 +139,68 @@ def build_fg(path, eyebrow, headline, sub):
     fg.save(path)
 
 
+def build_thumbnail(path):
+    """YouTube custom thumbnail: 1280x720, two words per line, legible at 210px wide.
+
+    Deliberately louder than the in-video cards. A thumbnail is read at thumbnail
+    size, so it gets the "before move" screenshot (the three arrows are the whole
+    pitch) and two short lines, the payoff line in the best-move green.
+    """
+    TW_, TH_ = 1280, 720
+    bg = Image.new("RGB", (TW_, TH_))
+    px = bg.load()
+    maxd = (TW_ - 1) + (TH_ - 1)
+    for y in range(TH_):
+        for x in range(TW_):
+            t = (x + y) / maxd
+            px[x, y] = tuple(int(G0[i] + (G1[i] - G0[i]) * t) for i in range(3))
+    card = bg.convert("RGBA")
+
+    shot = Image.open(os.path.join(ROOT, "docs", "img", "Screenshot_before_move_x3.png"))
+    ph = 620
+    pw = round(ph * shot.size[0] / shot.size[1])
+    shot = shot.resize((pw, ph), Image.LANCZOS).convert("RGBA")
+    m = Image.new("L", (pw, ph), 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, pw, ph], 26, fill=255)
+    shot.putalpha(m)
+    sx, sy = 90, (TH_ - ph) // 2
+
+    shadow = Image.new("RGBA", (TW_, TH_), (0, 0, 0, 0))
+    sd = Image.new("RGBA", (pw, ph), (0, 0, 0, 150))
+    sd.putalpha(m)
+    shadow.paste(sd, (sx, sy + 10), sd)
+    card = Image.alpha_composite(card, shadow.filter(ImageFilter.GaussianBlur(18)))
+    card.paste(shot, (sx, sy), shot)
+    ImageDraw.Draw(card).rounded_rectangle([sx, sy, sx + pw, sy + ph], 26,
+                                           outline=ACCENT + (90,), width=2)
+
+    draw = ImageDraw.Draw(card)
+    tx = sx + pw + 70
+    tw = TW_ - tx - 56
+    lines = [("Three moves.", WHITE), ("One is best.", MOVE_BEST)]
+
+    size = 96                                    # shrink to fit the column
+    while size > 40:
+        f = ImageFont.truetype(BOLD, size)
+        if max(draw.textlength(t, font=f) for t, _ in lines) <= tw:
+            break
+        size -= 2
+    f_head = ImageFont.truetype(BOLD, size)
+    f_eye = ImageFont.truetype(BOLD, 27)
+
+    lh = round(size * 1.22)
+    total = 34 + 30 + lh * len(lines)
+    y = (TH_ - total) // 2
+    draw_tracked(draw, (tx, y), "LIMPID CHESS", f_eye, ACCENT, 7)
+    y += 34 + 30
+    for text, fill in lines:
+        draw.text((tx, y), text, font=f_head, fill=fill)
+        y += lh
+
+    card.convert("RGB").save(path)
+    print("wrote", path)
+
+
 def has_audio(src):
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
@@ -147,9 +210,15 @@ def has_audio(src):
 
 
 def main():
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    thumb_only = "--thumb" in sys.argv
     home = os.path.expanduser("~")
-    src = sys.argv[1] if len(sys.argv) > 1 else f"{home}/Videos/limpid_chess_promo_1080x1920.mp4"
-    out = sys.argv[2] if len(sys.argv) > 2 else f"{home}/Videos/limpid_chess_promo_1920x1080.mp4"
+    src = args[0] if len(args) > 0 else f"{home}/Videos/limpid_chess_promo_1080x1920.mp4"
+    out = args[1] if len(args) > 1 else f"{home}/Videos/limpid_chess_promo_1920x1080.mp4"
+
+    build_thumbnail(os.path.join(ROOT, "docs", "img", "youtube_thumb_1280x720.png"))
+    if thumb_only:
+        return
     if not os.path.exists(src):
         sys.exit(f"source not found: {src}")
 
