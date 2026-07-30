@@ -31,9 +31,12 @@
 	var lastX = -1;
 	var lastY = -1;
 	var glLost = 0;
-	var frames = 0;
+	var frames = 0;      // our own rAF: is the browser painting at all
 	var fps = 0;
 	var fpsAt = 0;
+	var engFrames = 0;   // rAF callbacks from anyone else, i.e. Godot's main loop
+	var engFps = 0;
+	var audioCtx = null;
 	var started = false;
 	var overlay = null;
 	var pre = null;
@@ -100,18 +103,50 @@
 		}, false);
 	}
 
-	// Is the browser still painting? Godot drives its main loop from rAF, so a frozen
-	// rAF and a frozen game are the same failure.
+	// Two separate frame counters, and the difference between them is the whole point.
+	// `raf` is ours and only says the browser is still painting. `engine` counts rAF
+	// callbacks registered by anyone else — in this page, emscripten's main loop. A
+	// healthy browser (raf 60) with a dead engine (engine 0) means Godot stopped
+	// ticking, which no other probe here can distinguish. We run before index.js, so
+	// the patched function is the one emscripten picks up, and the handle is passed
+	// straight through so cancelAnimationFrame still works.
+	var rafOrig = window.requestAnimationFrame.bind(window);
+	window.requestAnimationFrame = function (cb) {
+		return rafOrig(function (t) {
+			engFrames++;
+			return cb(t);
+		});
+	};
+
 	function tick(t) {
 		frames++;
 		if (t - fpsAt >= 1000) {
 			fps = Math.round((frames * 1000) / (t - fpsAt));
+			engFps = Math.round((engFrames * 1000) / (t - fpsAt));
 			frames = 0;
+			engFrames = 0;
 			fpsAt = t;
 		}
-		requestAnimationFrame(tick);
+		rafOrig(tick);
 	}
-	requestAnimationFrame(tick);
+	rafOrig(tick);
+
+	// iOS Safari is strict about AudioContext resuming only inside a user gesture, and
+	// Godot resumes on first input. If that path throws, input dies with it.
+	['AudioContext', 'webkitAudioContext'].forEach(function (name) {
+		var Orig = window[name];
+		if (typeof Orig !== 'function') {
+			return;
+		}
+		function Patched() {
+			var bound = Function.prototype.bind.apply(
+				Orig, [null].concat(Array.prototype.slice.call(arguments)));
+			audioCtx = new bound();
+			return audioCtx;
+		}
+		Patched.prototype = Orig.prototype;
+		window[name] = Patched;
+	});
 
 	function describe(el) {
 		if (!el) {
@@ -141,7 +176,9 @@
 			// CANVAS#canvas means an element is intercepting taps.
 			'hitTest  ' + (lastX < 0 ? 'no tap yet' : describe(
 				document.elementFromPoint(lastX, lastY))),
-			'raf      ' + fps + 'fps' + (glLost ? '  GL CONTEXT LOST x' + glLost : ''),
+			'raf      browser ' + fps + 'fps  ENGINE ' + engFps + 'fps'
+				+ (glLost ? '  GL CONTEXT LOST x' + glLost : ''),
+			'audio    ' + (audioCtx ? audioCtx.state : 'none created'),
 			'focus    ' + describe(document.activeElement),
 			'sw       ' + (navigator.serviceWorker
 				? (navigator.serviceWorker.controller ? 'controlled' : 'not controlling')
