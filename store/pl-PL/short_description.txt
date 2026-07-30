@@ -1,1 +1,1 @@
-Szachy z 3 ruchami na turę: znajdź najlepszy!
+Szachy na luzie, 3 ruchy na turę: znajdź najlepszy!

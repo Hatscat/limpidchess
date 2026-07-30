@@ -1,1 +1,1 @@
-A chess game with 3 moves per turn: find the strongest one!
+A casual chess game with 3 moves per turn: find the strongest one!
