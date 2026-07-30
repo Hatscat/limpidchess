@@ -94,7 +94,15 @@ body {
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 <link rel="manifest" href="index.manifest.json">
 
-			<script>
+			<style>
+#canvas {
+	touch-action: none;
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+		</style>
+		<script>
 /* limpid:boot_diagnostics — build_web.sh greps this marker to stay idempotent.
  *
  * Boot diagnostics + self-heal for the web build.
@@ -125,6 +133,9 @@ body {
 	var errors = [];
 	var touches = 0;          // seen at window, capture phase
 	var canvasTouches = 0;    // actually delivered to the canvas element
+	var cUp = 0;              // completed releases
+	var cCancel = 0;          // iOS pulled the sequence away (gesture recognition)
+	var cMove = 0;            // movement between down and up reads as a drag, not a tap
 	var lastX = -1;
 	var lastY = -1;
 	var glLost = 0;
@@ -188,6 +199,24 @@ body {
 		['touchstart', 'pointerdown'].forEach(function (type) {
 			c.addEventListener(type, function () {
 				canvasTouches++;
+				render();
+			}, { passive: true });
+		});
+		// A Godot button needs press AND release on the same control. Counting only
+		// the press hides the two ways a tap dies on iOS: Safari stealing the sequence
+		// for gesture recognition (touchcancel), or enough drift that it reads as a
+		// drag. Both leave the press counter looking perfectly healthy.
+		[['touchend', 'up'], ['pointerup', 'up'],
+			['touchcancel', 'cancel'], ['pointercancel', 'cancel'],
+			['touchmove', 'move'], ['pointermove', 'move']].forEach(function (pair) {
+			c.addEventListener(pair[0], function () {
+				if (pair[1] === 'up') {
+					cUp++;
+				} else if (pair[1] === 'cancel') {
+					cCancel++;
+				} else {
+					cMove++;
+				}
 				render();
 			}, { passive: true });
 		});
@@ -267,8 +296,9 @@ body {
 			'canvas   ' + (c ? c.width + 'x' + c.height
 				+ ' css ' + Math.round(r.width) + 'x' + Math.round(r.height)
 				+ ' @' + Math.round(r.left) + ',' + Math.round(r.top) : 'MISSING'),
-			'touches  win ' + touches + ' canvas ' + canvasTouches
-				+ (lastX < 0 ? '' : ' last ' + lastX + ',' + lastY),
+			'touches  win ' + touches + '  canvas down ' + canvasTouches
+				+ ' up ' + cUp + ' CANCEL ' + cCancel + ' move ' + cMove
+				+ (lastX < 0 ? '' : '  last ' + lastX + ',' + lastY),
 			// What the browser thinks is on top at the tap point. Anything other than
 			// CANVAS#canvas means an element is intercepting taps.
 			'hitTest  ' + (lastX < 0 ? 'no tap yet' : describe(
