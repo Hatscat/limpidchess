@@ -581,7 +581,7 @@ body {
 		// (?d=noop fails), so it is something render() *does*. These two split it:
 		//   ?d=text  the periodic DOM write only, no diagnostic reads
 		//   ?d=read  the diagnostic reads only, no DOM write
-		if (mode === 'text' || mode === 'read') {
+		if (mode === 'text' || mode === 'read' || mode === 'both' || mode === 'estw') {
 			passThrough = true;
 			build('Split test', 'Try to play. Ignore these numbers.');
 		}
@@ -618,6 +618,34 @@ body {
 		} else if (mode === 'read') {
 			setInterval(function () {
 				diagnostics();                       // reads only, result discarded
+			}, 1000);
+		} else if (mode === 'keep') {
+			// Everything ?debug=1 does, minus visibility. If this works it is directly
+			// shippable as a permanent keepalive, understanding can come afterwards.
+			// If it fails while ?debug=1 works, the *visible* panel is what matters,
+			// which points at compositing rather than at anything render() computes.
+			var host = document.createElement('div');
+			host.setAttribute('style', 'position:fixed;left:-9999px;top:0;width:1px;'
+				+ 'height:1px;overflow:hidden;pointer-events:none');
+			pre = document.createElement('pre');
+			host.appendChild(pre);
+			document.body.appendChild(host);
+			setInterval(render, 1000);
+		} else if (mode === 'both') {
+			// render() minus the async storage.estimate(): reads + one sync DOM write.
+			setInterval(function () {
+				if (pre) {
+					pre.textContent = diagnostics();
+				}
+			}, 1000);
+		} else if (mode === 'estw') {
+			// Only render()'s async tail: estimate(), then write from the callback.
+			setInterval(function () {
+				if (pre && navigator.storage && navigator.storage.estimate) {
+					navigator.storage.estimate().then(function (e) {
+						pre.textContent = 'used ' + (e && e.usage);
+					}, function () {});
+				}
 			}, 1000);
 		} else if (mode === 'late') {
 			setTimeout(function () {
