@@ -301,11 +301,52 @@ body {
 	// ticking, which no other probe here can distinguish. We run before index.js, so
 	// the patched function is the one emscripten picks up, and the handle is passed
 	// straight through so cancelAnimationFrame still works.
+	// Reads a few pixels straight out of Godot's WebGL context, right after the engine's
+	// own rAF callback returns and therefore before the frame is composited. This is the
+	// one measurement that separates "Godot is not drawing" from "Safari is not
+	// presenting what Godot drew" — every other probe sees the same thing either way.
+	// getContext() with no attributes returns the context Godot already created.
+	var glCtx = null;
+	var pixHash = -1;
+	var pixReads = 0;
+	var pixChanges = 0;
+	function samplePixels() {
+		try {
+			var cv = document.getElementById('canvas');
+			if (!cv || !cv.width) {
+				return;
+			}
+			if (!glCtx) {
+				glCtx = cv.getContext('webgl2') || cv.getContext('webgl');
+				if (!glCtx) {
+					return;
+				}
+			}
+			var n = 8;
+			var buf = new Uint8Array(n * n * 4);
+			glCtx.readPixels(Math.floor(cv.width / 2), Math.floor(cv.height / 2),
+				n, n, glCtx.RGBA, glCtx.UNSIGNED_BYTE, buf);
+			var s = 0;
+			for (var i = 0; i < buf.length; i++) {
+				s = (s * 31 + buf[i]) & 0x7fffffff;
+			}
+			pixReads++;
+			if (pixHash !== -1 && s !== pixHash) {
+				pixChanges++;
+			}
+			pixHash = s;
+		} catch (e) { /* context lost, or read not permitted: stay silent */ }
+	}
+
 	var rafOrig = window.requestAnimationFrame.bind(window);
 	window.requestAnimationFrame = function (cb) {
 		return rafOrig(function (t) {
 			engFrames++;
-			return cb(t);
+			var r = cb(t);
+			if (engFrames % 15 === 0) {   // 8x8 read 4x/second: negligible cost
+				samplePixels();
+			}
+			return r;
 		});
 	};
 
@@ -380,6 +421,8 @@ body {
 				document.elementFromPoint(lastX, lastY))),
 			'raf      browser ' + fps + 'fps  ENGINE ' + engFps + 'fps'
 				+ (glLost ? '  GL CONTEXT LOST x' + glLost : ''),
+			'PIXELS   reads ' + pixReads + '  changed ' + pixChanges
+				+ (pixReads > 20 && pixChanges === 0 ? '   <-- ENGINE NOT DRAWING' : ''),
 			'audio    ' + (audioCtx ? audioCtx.state : 'none created'),
 			'focus    ' + describe(document.activeElement),
 			'sw       ' + (navigator.serviceWorker
