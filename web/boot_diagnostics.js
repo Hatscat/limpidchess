@@ -561,6 +561,29 @@
 					}, function () {});
 				}
 			}, 1000);
+		} else if (mode === 'nudge') {
+			// Rotation is the only thing known to unfreeze this, and what rotation
+			// changes is the canvas's CSS size. Dirty it by half a pixel and Godot's
+			// updateSize() snaps it back on the next frame, taking the exact branch a
+			// rotation takes (including _updateGL). canvas.width is untouched, so the
+			// GL backing store is never reallocated.
+			setInterval(function () {
+				if (!c) {
+					return;
+				}
+				var h = parseFloat(c.style.height) || c.getBoundingClientRect().height;
+				c.style.height = (h + 0.5) + 'px';
+			}, 500);
+		} else if (mode === 'opacity') {
+			// Cheaper hypothesis: a pure compositor-level change, no layout, no GL.
+			// If this is enough, the fix costs nothing.
+			var flip = false;
+			setInterval(function () {
+				if (c) {
+					flip = !flip;
+					c.style.opacity = flip ? '0.999' : '1';
+				}
+			}, 500);
 		} else if (mode === 'late') {
 			setTimeout(function () {
 				passThrough = true;
