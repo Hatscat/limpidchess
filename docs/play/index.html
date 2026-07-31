@@ -576,6 +576,15 @@ body {
 		var m = /[?&]d=([a-z]+)/.exec(q);
 		var mode = m ? m[1] : (q.indexOf('debug=1') !== -1 ? 'full' : '');
 
+		// ?debug=1 works and ?d=overlay does not, and the only difference between them
+		// is that debug=1 re-runs render() every second. A bare timer is not enough
+		// (?d=noop fails), so it is something render() *does*. These two split it:
+		//   ?d=text  the periodic DOM write only, no diagnostic reads
+		//   ?d=read  the diagnostic reads only, no DOM write
+		if (mode === 'text' || mode === 'read') {
+			passThrough = true;
+			build('Split test', 'Try to play. Ignore these numbers.');
+		}
 		if (mode === 'full' || mode === 'overlay') {
 			passThrough = true;
 			build('Limpid Chess diagnostics',
@@ -598,6 +607,18 @@ body {
 			}, 1000);
 		} else if (mode === 'noop') {
 			setInterval(function () { /* deliberately empty */ }, 1000);
+		} else if (mode === 'text') {
+			var n = 0;
+			setInterval(function () {
+				if (pre) {
+					n += 1;
+					pre.textContent = 'tick ' + n;   // DOM write, nothing read
+				}
+			}, 1000);
+		} else if (mode === 'read') {
+			setInterval(function () {
+				diagnostics();                       // reads only, result discarded
+			}, 1000);
 		} else if (mode === 'late') {
 			setTimeout(function () {
 				passThrough = true;
