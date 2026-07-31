@@ -97,6 +97,8 @@ body {
 			<style>
 #canvas {
 	cursor: pointer;
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
 	touch-action: none;
 	-webkit-user-select: none;
 	user-select: none;
@@ -562,6 +564,26 @@ body {
 			probeCanvas(c);
 		}
 		watchServiceWorker();
+
+		// A/B control for the compositing fix: ?d=nofix strips the layer promotion so
+		// the portrait freeze should come back. If it does not, the CSS was not what
+		// fixed it and we are looking at the wrong thing again.
+		if (q.indexOf('d=nofix') !== -1 && c) {
+			c.style.transform = 'none';
+			c.style.webkitTransform = 'none';
+		}
+
+		// Belt and braces for the same bug: if presentation ever stalls again, a real
+		// size change is the one thing Godot's updateSize() reacts to. Rotating the
+		// phone is what a user would stumble into; this makes it automatic.
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener('resize', function () {
+				if (c) {
+					c.style.transform = c.style.transform === 'none'
+						? 'none' : 'translateZ(0)';
+				}
+			});
+		}
 		// iOS plays correctly with ?debug=1 and is frozen without it, so something in
 		// the overlay path is the accidental cure. These modes isolate the candidates,
 		// one variable each, so a tester only has to answer "can you tap New Game?".
