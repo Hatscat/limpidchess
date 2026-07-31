@@ -203,6 +203,7 @@
 	var pixHash = -1;
 	var pixReads = 0;
 	var pixChanges = 0;
+	var glInfo = '?';
 	function samplePixels() {
 		try {
 			var cv = document.getElementById('canvas');
@@ -215,13 +216,28 @@
 					return;
 				}
 			}
+			// Four points, not one. Sampling only the centre reads blank background
+			// on most screens, so a perfectly healthy render looked like "not drawing".
 			var n = 8;
 			var buf = new Uint8Array(n * n * 4);
-			glCtx.readPixels(Math.floor(cv.width / 2), Math.floor(cv.height / 2),
-				n, n, glCtx.RGBA, glCtx.UNSIGNED_BYTE, buf);
 			var s = 0;
-			for (var i = 0; i < buf.length; i++) {
-				s = (s * 31 + buf[i]) & 0x7fffffff;
+			var pts = [[0.3, 0.3], [0.7, 0.35], [0.3, 0.7], [0.7, 0.75]];
+			for (var q = 0; q < pts.length; q++) {
+				glCtx.readPixels(Math.floor(cv.width * pts[q][0]),
+					Math.floor(cv.height * pts[q][1]),
+					n, n, glCtx.RGBA, glCtx.UNSIGNED_BYTE, buf);
+				for (var i = 0; i < buf.length; i++) {
+					s = (s * 31 + buf[i]) & 0x7fffffff;
+				}
+			}
+			// Safari silently clamps a drawing buffer it cannot allocate, and a portrait
+			// canvas here is 1974px tall against 912px in landscape. If the buffer no
+			// longer matches the canvas, that mismatch IS the bug.
+			glInfo = glCtx.drawingBufferWidth + 'x' + glCtx.drawingBufferHeight;
+			glInfo += (glCtx.drawingBufferWidth !== cv.width
+				|| glCtx.drawingBufferHeight !== cv.height) ? '  CLAMPED!' : ' ok';
+			if (glCtx.isContextLost && glCtx.isContextLost()) {
+				glInfo += '  LOST';
 			}
 			pixReads++;
 			if (pixHash !== -1 && s !== pixHash) {
@@ -236,7 +252,7 @@
 		return rafOrig(function (t) {
 			engFrames++;
 			var r = cb(t);
-			if (engFrames % 15 === 0) {   // 8x8 read 4x/second: negligible cost
+			if (engFrames % 20 === 0) {   // 4 small reads, 3x/second
 				samplePixels();
 			}
 			return r;
@@ -290,8 +306,8 @@
 		var c = document.getElementById('canvas');
 		if (!verbose) {
 			var out = [
-				'PIXELS reads ' + pixReads + ' changed ' + pixChanges
-					+ (pixReads > 20 && pixChanges === 0 ? '  <-- NOT DRAWING' : ''),
+				'PIXELS reads ' + pixReads + ' changed ' + pixChanges,
+				'GLBUF  ' + glInfo,
 				'raf ' + fps + ' / engine ' + engFps + 'fps',
 				'win ' + window.innerWidth + 'x' + window.innerHeight
 					+ '  canvas ' + (c ? c.width + 'x' + c.height : '?'),
