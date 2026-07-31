@@ -97,6 +97,7 @@
 	var overlay = null;
 	var pre = null;
 	var passThrough = false;
+	var verbose = false;
 
 	function note(kind, msg) {
 		errors.push(kind + ': ' + msg);
@@ -281,8 +282,26 @@
 				? '.' + String(el.className).split(' ')[0] : '');
 	}
 
+	// Compact by default: the panel has to leave the game clickable, especially in
+	// landscape. Everything trimmed here has already given its answer (service worker
+	// ruled out by the private-tab test, listeners bound and firing, no removals, no
+	// gesture cancels, focus and hit-test correct). ?debug=all brings it all back.
 	function diagnostics() {
 		var c = document.getElementById('canvas');
+		if (!verbose) {
+			var out = [
+				'PIXELS reads ' + pixReads + ' changed ' + pixChanges
+					+ (pixReads > 20 && pixChanges === 0 ? '  <-- NOT DRAWING' : ''),
+				'raf ' + fps + ' / engine ' + engFps + 'fps',
+				'win ' + window.innerWidth + 'x' + window.innerHeight
+					+ '  canvas ' + (c ? c.width + 'x' + c.height : '?'),
+				'taps ' + canvasTouches + ' down ' + cUp + ' up ' + cCancel + ' cancel'
+			];
+			if (errors.length) {
+				out.push('err ' + errors[errors.length - 1].slice(0, 70));
+			}
+			return out.join('\n');
+		}
 		var r = c ? c.getBoundingClientRect() : null;
 		var vv = window.visualViewport;
 		var lines = [
@@ -333,9 +352,11 @@
 		if (!pre) {
 			return;
 		}
-		var base = diagnostics() + '\nsw state ' + swState + '\ncaches   ' + cacheList;
+		var base = verbose
+			? diagnostics() + '\nsw state ' + swState + '\ncaches   ' + cacheList
+			: diagnostics();
 		pre.textContent = base;
-		if (navigator.storage && navigator.storage.estimate) {
+		if (verbose && navigator.storage && navigator.storage.estimate) {
 			navigator.storage.estimate().then(function (e) {
 				var mb = function (n) { return Math.round((n || 0) / 1048576) + 'MB'; };
 				pre.textContent = base + '\nstorage  ' + mb(e.usage) + ' used / '
@@ -427,23 +448,26 @@
 
 	function build(title, blurb) {
 		var box = 'position:fixed;left:0;right:0;top:0;z-index:99999;background:' + BG + ';'
-			+ 'color:#edf2f7;font:13px/1.45 -apple-system,system-ui,sans-serif;padding:18px;'
+			+ 'color:#edf2f7;font:13px/1.4 -apple-system,system-ui,sans-serif;'
+			+ (passThrough ? 'padding:8px 10px;' : 'padding:18px;')
 			+ 'overflow:auto;-webkit-overflow-scrolling:touch;';
 		box += passThrough
 			// Sit over the top of the page but let taps fall through to the canvas,
 			// so the touch probe measures real input instead of hits on this panel.
-			? 'max-height:52%;background:rgba(23,26,31,.94);pointer-events:none;'
+			? 'max-height:33%;background:rgba(23,26,31,.92);pointer-events:none;'
 			: 'bottom:0;';
 
 		overlay = document.createElement('div');
 		overlay.setAttribute('style', box);
 
 		var h = document.createElement('div');
-		h.setAttribute('style', 'font-size:19px;font-weight:700;margin-bottom:6px;color:' + ACCENT);
+		h.setAttribute('style', 'font-weight:700;margin-bottom:2px;color:' + ACCENT
+			+ (passThrough ? ';font-size:12px' : ';font-size:19px'));
 		h.textContent = title;
 
 		var p = document.createElement('div');
-		p.setAttribute('style', 'margin-bottom:12px;color:' + DIM);
+		p.setAttribute('style', 'color:' + DIM
+			+ (passThrough ? ';display:none' : ';margin-bottom:12px'));
 		p.textContent = blurb;
 
 		pre = document.createElement('pre');
@@ -531,7 +555,8 @@
 		//   ?d=est      periodic navigator.storage.estimate(), no overlay
 		//   ?d=noop     an empty periodic timer, nothing else
 		var m = /[?&]d=([a-z]+)/.exec(q);
-		var mode = m ? m[1] : (q.indexOf('debug=1') !== -1 ? 'full' : '');
+		var mode = m ? m[1] : (/debug=(1|all)/.test(q) ? 'full' : '');
+		verbose = q.indexOf('debug=all') !== -1;
 
 		// ?debug=1 works and ?d=overlay does not, and the only difference between them
 		// is that debug=1 re-runs render() every second. A bare timer is not enough
