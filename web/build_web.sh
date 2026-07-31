@@ -136,6 +136,15 @@ css = (
     # does not consider interactive; cursor:pointer is the standard way to opt in.
     # Harmless elsewhere, and PWA_PLAN already wants a pointing hand on the board.
     "\tcursor: pointer;\n"
+    # THE iOS PORTRAIT FREEZE FIX. Safari would show a stale frame of a running game:
+    # input, audio and the main loop all worked, only presentation was dead. Godot's
+    # updateSize() only touches the canvas when window.innerWidth/Height change, so
+    # rotating the phone forced a re-composite and unfroze it, while portrait never
+    # did. translateZ(0) puts the canvas on its own compositing layer so it presents
+    # every frame. No 2D layout effect, so hit-testing is unchanged. ?d=nofix removes
+    # it at runtime to re-confirm the bug.
+    "\ttransform: translateZ(0);\n"
+    "\t-webkit-transform: translateZ(0);\n"
     "\ttouch-action: none;\n"
     "\t-webkit-user-select: none;\n"
     "\tuser-select: none;\n"
