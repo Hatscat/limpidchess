@@ -32,13 +32,17 @@ memory pressure and WebGL context loss, `touch-action` gesture stealing, missing
 synthesis (`cursor: pointer`), and listener teardown (`removeEL` reads `none` on both
 platforms, so nothing removes Godot's handlers).
 
-**Leading explanation: service-worker version skew.** Patch 4 makes `index.html`
-network-first, but `index.pck` and `index.wasm` stay cache-first. A newly installed
-worker sits in `waiting` until something promotes it, so the page shell can be brand new
-while the game data it loads is still the previous build's — or a bad first fetch that
-got cached. That is invisible to every probe above and matches every symptom, including
-why only some devices were hit and why `sw: controlled` was the single line that ever
-differed between a broken iPhone and a working Android.
+**Also ruled out: the service worker.** Private Browsing runs no service worker, and the
+plain URL fails there too, 3 of 3. Caching, version skew and stale pck/wasm are all
+out — the earlier `sw: controlled` correlation was noise.
+
+**Where it actually stands.** The failure is deterministic per URL: `/play/` never works,
+`/play/?debug=1` always works, `/play/?d=overlay` never works. The only difference
+between the last two is that `?debug=1` re-runs `render()` once a second. A bare timer
+does not help (`?d=noop` fails), nor does a periodic `getBoundingClientRect` (`?d=rect`)
+or `storage.estimate` (`?d=est`). So something `render()` does, done *repeatedly*, is
+what keeps Godot's input alive on iOS. `?d=text` (periodic DOM write only) and `?d=read`
+(periodic reads only) split the remaining possibilities.
 
 `boot_diagnostics.js` now reports `sw state` and lists cache versions (two caches = skew),
 and promotes a held-back worker itself via the `'claim'` message. It uses `'claim'` rather
