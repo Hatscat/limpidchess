@@ -193,11 +193,56 @@ body {
 	// loop. A healthy browser with a dead engine is a different bug entirely, and no
 	// other probe separates them. We run before index.js so the patched function is the
 	// one emscripten picks up; the handle passes through so cancelAnimationFrame works.
+
+	// Drain Godot's GL error queue right after the engine's own frame callback.
+	//
+	// This is the blind spot that stalled the whole iOS investigation: browsers emit
+	// WebGL errors through internal logging, NOT through console.error, so nothing the
+	// page can hook will ever see them and a phone has no console. But getContext() with
+	// no attributes hands back the very context Godot created, and getError() reports and
+	// clears one flag per call, so polling it surfaces the engine's GL errors on a real
+	// device with no inspector attached.
+	//
+	// Caveat for anyone reading this later: this *consumes* errors Godot might otherwise
+	// have checked itself. Fine for a diagnostic build, and the Compatibility renderer
+	// does not check them in release.
+	var GL_ERRS = {
+		1280: 'INVALID_ENUM', 1281: 'INVALID_VALUE', 1282: 'INVALID_OPERATION',
+		1285: 'OUT_OF_MEMORY', 1286: 'INVALID_FRAMEBUFFER_OPERATION', 37442: 'CONTEXT_LOST'
+	};
+	var glErrs = {};
+	var glPoll = null;
+	var glCheckedFor = '';
+
+	function pollGL() {
+		try {
+			if (!glPoll) {
+				var cv = document.getElementById('canvas');
+				if (!cv || cv.width < 2) {
+					return;
+				}
+				glPoll = cv.getContext('webgl2') || cv.getContext('webgl');
+				if (!glPoll) {
+					return;
+				}
+			}
+			for (var i = 0; i < 8; i++) {          // bounded: never spin on a stuck queue
+				var e = glPoll.getError();
+				if (!e) {
+					break;
+				}
+				glErrs[e] = (glErrs[e] || 0) + 1;
+			}
+		} catch (e) { /* context lost mid-poll */ }
+	}
+
 	var rafOrig = window.requestAnimationFrame.bind(window);
 	window.requestAnimationFrame = function (cb) {
 		return rafOrig(function (t) {
 			engFrames++;
-			return cb(t);
+			var r = cb(t);
+			pollGL();
+			return r;
 		});
 	};
 
@@ -251,11 +296,25 @@ body {
 
 	function diagnostics() {
 		var c = document.getElementById('canvas');
-		if (c && glInfo === '?' && c.width > 1) {
-			checkGL(c);
+		// Re-read whenever the canvas is resized, not just once: a single early read
+		// captures the untouched 300x150 default before Godot sizes it, and caches that
+		// forever. Keying on the size also re-checks after every rotation, which is
+		// precisely when a clamp would appear.
+		if (c && c.width > 1) {
+			var key = c.width + 'x' + c.height;
+			if (key !== glCheckedFor) {
+				glCheckedFor = key;
+				checkGL(c);
+			}
 		}
+		var ge = Object.keys(glErrs);
 		var out = [
 			'raf ' + fps + ' / engine ' + engFps + 'fps' + (glLost ? '  GL LOST' : ''),
+			'glerr ' + (ge.length
+				? ge.map(function (k) {
+					return (GL_ERRS[k] || k) + ' x' + glErrs[k];
+				}).join(', ')
+				: 'none'),
 			'win ' + window.innerWidth + 'x' + window.innerHeight
 				+ '  canvas ' + (c ? c.width + 'x' + c.height : '?'),
 			'gl  ' + glInfo,
@@ -407,6 +466,15 @@ body {
 			probeCanvas(c);
 		}
 		promoteServiceWorker();
+		if (q.indexOf('log=1') !== -1) {
+			// Same-origin POST, so no CORS and no config: whoever serves the page
+			// collects the log. See web/tools/lan_server.py.
+			setInterval(function () {
+				try {
+					fetch('/__log', { method: 'POST', body: diagnostics() });
+				} catch (e) { /* offline or blocked */ }
+			}, 2000);
+		}
 		if (q.indexOf('debug=1') !== -1) {
 			passThrough = true;
 			build('Limpid Chess diagnostics', 'Tap a few times, then screenshot.');
