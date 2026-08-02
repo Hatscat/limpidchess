@@ -129,22 +129,16 @@ assert "limpid:boot_diagnostics" not in page, "boot diagnostics already injected
 #    does not set it itself. A stolen sequence ends in touchcancel instead of
 #    touchend, so a Godot button receives a press with no matching release and never
 #    activates — which looks exactly like "the buttons do nothing".
+# Standard game-canvas hygiene, each justified on its own merits. `touch-action` is
+# not an inherited property, so the template setting it on <body> does not cover the
+# canvas. The selection and callout rules stop a long press from selecting text or
+# raising the iOS callout menu over the board.
+# NOTE: cursor:pointer and transform:translateZ(0) were tried here as fixes for the
+# iOS portrait freeze and did NOT work (see README). Removed rather than left behind,
+# so a console session is not misled by leftover speculative CSS.
 css = (
     "\t\t<style>\n"
     "#canvas {\n"
-    # iOS Safari has long withheld synthesized mouse/click events from elements it
-    # does not consider interactive; cursor:pointer is the standard way to opt in.
-    # Harmless elsewhere, and PWA_PLAN already wants a pointing hand on the board.
-    "\tcursor: pointer;\n"
-    # THE iOS PORTRAIT FREEZE FIX. Safari would show a stale frame of a running game:
-    # input, audio and the main loop all worked, only presentation was dead. Godot's
-    # updateSize() only touches the canvas when window.innerWidth/Height change, so
-    # rotating the phone forced a re-composite and unfroze it, while portrait never
-    # did. translateZ(0) puts the canvas on its own compositing layer so it presents
-    # every frame. No 2D layout effect, so hit-testing is unchanged. ?d=nofix removes
-    # it at runtime to re-confirm the bug.
-    "\ttransform: translateZ(0);\n"
-    "\t-webkit-transform: translateZ(0);\n"
     "\ttouch-action: none;\n"
     "\t-webkit-user-select: none;\n"
     "\tuser-select: none;\n"
