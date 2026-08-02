@@ -130,6 +130,22 @@ body {
 	var DIM = '#b0beca';
 	var BG = '#171a1f';
 
+	// ?d=lowdpi — must run here, at <head> parse time, before the engine reads it.
+	// Godot sizes its canvas as window * devicePixelRatio, so dpr 3 gives a 1170x1974
+	// backing store in portrait against 2250x912 in landscape: near-identical pixel
+	// counts, but more than twice the height. Height is the one measured asymmetry
+	// between the frozen and working orientations, and forcing dpr to 1 collapses
+	// portrait to 390x658. If that unfreezes it, the fix is the `allow_hidpi` project
+	// setting (or a capped backing store), not anything to do with compositing.
+	if (location.search.indexOf('d=lowdpi') !== -1) {
+		try {
+			Object.defineProperty(window, 'devicePixelRatio', {
+				get: function () { return 1; },
+				configurable: true
+			});
+		} catch (e) { /* not overridable here; the test is simply inconclusive */ }
+	}
+
 	var errors = [];
 	var taps = 0;
 	var ups = 0;
