@@ -214,6 +214,64 @@ body {
 	var glPoll = null;
 	var glCheckedFor = '';
 
+	// THE decisive probe for the iOS portrait freeze. Everything else established that
+	// the engine loop runs, input arrives, the GL context is healthy and error-free, and
+	// the screen still does not update. That leaves exactly two possibilities, needing
+	// opposite fixes:
+	//
+	//   Godot draws but Safari never presents  ->  compositor bug, nothing engine-side
+	//   Godot never draws                      ->  engine bug, Safari is innocent
+	//
+	// Counting draw calls separates them. `screen` counts only draws issued while the
+	// DRAW framebuffer binding is null, i.e. straight to the default framebuffer, which
+	// is what actually reaches the display. Patch the prototypes rather than one context
+	// instance: we run in <head>, well before Godot calls getContext, so every call it
+	// makes goes through these.
+	var drawCalls = 0;
+	var drawScreen = 0;
+	var blits = 0;
+	var drawRate = 0;
+	var screenRate = 0;
+	var blitRate = 0;
+
+	function instrumentGL(proto) {
+		if (!proto || proto.__limpidPatched) {
+			return;
+		}
+		proto.__limpidPatched = true;
+		var bindOrig = proto.bindFramebuffer;
+		proto.bindFramebuffer = function (target) {
+			// FRAMEBUFFER (0x8D40) and DRAW_FRAMEBUFFER (0x8CA9) both retarget draws.
+			if (target === 0x8D40 || target === 0x8CA9) {
+				this.__limpidDrawFB = arguments[1];
+			}
+			return bindOrig.apply(this, arguments);
+		};
+		['drawArrays', 'drawElements', 'drawArraysInstanced',
+			'drawElementsInstanced'].forEach(function (name) {
+			var orig = proto[name];
+			if (!orig) {
+				return;
+			}
+			proto[name] = function () {
+				drawCalls++;
+				if (!this.__limpidDrawFB) {   // unset or null == the default framebuffer
+					drawScreen++;
+				}
+				return orig.apply(this, arguments);
+			};
+		});
+		if (proto.blitFramebuffer) {
+			var blitOrig = proto.blitFramebuffer;
+			proto.blitFramebuffer = function () {
+				blits++;
+				return blitOrig.apply(this, arguments);
+			};
+		}
+	}
+	instrumentGL(window.WebGL2RenderingContext && window.WebGL2RenderingContext.prototype);
+	instrumentGL(window.WebGLRenderingContext && window.WebGLRenderingContext.prototype);
+
 	function pollGL() {
 		try {
 			if (!glPoll) {
@@ -249,10 +307,17 @@ body {
 	function tick(t) {
 		frames++;
 		if (t - fpsAt >= 1000) {
-			fps = Math.round((frames * 1000) / (t - fpsAt));
-			engFps = Math.round((engFrames * 1000) / (t - fpsAt));
+			var per = 1000 / (t - fpsAt);
+			fps = Math.round(frames * per);
+			engFps = Math.round(engFrames * per);
+			drawRate = Math.round(drawCalls * per);
+			screenRate = Math.round(drawScreen * per);
+			blitRate = Math.round(blits * per);
 			frames = 0;
 			engFrames = 0;
+			drawCalls = 0;
+			drawScreen = 0;
+			blits = 0;
 			fpsAt = t;
 		}
 		rafOrig(tick);
@@ -310,6 +375,8 @@ body {
 		var ge = Object.keys(glErrs);
 		var out = [
 			'raf ' + fps + ' / engine ' + engFps + 'fps' + (glLost ? '  GL LOST' : ''),
+			'DRAW ' + drawRate + '/s  to-screen ' + screenRate + '/s  blit ' + blitRate + '/s'
+				+ (drawRate > 0 && screenRate === 0 ? '   <-- NOTHING TO SCREEN' : ''),
 			'glerr ' + (ge.length
 				? ge.map(function (k) {
 					return (GL_ERRS[k] || k) + ' x' + glErrs[k];
