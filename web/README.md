@@ -93,6 +93,31 @@ Worth knowing: browsers emit WebGL errors through internal logging, **not** thro
 page's `console.error`. That blind spot is now closed on-device by the `glerr` line in
 `boot_diagnostics.js`, which drains `gl.getError()` on Godot's own context every frame.
 
+### Next measurement: the DRAW line
+
+`boot_diagnostics.js` instruments `WebGL2RenderingContext.prototype` before Godot ever
+calls `getContext`, counting draw calls per second and, separately, those issued while the
+DRAW framebuffer binding is `null` — i.e. straight to the default framebuffer, which is
+what actually reaches the display.
+
+Healthy baseline, measured in Playwright WebKit where rendering works:
+
+```
+PORTRAIT   DRAW 449/s  to-screen 20/s  blit 0/s     (at 20 fps)
+LANDSCAPE  DRAW 391/s  to-screen 18/s  blit 0/s     (at 18 fps)
+```
+
+Roughly 400 draws into offscreen buffers, then **exactly one composite per frame** to the
+default framebuffer. On a frozen iPhone in portrait, that single number decides it:
+
+| `to-screen` on frozen portrait | Meaning | Where the fix lives |
+|---|---|---|
+| ~0/s while `DRAW` stays high | Godot renders offscreen and never composites | Godot / engine-side |
+| matches the frame rate (~56/s) | Godot composites every frame, Safari never presents it | WebKit compositor; needs a workaround, not a fix |
+
+Everything else is already excluded, so this is the fork the whole investigation reduces
+to. Get this reading before spending anything on a console session.
+
 ### The mechanism, as far as it is understood
 
 Godot polls the canvas size every frame from C++ via `_godot_js_display_size_update()`,
