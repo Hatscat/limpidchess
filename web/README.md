@@ -93,7 +93,44 @@ Worth knowing: browsers emit WebGL errors through internal logging, **not** thro
 page's `console.error`. That blind spot is now closed on-device by the `glerr` line in
 `boot_diagnostics.js`, which drains `gl.getError()` on Godot's own context every frame.
 
-### Next measurement: the DRAW line
+### SOLVED HALF: Godot is innocent, WebKit is not presenting
+
+Measured on a frozen portrait iPhone, `?debug=1`:
+
+```
+before taps:   raf 56 / engine 56fps   DRAW 1232/s   to-screen 56/s   blit 0/s
+after 9 taps:  raf 57 / engine 57fps   DRAW 2216/s   to-screen 57/s   blit 0/s
+```
+
+`to-screen` **equals the frame rate**. Godot composites to the default framebuffer 56
+times a second on a screen that looks dead. The draw count nearly doubles after tapping,
+because the game really did navigate and build a heavier scene, and rendered it, while the
+display still showed the previous screen.
+
+**So the engine draws every frame and WebKit never presents the buffer.** Nothing is
+fixable engine-side; what is needed is a workaround that makes WebKit present.
+
+Godot requests **no context attributes at all** (`attrs (defaults)`), so the browser
+defaults apply — notably `antialias: true`, which makes the default framebuffer
+multisampled and requires a resolve at present time, and `preserveDrawingBuffer: false`,
+which lets WebKit discard the buffer after compositing.
+
+`boot_diagnostics.js` patches `HTMLCanvasElement.prototype.getContext` in `<head>`, before
+Godot creates its context, so those attributes can be overridden from the URL. Test in
+portrait, without rotating, most promising first:
+
+| URL | Override | Why |
+|---|---|---|
+| `?d=noaa` | `antialias: false` | No multisample resolve on a 1170x1974 default framebuffer. Landscape's is less than half as tall and works. |
+| `?d=preserve` | `preserveDrawingBuffer: true` | Stops WebKit discarding the buffer after compositing. The classic fix for a canvas that will not update. |
+| `?d=noalpha` | `alpha: false` | Removes the alpha channel from the compositing path. |
+
+Whichever unfreezes it becomes the permanent fix, applied to the real context creation
+instead of a URL flag. Note the probe targets only the canvas with `id="canvas"`: Godot's
+shell feature-detects WebGL2 on a throwaway canvas first, and recording that one reports
+`(defaults)` regardless of what the engine asks for.
+
+### Earlier measurement: the DRAW line
 
 `boot_diagnostics.js` instruments `WebGL2RenderingContext.prototype` before Godot ever
 calls `getContext`, counting draw calls per second and, separately, those issued while the

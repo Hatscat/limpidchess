@@ -41,6 +41,55 @@
 		} catch (e) { /* not overridable here; the test is simply inconclusive */ }
 	}
 
+	// The DRAW probe below proved Godot composites to the default framebuffer every
+	// frame on a frozen portrait screen (to-screen == fps), so the engine is innocent and
+	// WebKit is simply not presenting the buffer. That makes the context attributes the
+	// most promising lever, and they can only be set at creation time — hence patching
+	// getContext here, in <head>, before Godot ever calls it.
+	//
+	//   ?d=preserve  preserveDrawingBuffer: true   (stops WebKit discarding the buffer
+	//                                               after compositing; the classic fix
+	//                                               for a canvas that will not update)
+	//   ?d=noaa      antialias: false              (no multisample resolve on the
+	//                                               default framebuffer)
+	//   ?d=aa        antialias: true
+	//   ?d=noalpha   alpha: false
+	var GL_OVERRIDES = {
+		preserve: { preserveDrawingBuffer: true },
+		noaa: { antialias: false },
+		aa: { antialias: true },
+		noalpha: { alpha: false }
+	};
+	var glAttrs = null;
+	(function patchGetContext() {
+		var q = location.search;
+		var m = /[?&]d=([a-z]+)/.exec(q);
+		var override = m && GL_OVERRIDES[m[1]];
+		var orig = HTMLCanvasElement.prototype.getContext;
+		HTMLCanvasElement.prototype.getContext = function (type, attrs) {
+			// Only the real game canvas. Godot's shell feature-detects WebGL2 on a
+			// throwaway <canvas> first, and recording that one reports "(defaults)"
+			// no matter what the engine actually asks for.
+			if (/webgl/i.test(String(type)) && this && this.id === 'canvas') {
+				var merged = {};
+				var k;
+				for (k in (attrs || {})) {
+					merged[k] = attrs[k];
+				}
+				if (!glAttrs) {
+					glAttrs = merged;
+				}
+				if (override) {
+					for (k in override) {
+						merged[k] = override[k];
+					}
+				}
+				return orig.call(this, type, merged);
+			}
+			return orig.apply(this, arguments);
+		};
+	}());
+
 	var errors = [];
 	var taps = 0;
 	var ups = 0;
@@ -280,6 +329,13 @@
 			'win ' + window.innerWidth + 'x' + window.innerHeight
 				+ '  canvas ' + (c ? c.width + 'x' + c.height : '?'),
 			'gl  ' + glInfo,
+			'attrs ' + (glAttrs
+				? (Object.keys(glAttrs).length
+					? Object.keys(glAttrs).map(function (k) {
+						return k + '=' + glAttrs[k];
+					}).join(' ')
+					: '(defaults)')
+				: 'n/a'),
 			'taps ' + taps + ' down, ' + ups + ' up',
 			'started ' + started
 		];
