@@ -262,6 +262,7 @@ body {
 	var glErrs = {};
 	var glPoll = null;
 	var glCheckedFor = '';
+	var glGranted = '?';
 
 	// THE decisive probe for the iOS portrait freeze. Everything else established that
 	// the engine loop runs, input arrives, the GL context is healthy and error-free, and
@@ -343,12 +344,51 @@ body {
 		} catch (e) { /* context lost mid-poll */ }
 	}
 
+	// Closes the last ambiguity in the DRAW result. Counting draw calls proves Godot
+	// *issues* a composite every frame, but not that the composite is CORRECT: a broken
+	// viewport would produce an identical blank frame each time and look the same to that
+	// probe. So sample the default framebuffer right after the engine's callback, before
+	// the buffer is composited and discarded. If these pixels change when the game state
+	// changes while the display stays stale, rendering is correct and only presentation
+	// is broken. If they never change, the engine is drawing nothing useful.
+	var pxSamples = 0;
+	var pxChanges = 0;
+	var pxLast = -1;
+
+	function samplePixels() {
+		try {
+			if (!glPoll) {
+				return;
+			}
+			var cv = document.getElementById('canvas');
+			var buf = new Uint8Array(64 * 4);
+			var hash = 0;
+			var pts = [[0.3, 0.35], [0.7, 0.35], [0.3, 0.7], [0.7, 0.7]];
+			for (var q = 0; q < pts.length; q++) {
+				glPoll.readPixels(Math.floor(cv.width * pts[q][0]),
+					Math.floor(cv.height * pts[q][1]),
+					4, 4, glPoll.RGBA, glPoll.UNSIGNED_BYTE, buf);
+				for (var i = 0; i < 64; i++) {
+					hash = (hash * 31 + buf[i]) & 0x7fffffff;
+				}
+			}
+			pxSamples++;
+			if (pxLast !== -1 && hash !== pxLast) {
+				pxChanges++;
+			}
+			pxLast = hash;
+		} catch (e) { /* buffer already discarded, or context lost */ }
+	}
+
 	var rafOrig = window.requestAnimationFrame.bind(window);
 	window.requestAnimationFrame = function (cb) {
 		return rafOrig(function (t) {
 			engFrames++;
 			var r = cb(t);
 			pollGL();
+			if (engFrames % 12 === 0) {   // ~5 reads/s: readPixels forces a GPU sync
+				samplePixels();
+			}
 			return r;
 		});
 	};
@@ -385,6 +425,17 @@ body {
 			glInfo = gl.drawingBufferWidth + 'x' + gl.drawingBufferHeight
 				+ ((gl.drawingBufferWidth !== c.width || gl.drawingBufferHeight !== c.height)
 					? '  CLAMPED!' : ' ok');
+			// What the browser actually GRANTED, which is what matters. Godot requests
+			// nothing, so defaults apply, and `samples > 1` means the default framebuffer
+			// really is multisampled and needs a resolve to present.
+			var got = gl.getContextAttributes ? gl.getContextAttributes() : null;
+			if (got) {
+				glGranted = 'aa=' + got.antialias + ' preserve=' + got.preserveDrawingBuffer
+					+ ' alpha=' + got.alpha;
+			}
+			try {
+				glGranted += ' samples=' + gl.getParameter(gl.SAMPLES);
+			} catch (e) { /* WebGL1 without the constant */ }
 		} catch (e) {
 			glInfo = 'read failed';
 		}
@@ -426,6 +477,7 @@ body {
 			'raf ' + fps + ' / engine ' + engFps + 'fps' + (glLost ? '  GL LOST' : ''),
 			'DRAW ' + drawRate + '/s  to-screen ' + screenRate + '/s  blit ' + blitRate + '/s'
 				+ (drawRate > 0 && screenRate === 0 ? '   <-- NOTHING TO SCREEN' : ''),
+			'PIXELS ' + pxSamples + ' read, ' + pxChanges + ' changed',
 			'glerr ' + (ge.length
 				? ge.map(function (k) {
 					return (GL_ERRS[k] || k) + ' x' + glErrs[k];
@@ -434,6 +486,7 @@ body {
 			'win ' + window.innerWidth + 'x' + window.innerHeight
 				+ '  canvas ' + (c ? c.width + 'x' + c.height : '?'),
 			'gl  ' + glInfo,
+			'granted ' + glGranted,
 			'attrs ' + (glAttrs
 				? (Object.keys(glAttrs).length
 					? Object.keys(glAttrs).map(function (k) {
