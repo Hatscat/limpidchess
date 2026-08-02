@@ -90,8 +90,8 @@ total pixels as portrait; less than half the height.
     `BackBufferCopy` and no MSAA, so nothing in the game asks for that blit.
 
 Worth knowing: browsers emit WebGL errors through internal logging, **not** through the
-page's `console.error`, so the on-device diagnostics panel can never show them. Only the
-harness can.
+page's `console.error`. That blind spot is now closed on-device by the `glerr` line in
+`boot_diagnostics.js`, which drains `gl.getError()` on Godot's own context every frame.
 
 ### The mechanism, as far as it is understood
 
@@ -129,13 +129,39 @@ Note: 1 of 3 iPhones tested was never affected, so device or iOS build matters.
 
 - Whether Godot's per-frame `RenderingServer` draw is actually running in portrait, or
   whether the engine skips drawing while still iterating the main loop at 56 fps.
-- `gl.getError()` and framebuffer completeness after a frame, in both orientations.
+- Framebuffer completeness after a frame, in both orientations. (Raw `gl.getError()` is
+  already reported on-device by the `glerr` panel line, so check that first — it may make
+  the console session unnecessary.)
 - Whether the canvas is composited at all in portrait (Safari's Layers/Timelines panel).
 - Whether a Godot build with `stretch/aspect` other than `expand` changes anything.
   (Canvas size itself is already excluded: `?d=lowdpi` shrinks portrait to 390x658 and it
   still freezes.)
 - Report the startup `glBlitFramebuffer` error upstream while you are in there. It is not
   the cause, but the Compatibility renderer should not be emitting it on WebGL.
+
+### A separate failure mode: corrupted wasm download
+
+Distinct from the portrait freeze, and the likely explanation for "stuck on the loading
+bar forever". Symptom, visible in the diagnostics panel:
+
+```
+err rejection: WebAssembly.Module doesn't parse at byte 101: invalid opcode
+started false    canvas 300x150    engine 0fps
+```
+
+That is **not** a feature gap or a bad build. Byte 101 of both `index.wasm` and
+`stockfish-18-lite-single.wasm` is `0x7f` (i32) inside the type section, both validate
+under `WebAssembly.validate`, and the served copy is byte-identical to the deployed one.
+The browser parsed something other than what we serve, i.e. the transfer was corrupted.
+
+Seen reliably through BrowserStack Live's proxy, which mangles the ~9.5 MB gzipped wasm.
+**BrowserStack Live is therefore a poor tool for this app** — the payload rarely arrives
+intact. Prefer Safari Web Inspector over USB from any Mac, against the real device.
+
+The same thing can happen to a real user on a flaky mobile connection, and the service
+worker will happily cache a corrupt-but-`200` response. That is what the boot watchdog and
+`?reset=1` exist for: after 40 s stalled, the panel offers **Reset and reload**, which
+wipes caches and refetches. Keep both.
 
 ### Methodology notes, learned the hard way
 
@@ -181,6 +207,30 @@ libpthread.so.0: undefined symbol: __libc_pthread_init, version GLIBC_PRIVATE
 Same class of snap leak that `build_web.sh` already works around for `XDG_DATA_HOME`.
 Expect it from any browser tooling launched out of the editor.
 
+## tools/lan_server.py — testing on a real iPhone with no Mac
+
+For a tester who is physically present. Serves the exported build over the LAN and prints
+whatever the page posts back, so readings land in your terminal instead of being squinted
+at through a screenshot.
+
+```bash
+python3 web/tools/lan_server.py            # serves build/web on :8099
+# prints:  on the phone:  http://192.168.x.x:8099/?debug=1&log=1
+```
+
+`?log=1` makes the page POST its diagnostics panel to `/__log` every 2 s. Same origin, so
+no CORS and nothing to configure: whoever serves the page collects the log.
+
+The real win is the loop. Rebuild with `web/build_web.sh` (no `--deploy`), the phone
+reloads, done: no commit, no push, no waiting on GitHub Pages, no service-worker cache to
+fight (plain HTTP is an insecure origin, so the worker never registers — a feature here).
+Ten experiments in the time one remote round trip used to take.
+
+Debugging iOS from Linux directly is possible but unreliable: `ios-webkit-debug-proxy` is
+not packaged in apt and predates iOS 17's RemoteXPC transport. `pymobiledevice3` (pip)
+does support iOS 17/18 and has `webinspector` subcommands, but needs a root-started tunnel
+and is fiddly. Try it if you like; do not build the session around it.
+
 ## boot_diagnostics.js — making iOS failures visible
 
 Inlined into `<head>` of the exported `index.html` by `build_web.sh` (step 5), ahead of
@@ -197,6 +247,19 @@ entry and can never 404 offline. It only adds **passive** listeners and never ca
 It also mirrors `console.error`/`console.warn` into the panel, since Godot prints its own
 failures to a console nobody can open on a phone, and promotes a service worker stuck in
 `waiting` (see the network-first section above).
+
+The **`glerr`** line is the important one. Browsers emit WebGL errors through internal
+logging, not through `console.error`, so no page hook can see them and a phone has no
+console — that blind spot is what stalled the iOS investigation for days. But
+`canvas.getContext('webgl2')` returns the very context Godot created, and `getError()`
+reports and clears one flag per call, so draining it right after the engine's own frame
+callback surfaces engine-level GL errors on a real device with no inspector attached.
+Note this consumes errors Godot might otherwise check itself; fine for a diagnostic build.
+
+The **`gl`** line re-reads the drawing buffer whenever the canvas is resized rather than
+once, because a single early read captures the untouched 300x150 default and caches it
+forever. Keying on size also re-checks after each rotation, which is exactly when a clamp
+would show up.
 
 **Keep this file.** It is what turns "it's broken" from a phone user into an actionable
 report, and the reset path is the only remote recovery for a device with a bad cache.
