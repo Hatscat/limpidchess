@@ -74,6 +74,24 @@ total pixels as portrait; less than half the height.
 10. **Forcing a re-composite** — periodic `getBoundingClientRect`, `storage.estimate`,
     opacity toggling, DOM writes, a bare timer, and dirtying `canvas.style.height` by a
     half pixel: none of them unfreeze it.
+11. **Canvas backing-store height** — `?d=lowdpi` overrides `devicePixelRatio` to 1, so
+    portrait renders at `390x658` instead of `1170x1974`. Still frozen, so the 1974px
+    height (the one large asymmetry against landscape's 912px) is not the trigger.
+12. **WebKit itself** — Playwright's WebKit 26.5 on Linux, at the same viewport and dpr,
+    repaints normally in *both* orientations (see the harness below). Whatever iOS does
+    here, desktop WebKit does not share it.
+13. **Engine render-path GL errors** — the harness catches
+    `glBlitFramebuffer: Read and write color attachments cannot be the same image` from
+    Godot's Compatibility renderer, but only ~4 times during startup; steady state is
+    clean over 10 s. A real engine bug worth reporting upstream (compare
+    [PR #106267](https://github.com/godotengine/godot/pull/106267), which replaced the
+    final blit-to-screen with a shader copy in 4.5), but it stops after boot and so
+    cannot explain a freeze that persists. Note the project has no shaders, no
+    `BackBufferCopy` and no MSAA, so nothing in the game asks for that blit.
+
+Worth knowing: browsers emit WebGL errors through internal logging, **not** through the
+page's `console.error`, so the on-device diagnostics panel can never show them. Only the
+harness can.
 
 ### The mechanism, as far as it is understood
 
@@ -113,9 +131,11 @@ Note: 1 of 3 iPhones tested was never affected, so device or iOS build matters.
   whether the engine skips drawing while still iterating the main loop at 56 fps.
 - `gl.getError()` and framebuffer completeness after a frame, in both orientations.
 - Whether the canvas is composited at all in portrait (Safari's Layers/Timelines panel).
-- Whether a Godot build with `stretch/aspect` other than `expand`, or a smaller canvas
-  (hidpi off), changes anything: portrait is 1974px tall against 912 in landscape, and
-  height is the one dimension that differs sharply between working and broken.
+- Whether a Godot build with `stretch/aspect` other than `expand` changes anything.
+  (Canvas size itself is already excluded: `?d=lowdpi` shrinks portrait to 390x658 and it
+  still freezes.)
+- Report the startup `glBlitFramebuffer` error upstream while you are in there. It is not
+  the cause, but the Compatibility renderer should not be emitting it on WebGL.
 
 ### Methodology notes, learned the hard way
 
@@ -125,6 +145,41 @@ Note: 1 of 3 iPhones tested was never affected, so device or iOS build matters.
   rotating the device between attempts without mentioning it, which made a deterministic
   bug look intermittent.
 - Single trials are worthless against a bug you believe may be flaky. Repeat, and count.
+
+## tools/webkit_check.mjs — running the build in WebKit locally
+
+Loads the exported build in Playwright's WebKit (same engine family as Safari, and the
+closest thing to an iPhone that runs on Linux), taps the canvas, checks whether the frame
+changed, and reports WebGL errors **bucketed by rate**. Rate is the point: a per-frame
+message sits on the render path, a handful at startup does not.
+
+It does not reproduce the iOS portrait freeze. It is still worth keeping, because it is
+the only way to see engine-level WebGL errors at all, and it turns "change a setting and
+ask a friend" into a one-minute local loop.
+
+```bash
+# once, deliberately outside the repo so no node_modules lands in a Godot project
+mkdir -p /tmp/pwtest && cd /tmp/pwtest && npm init -y && npm install playwright
+npx playwright install webkit
+
+# run
+cd build/web && python3 -m http.server 8099 &
+env -u LD_LIBRARY_PATH -u GTK_PATH -u GIO_MODULE_DIR PW_DIR=/tmp/pwtest \
+  node web/tools/webkit_check.mjs
+```
+
+**The `env -u` is not optional.** VS Code's snap leaks `GIO_MODULE_DIR` and friends into
+child processes, dragging a 2020-era glibc into WebKit's network process, and every
+navigation dies with `WebKit encountered an internal error`. The real message only shows
+up under `DEBUG=pw:browser`:
+
+```
+WPENetworkProcess: symbol lookup error: /snap/core20/current/lib/x86_64-linux-gnu/
+libpthread.so.0: undefined symbol: __libc_pthread_init, version GLIBC_PRIVATE
+```
+
+Same class of snap leak that `build_web.sh` already works around for `XDG_DATA_HOME`.
+Expect it from any browser tooling launched out of the editor.
 
 ## boot_diagnostics.js — making iOS failures visible
 
