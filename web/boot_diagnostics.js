@@ -54,13 +54,20 @@
 	//                                               default framebuffer)
 	//   ?d=aa        antialias: true
 	//   ?d=noalpha   alpha: false
+	//   ?d=desync    desynchronized: true          (low-latency canvas path; on some
+	//                                               Safari builds this bypasses the
+	//                                               normal compositor pipeline entirely)
 	var GL_OVERRIDES = {
 		preserve: { preserveDrawingBuffer: true },
 		noaa: { antialias: false },
 		aa: { antialias: true },
-		noalpha: { alpha: false }
+		noalpha: { alpha: false },
+		desync: { desynchronized: true }
 	};
+	var activeMode = (/[?&]d=([a-z]+)/.exec(location.search) || [])[1] || '';
 	var glAttrs = null;
+	var glResize = /[?&]d=resize\b/.test(location.search);
+	var glForce = (/[?&]d=(finish|flush)\b/.exec(location.search) || [])[1] || '';
 	(function patchGetContext() {
 		var q = location.search;
 		var m = /[?&]d=([a-z]+)/.exec(q);
@@ -89,6 +96,26 @@
 			return orig.apply(this, arguments);
 		};
 	}());
+
+	// ?d=wide — isolates canvas ASPECT, which no test so far has varied independently.
+	// `lowdpi` changed the canvas size (1170x1974 -> 390x658) and it still froze, so size
+	// is out. But every frozen canvas has been taller than wide, and every working one
+	// (landscape) wider than tall. Godot derives its canvas from window.innerWidth/Height,
+	// so shrinking innerHeight gives a portrait phone a landscape-shaped canvas. The game
+	// will look squashed into a letterbox at the top; that does not matter. The only
+	// question is whether tapping visibly changes anything.
+	//
+	// If this presents, the trigger is aspect, and a real workaround becomes possible:
+	// render into a wide canvas and rotate it back with a CSS transform.
+	if (/[?&]d=wide\b/.test(location.search)) {
+		try {
+			var realW = window.innerWidth;
+			Object.defineProperty(window, 'innerHeight', {
+				get: function () { return Math.floor(realW * 0.6); },
+				configurable: true
+			});
+		} catch (e) { /* not overridable; test is inconclusive */ }
+	}
 
 	var errors = [];
 	var taps = 0;
@@ -280,6 +307,33 @@
 		return rafOrig(function (t) {
 			engFrames++;
 			var r = cb(t);
+			// ?d=finish / ?d=flush — force the GL commands to complete before the
+			// compositor can sample the buffer. A missing flush is a classic cause of a
+			// canvas showing stale content: the compositor grabs the previous buffer
+			// because this frame's commands have not landed yet. WebGL flushes
+			// implicitly at the end of a rAF task, but Safari has not always honoured it.
+			if (glForce && glPoll) {
+				try {
+					if (glForce === 'finish') {
+						glPoll.finish();
+					} else {
+						glPoll.flush();
+					}
+				} catch (e) { /* context lost */ }
+			}
+			// ?d=resize — last resort, and the only mechanism with proven effect: a real
+			// backing-store change is what rotating the device does. Shrink the canvas and
+			// let Godot's updateSize() snap it back next frame, which reallocates the GL
+			// buffer exactly as a rotation would. Expensive, so 10x/s rather than every
+			// frame. Earlier attempts only dirtied canvas.style, which was not enough.
+			if (glResize && engFrames % 6 === 0) {
+				try {
+					var rc = document.getElementById('canvas');
+					if (rc && rc.width > 4) {
+						rc.width = rc.width - 2;
+					}
+				} catch (e) { /* ignore */ }
+			}
 			pollGL();
 			if (engFrames % 12 === 0) {   // ~5 reads/s: readPixels forces a GPU sync
 				samplePixels();
@@ -381,6 +435,7 @@
 			'win ' + window.innerWidth + 'x' + window.innerHeight
 				+ '  canvas ' + (c ? c.width + 'x' + c.height : '?'),
 			'gl  ' + glInfo,
+			'MODE ' + (activeMode || 'none'),
 			'granted ' + glGranted,
 			'attrs ' + (glAttrs
 				? (Object.keys(glAttrs).length
