@@ -13,6 +13,7 @@
  *   <page>          watchdog only: panel appears if boot stalls past BOOT_TIMEOUT_MS
  *   <page>?debug=1  live pass-through panel + the GL instrumentation below
  *   <page>?reset=1  wipe service worker + caches, then boot clean
+ *   <page>?log=1    POST the panel text to /__log every 2 s (web/tools/lan_server.py)
  *
  * COST: everything expensive is gated behind ?debug=1. The pixel sampler forces a GPU sync
  * and the draw counters wrap every WebGL draw call, so neither may run for real players.
@@ -281,7 +282,10 @@
 
 	function diagnostics() {
 		var c = document.getElementById('canvas');
-		if (c && c.width > 1) {
+		// Only once Godot has booted. checkGL() calls getContext(), and an untouched
+		// canvas is 300x150, which passes any `width > 1` test: running earlier would
+		// CREATE the context with our attributes and Godot would silently inherit it.
+		if (c && started && c.width > 1) {
 			var key = c.width + 'x' + c.height;
 			if (key !== glCheckedFor) {
 				glCheckedFor = key;
@@ -452,6 +456,16 @@
 			probeCanvas(c);
 		}
 		promoteServiceWorker();
+		if (location.search.indexOf('log=1') !== -1) {
+			// Same-origin POST, so no CORS and nothing to configure: whoever serves the
+			// page collects the log. Only useful behind web/tools/lan_server.py, which
+			// prints it to a terminal instead of a phone screenshot.
+			setInterval(function () {
+				try {
+					fetch('/__log', { method: 'POST', body: diagnostics() });
+				} catch (e) { /* offline or blocked */ }
+			}, 2000);
+		}
 		if (DEBUG) {
 			passThrough = true;
 			build('Limpid Chess diagnostics', 'Tap a few times, then screenshot.');

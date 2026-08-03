@@ -10,9 +10,10 @@
  * some iPhones are affected — a blanket "rotate your phone" banner would be wrong for
  * everyone else.
  *
- * So trigger on the user's behaviour instead: repeated taps in a short window with the
- * device in portrait is what a frozen screen feels like from the other side. A player
- * whose screen is responding does not tap six times in eight seconds. Healthy devices
+ * So trigger on the user's behaviour instead: six taps within eight seconds, CLUSTERED
+ * inside 60 px, with the device in portrait. Rate alone would be a false-positive machine
+ * because Puzzles rewards fast play; the clustering is what separates someone jabbing at a
+ * dead screen from someone happily tapping arrows all over the board. Healthy devices
  * essentially never see this; frozen ones see it within a few seconds of trying to play.
  *
  * Delete this file, and its injection in build_web.sh, once the underlying bug is fixed.
@@ -22,6 +23,12 @@
 
 	var TAPS_NEEDED = 6;
 	var WINDOW_MS = 8000;
+	// Taps must also be CLUSTERED. Rate alone is not enough: Puzzles rewards fast play, so
+	// a happy player on a healthy phone can easily manage six taps in eight seconds, and
+	// telling them their screen is frozen would be worse than saying nothing. Someone
+	// staring at a dead screen jabs the same spot; someone playing taps arrows and buttons
+	// all over the board. Clustering is what separates frustration from flow.
+	var CLUSTER_PX = 60;
 	var STORAGE_KEY = 'limpid_rotate_hint_dismissed';
 
 	var ua = navigator.userAgent || '';
@@ -48,9 +55,20 @@
 	var lang = (navigator.language || 'en').slice(0, 2).toLowerCase();
 	var t = TEXT[lang] || TEXT.en;
 
-	var taps = [];
+	var taps = [];   // {t, x, y}
 	var shown = false;
 	var box = null;
+
+	function clustered() {
+		var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+		for (var i = 0; i < taps.length; i++) {
+			minX = Math.min(minX, taps[i].x);
+			maxX = Math.max(maxX, taps[i].x);
+			minY = Math.min(minY, taps[i].y);
+			maxY = Math.max(maxY, taps[i].y);
+		}
+		return (maxX - minX) <= CLUSTER_PX && (maxY - minY) <= CLUSTER_PX;
+	}
 
 	function portrait() {
 		return window.innerHeight > window.innerWidth;
@@ -99,16 +117,20 @@
 	}
 
 	// Passive, never preventDefault: this must not interfere with input reaching Godot.
-	window.addEventListener('touchstart', function () {
+	window.addEventListener('touchstart', function (e) {
 		if (shown || !portrait()) {
 			return;
 		}
+		var p = (e.touches && e.touches[0]) ? e.touches[0] : e;
+		if (typeof p.clientX !== 'number') {
+			return;
+		}
 		var now = Date.now();
-		taps.push(now);
-		while (taps.length && now - taps[0] > WINDOW_MS) {
+		taps.push({ t: now, x: p.clientX, y: p.clientY });
+		while (taps.length && now - taps[0].t > WINDOW_MS) {
 			taps.shift();
 		}
-		if (taps.length >= TAPS_NEEDED) {
+		if (taps.length >= TAPS_NEEDED && clustered()) {
 			show();
 		}
 	}, { passive: true, capture: true });
