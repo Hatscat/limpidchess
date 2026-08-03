@@ -89,6 +89,15 @@ total pixels as portrait; less than half the height.
     cannot explain a freeze that persists. Note the project has no shaders, no
     `BackBufferCopy` and no MSAA, so nothing in the game asks for that blit.
 
+14. **Canvas aspect ratio** — `?d=wide` (canvas 1170x1053, ratio 1.11) and `?d=squat`
+    (1170x525, ratio 2.23) both give a portrait-held phone a decisively landscape-shaped
+    canvas. Both still freeze. So it is not the canvas geometry at all: **the trigger is
+    the physical device orientation**, independent of anything about the canvas.
+15. **Every WebGL context attribute reachable from JS** — `antialias` on/off,
+    `preserveDrawingBuffer: true`, `alpha: false`, `desynchronized: true`; plus
+    `gl.finish()` after every frame and a forced backing-store realloc 10x/s
+    (`?d=resize`, which mimics what a rotation does). None of them present the frame.
+
 Worth knowing: browsers emit WebGL errors through internal logging, **not** through the
 page's `console.error`. That blind spot is now closed on-device by the `glerr` line in
 `boot_diagnostics.js`, which drains `gl.getError()` on Godot's own context every frame.
@@ -200,6 +209,25 @@ Note: 1 of 3 iPhones tested was never affected, so device or iOS build matters.
   still freezes.)
 - Report the startup `glBlitFramebuffer` error upstream while you are in there. It is not
   the cause, but the Compatibility renderer should not be emitting it on WebGL.
+
+### Shipped mitigation: web/ios_portrait_notice.js
+
+The bug is unsolved and every JS-reachable lever is exhausted, so the build ships a
+behavioural hint instead. Injected into `<head>` by `build_web.sh` alongside the
+diagnostics.
+
+It cannot detect the fault: the framebuffer updates correctly, so nothing readable from
+the page distinguishes an affected iPhone from a healthy one, and only some are affected.
+A blanket "rotate your phone" banner would be wrong for everyone else.
+
+So it triggers on **behaviour**: six taps within eight seconds, on iOS, in portrait. That
+is what a frozen screen feels like from the player's side, and someone whose screen is
+responding does not do it. Then a dismissible card (EN/FR/ES, following `navigator.language`)
+suggests turning the phone sideways. Dismissal is remembered for the session, and rotating
+clears it automatically.
+
+Verified: absent on load, appears after six taps, correct language. Delete this file and
+its injection in `build_web.sh` once the underlying bug is fixed.
 
 ### A separate failure mode: corrupted wasm download
 
