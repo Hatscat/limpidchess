@@ -107,11 +107,17 @@
 	//
 	// If this presents, the trigger is aspect, and a real workaround becomes possible:
 	// render into a wide canvas and rotate it back with a CSS transform.
-	if (/[?&]d=wide\b/.test(location.search)) {
+	if (/[?&]d=(wide|squat)\b/.test(location.search)) {
 		try {
+			// 0.9, not 0.6: the hypothesis is only that width > height, so shave the
+			// minimum needed. A 0.6 ratio left a canvas too squat to see or tap.
+			// ?d=wide is only marginally landscape (ratio ~1.1), which keeps the canvas
+			// usable but might not clear a threshold if the trigger has one. ?d=squat is
+			// unambiguous (~2.2) at the cost of a very short canvas. Test wide first.
 			var realW = window.innerWidth;
+			var ratio = /[?&]d=squat\b/.test(location.search) ? 0.45 : 0.9;
 			Object.defineProperty(window, 'innerHeight', {
-				get: function () { return Math.floor(realW * 0.6); },
+				get: function () { return Math.floor(realW * ratio); },
 				configurable: true
 			});
 		} catch (e) { /* not overridable; test is inconclusive */ }
@@ -524,6 +530,11 @@
 		box += passThrough
 			? 'max-height:33%;background:rgba(23,26,31,.92);pointer-events:none;'
 			: 'bottom:0;';
+		// ?d=wide shrinks the canvas to the top of the screen, so a top-anchored panel
+		// covers the very thing being tested. Dock it to the bottom instead.
+		if (passThrough && (activeMode === 'wide' || activeMode === 'squat')) {
+			box = box.replace('top:0;', 'bottom:0;');
+		}
 
 		overlay = document.createElement('div');
 		overlay.setAttribute('style', box);
