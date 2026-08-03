@@ -102,67 +102,32 @@ Worth knowing: browsers emit WebGL errors through internal logging, **not** thro
 page's `console.error`. That blind spot is now closed on-device by the `glerr` line in
 `boot_diagnostics.js`, which drains `gl.getError()` on Godot's own context every frame.
 
-### SOLVED HALF: Godot is innocent, WebKit is not presenting
+### What it is: Godot draws, WebKit never presents
 
-Measured on a frozen portrait iPhone, `?debug=1`:
+Measured on a frozen portrait iPhone with `?debug=1`:
 
 ```
 before taps:   raf 56 / engine 56fps   DRAW 1232/s   to-screen 56/s   blit 0/s
 after 9 taps:  raf 57 / engine 57fps   DRAW 2216/s   to-screen 57/s   blit 0/s
+later:         raf 60 / engine 60fps   DRAW 6900/s   to-screen 60/s   blit 0/s
 ```
 
-`to-screen` **equals the frame rate**. Godot composites to the default framebuffer 56
-times a second on a screen that looks dead. The draw count nearly doubles after tapping,
-because the game really did navigate and build a heavier scene, and rendered it, while the
-display still showed the previous screen.
+`to-screen` **equals the frame rate throughout**. Godot composites to the default
+framebuffer 56-60 times a second on a screen that looks dead. And the draw density tracks
+the real game state: 22 draws/frame on the home menu, 39 after navigating, 115 once a
+board is up. The game navigated two screens deep and rendered every frame of it while the
+display still showed the menu.
 
-**So the engine draws every frame and WebKit never presents the buffer.** Nothing is
-fixable engine-side; what is needed is a workaround that makes WebKit present.
+Confirmed independently by pixel readback with `preserveDrawingBuffer: true` (which makes
+`readPixels` trustworthy): the default framebuffer's contents changed exactly when the
+game navigated, then held steady, because a still chess board is a still image.
 
-Godot requests **no context attributes at all** (`attrs (defaults)`), so the browser
-defaults apply — notably `antialias: true`, which makes the default framebuffer
-multisampled and requires a resolve at present time, and `preserveDrawingBuffer: false`,
-which lets WebKit discard the buffer after compositing.
+**So the engine renders the correct frame every frame and WebKit never puts it on screen.**
+Nothing here is fixable engine-side.
 
-`boot_diagnostics.js` patches `HTMLCanvasElement.prototype.getContext` in `<head>`, before
-Godot creates its context, so those attributes can be overridden from the URL. Test in
-portrait, without rotating, most promising first:
-
-| URL | Override | Why |
-|---|---|---|
-| `?d=noaa` | `antialias: false` | No multisample resolve on a 1170x1974 default framebuffer. Landscape's is less than half as tall and works. |
-| `?d=preserve` | `preserveDrawingBuffer: true` | Stops WebKit discarding the buffer after compositing. The classic fix for a canvas that will not update. |
-| `?d=noalpha` | `alpha: false` | Removes the alpha channel from the compositing path. |
-
-Whichever unfreezes it becomes the permanent fix, applied to the real context creation
-instead of a URL flag. Note the probe targets only the canvas with `id="canvas"`: Godot's
-shell feature-detects WebGL2 on a throwaway canvas first, and recording that one reports
-`(defaults)` regardless of what the engine asks for.
-
-### Earlier measurement: the DRAW line
-
-`boot_diagnostics.js` instruments `WebGL2RenderingContext.prototype` before Godot ever
-calls `getContext`, counting draw calls per second and, separately, those issued while the
-DRAW framebuffer binding is `null` — i.e. straight to the default framebuffer, which is
-what actually reaches the display.
-
-Healthy baseline, measured in Playwright WebKit where rendering works:
-
-```
-PORTRAIT   DRAW 449/s  to-screen 20/s  blit 0/s     (at 20 fps)
-LANDSCAPE  DRAW 391/s  to-screen 18/s  blit 0/s     (at 18 fps)
-```
-
-Roughly 400 draws into offscreen buffers, then **exactly one composite per frame** to the
-default framebuffer. On a frozen iPhone in portrait, that single number decides it:
-
-| `to-screen` on frozen portrait | Meaning | Where the fix lives |
-|---|---|---|
-| ~0/s while `DRAW` stays high | Godot renders offscreen and never composites | Godot / engine-side |
-| matches the frame rate (~56/s) | Godot composites every frame, Safari never presents it | WebKit compositor; needs a workaround, not a fix |
-
-Everything else is already excluded, so this is the fork the whole investigation reduces
-to. Get this reading before spending anything on a console session.
+Godot requests **no WebGL context attributes at all**, so browser defaults apply:
+`antialias: true`, `preserveDrawingBuffer: false`, `alpha: true`. Overriding each of them
+individually changes nothing (see "Ruled out", item 15).
 
 ### The mechanism, as far as it is understood
 
@@ -191,43 +156,24 @@ actually unfreezes the screen on rotation.
 ### Reproducing
 
 Affected iPhone, `https://limpidchess.com/play/`, portrait, do not rotate. Add `?debug=1`
-for the live panel (frame rates, canvas and GL sizes, tap counts, last error). `?reset=1`
-wipes the service worker and caches.
+for the live panel: frame rates, the DRAW/to-screen counters, pixel readback, GL errors,
+canvas and drawing-buffer sizes, granted context attributes, tap counts, last error.
+`?reset=1` wipes the service worker and caches.
 
-Note: 1 of 3 iPhones tested was never affected, so device or iOS build matters.
+Note 1 of 3 iPhones tested was never affected, so device or iOS build matters.
 
-### What to try with a console attached
+**Do not re-run the tester through more experiments without a new hypothesis.** Fifteen
+were tried and every one failed; the list above is what they cost.
 
-- Whether Godot's per-frame `RenderingServer` draw is actually running in portrait, or
-  whether the engine skips drawing while still iterating the main loop at 56 fps.
-- Framebuffer completeness after a frame, in both orientations. (Raw `gl.getError()` is
-  already reported on-device by the `glerr` panel line, so check that first — it may make
-  the console session unnecessary.)
-- Whether the canvas is composited at all in portrait (Safari's Layers/Timelines panel).
-- Whether a Godot build with `stretch/aspect` other than `expand` changes anything.
-  (Canvas size itself is already excluded: `?d=lowdpi` shrinks portrait to 390x658 and it
-  still freezes.)
+### What to try with a real Safari console
+
+- Whether WebKit's compositor ever marks the canvas layer dirty in portrait (Layers /
+  Timelines panel). That is the one thing no page-level probe can see, and it is now the
+  only open question.
+- Whether a minimal WebGL page (a spinning triangle, no Godot) reproduces it on the same
+  device. If it does, this is a clean WebKit bug report and nothing to do with Godot.
 - Report the startup `glBlitFramebuffer` error upstream while you are in there. It is not
-  the cause, but the Compatibility renderer should not be emitting it on WebGL.
-
-### Shipped mitigation: web/ios_portrait_notice.js
-
-The bug is unsolved and every JS-reachable lever is exhausted, so the build ships a
-behavioural hint instead. Injected into `<head>` by `build_web.sh` alongside the
-diagnostics.
-
-It cannot detect the fault: the framebuffer updates correctly, so nothing readable from
-the page distinguishes an affected iPhone from a healthy one, and only some are affected.
-A blanket "rotate your phone" banner would be wrong for everyone else.
-
-So it triggers on **behaviour**: six taps within eight seconds, on iOS, in portrait. That
-is what a frozen screen feels like from the player's side, and someone whose screen is
-responding does not do it. Then a dismissible card (EN/FR/ES, following `navigator.language`)
-suggests turning the phone sideways. Dismissal is remembered for the session, and rotating
-clears it automatically.
-
-Verified: absent on load, appears after six taps, correct language. Delete this file and
-its injection in `build_web.sh` once the underlying bug is fixed.
+  the cause, but the Compatibility renderer should not emit it on WebGL.
 
 ### A separate failure mode: corrupted wasm download
 
