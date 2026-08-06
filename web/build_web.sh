@@ -155,6 +155,13 @@ print("index.html: canvas hardening + boot diagnostics + iOS portrait notice")
 EOF
 
 if [[ "${1:-}" == "--deploy" ]]; then
+	# Refuse to publish a build wired to the Lemon Squeezy TEST store: test cards work
+	# there, so Premium would be free (and no money would arrive). See lemon_squeezy.gd.
+	if grep -q '^const TEST_STORE := true' scripts/lemon_squeezy.gd; then
+		echo "REFUSING to deploy: lemon_squeezy.gd has TEST_STORE = true." >&2
+		echo "Fill LIVE_CHECKOUT_URL / LIVE_PRODUCT_IDS and set TEST_STORE := false first." >&2
+		exit 1
+	fi
 	rm -rf docs/play
 	mkdir -p docs/play
 	cp build/web/index.* build/web/stockfish-* build/web/Copying.txt docs/play/

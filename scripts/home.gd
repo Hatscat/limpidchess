@@ -25,10 +25,25 @@ func _ready() -> void:
 	_refresh_games()
 	_refresh_puzzle_button()
 	_refresh_language_btn()
+	_route_checkout_return()
 	# Calm moment after a positive game: ask for a Play rating (gated to once, 2nd+ game).
 	if GameManager.pending_review_check:
 		GameManager.pending_review_check = false
 		Reviews.maybe_ask()
+
+
+## Coming back from the web checkout lands on Home (the game reloads): take the player
+## straight to Premium, where the redeem button and the "check your email" line are.
+func _route_checkout_return() -> void:
+	if not GameManager.returned_from_checkout:
+		return
+	# Strip ?ls=ok only now that it has been acted on: dropping it at boot would lose
+	# the flag if the PWA update path reloads the page a moment later.
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval(
+			"history.replaceState(null, '', location.pathname + location.hash)", true)
+	if not GameManager.is_premium:
+		GameManager.go_to_premium()
 
 
 func _refresh_games() -> void:

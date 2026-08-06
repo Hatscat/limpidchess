@@ -52,6 +52,16 @@ const UNLIMITED_GAMES := 999
 
 # --- Persistent state ---
 var is_premium := false
+## Web only: the Lemon Squeezy license key that bought Premium, its activation instance,
+## and the last day it was re-checked (see Billing._revalidate). The key doubles as the
+## portable proof of purchase: re-pasting it is how a web player "restores" on a new
+## browser, or after the browser evicts this save.
+var license_key := ""
+var license_instance := ""
+var license_checked_date := ""
+## Set at boot when the player lands back from the checkout (…/play/?ls=ok), so Home can
+## take them straight to Premium with "your key is in your email".
+var returned_from_checkout := false
 var language := ""           ## chosen UI locale code; "" = follow the device language
 var sound_enabled := true    ## sound-effect cues on/off
 var last_review_prompt_date := "" ## "YYYY-MM-DD" we last auto-showed the rating prompt (cap: once/day)
@@ -88,6 +98,7 @@ func _ready() -> void:
 	_apply_locale()
 	_roll_day()
 	_check_web_update()
+	_check_checkout_return()
 
 
 # --- Web/PWA update-at-boot ---
@@ -131,6 +142,20 @@ func _on_pwa_solo_boot(_args: Array) -> void:
 		JavaScriptBridge.pwa_update()
 
 
+## Did the player just come back from the Lemon Squeezy checkout (…/play/?ls=ok)?
+## The flag is read once by Home, which routes them to Premium to redeem their key.
+## The parameter is then stripped so a reload (or an installed PWA relaunching its
+## start_url) can't re-trigger the prompt forever.
+func _check_checkout_return() -> void:
+	if not OS.has_feature("web"):
+		return
+	var flag: Variant = JavaScriptBridge.eval(
+		"(new URLSearchParams(location.search).get('ls') === 'ok')", true)
+	if typeof(flag) != TYPE_BOOL or not flag:
+		return
+	returned_from_checkout = true
+
+
 # --- Language ---
 
 ## Apply the saved locale, or fall back to the device language (then English).
@@ -167,6 +192,46 @@ func set_sound_enabled(on: bool) -> void:
 	_save()
 
 
+# --- Web license (Lemon Squeezy; see Billing) ---
+
+## Web: another tab (the one that came back from the checkout) may have redeemed a key
+## while this tab sat idle with a stale copy of the save. Re-read the entitlement when
+## we regain focus, UPGRADE-ONLY, so this tab's next full-file _save() can't wipe the
+## Premium the other tab just bought. Never downgrades: only the store revokes.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_APPLICATION_FOCUS_IN or not OS.has_feature("web") or is_premium:
+		return
+	var cfg := ConfigFile.new()
+	if cfg.load(SAVE_PATH) != OK:
+		return
+	if not bool(cfg.get_value("player", "is_premium", false)):
+		return
+	license_key = str(cfg.get_value("premium", "license_key", license_key))
+	license_instance = str(cfg.get_value("premium", "license_instance", license_instance))
+	license_checked_date = str(cfg.get_value("premium", "license_checked_date", license_checked_date))
+	is_premium = true
+	premium_changed.emit()
+
+
+func set_license(key: String, instance_id: String) -> void:
+	license_key = key
+	license_instance = instance_id
+	license_checked_date = Time.get_date_string_from_system()
+	_save()
+
+
+func set_license_checked(date: String) -> void:
+	license_checked_date = date
+	_save()
+
+
+func clear_license() -> void:
+	license_key = ""
+	license_instance = ""
+	license_checked_date = ""
+	_save()
+
+
 ## DEV ONLY: wipe the local save and reset in-memory state to a fresh first launch
 ## (non-premium, full daily games, zeroed stats). Caller should reload the scene.
 func reset_save() -> void:
@@ -183,6 +248,9 @@ func reset_save() -> void:
 	last_play_date = ""
 	bonus_games = WELCOME_BONUS_GAMES
 	bonus_puzzles = WELCOME_BONUS_PUZZLES
+	license_key = ""
+	license_instance = ""
+	license_checked_date = ""
 	games_played = 0
 	bot_wins.clear()
 	puzzle_highscore = 0
@@ -459,6 +527,9 @@ func _save() -> void:
 	cfg.set_value("daily", "last_play_date", last_play_date)
 	cfg.set_value("daily", "bonus_games", bonus_games)
 	cfg.set_value("daily", "bonus_puzzles", bonus_puzzles)
+	cfg.set_value("premium", "license_key", license_key)
+	cfg.set_value("premium", "license_instance", license_instance)
+	cfg.set_value("premium", "license_checked_date", license_checked_date)
 	cfg.set_value("stats", "games_played", games_played)
 	cfg.set_value("stats", "puzzle_highscore", puzzle_highscore)
 	cfg.set_value("stats", "puzzle_streak", puzzle_streak)
@@ -486,6 +557,9 @@ func _load() -> void:
 	# fresh installs and (once) to existing saves that predate the feature.
 	bonus_games = int(cfg.get_value("daily", "bonus_games", WELCOME_BONUS_GAMES))
 	bonus_puzzles = int(cfg.get_value("daily", "bonus_puzzles", WELCOME_BONUS_PUZZLES))
+	license_key = str(cfg.get_value("premium", "license_key", ""))
+	license_instance = str(cfg.get_value("premium", "license_instance", ""))
+	license_checked_date = str(cfg.get_value("premium", "license_checked_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))
 	puzzle_highscore = int(cfg.get_value("stats", "puzzle_highscore", 0))
 	puzzle_streak = int(cfg.get_value("stats", "puzzle_streak", 0))

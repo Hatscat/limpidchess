@@ -24,7 +24,19 @@ func _ready() -> void:
 	Billing.purchase_succeeded.connect(_on_purchase_succeeded)
 	Billing.purchase_failed.connect(_on_purchase_failed)
 	Billing.restore_finished.connect(_on_restore_finished)
+	Billing.redeem_started.connect(_on_redeem_started)
+	GameManager.premium_changed.connect(_refresh)  # e.g. a revoke landing while we're open
 	_refresh()
+	if GameManager.returned_from_checkout:
+		# Landed back from the checkout: the key is in their inbox, not in the app.
+		GameManager.returned_from_checkout = false
+		if not GameManager.is_premium:
+			_set_status(tr("Your key is in your purchase email."))
+
+
+## Web: the license check is a network round trip, so say something during it.
+func _on_redeem_started() -> void:
+	_set_status(tr("Checking your key…"))
 
 
 ## Back arrow (top-left) returns to Home, same as the Android back gesture.
@@ -38,22 +50,24 @@ func _notification(what: int) -> void:
 
 
 ## Reflect the current entitlement + latest price. Buy/restore/redeem hide once Premium.
-## On web there is no Play Billing, so the screen becomes the funnel: it explains that
-## Premium comes with the Android app and the button links to the Play listing.
+## On web there is no Play Billing: the same buttons drive the Lemon Squeezy checkout and
+## the license-key redeem instead (see Billing), so only their labels differ.
 func _refresh() -> void:
 	var web := OS.has_feature("web")
 	var premium := GameManager.is_premium
-	price_label.text = tr("Premium comes with the Android app") if web \
-		else tr("%s · one-time, forever") % Billing.price_text
+	price_label.text = tr("%s · one-time, forever") % Billing.price_text
 	get_button.visible = not premium
-	restore_button.visible = not premium and not web
+	restore_button.visible = not premium
 	status_label.visible = premium
+	# On web the key IS the purchase record, so "Restore purchase" becomes "I have a key":
+	# the same button, the same redeem flow, whether they just bought or are returning on
+	# a new browser.
+	restore_button.text = tr("I have a key") if web else tr("Restore purchase")
 	if premium:
 		_set_status(tr("✓ You're Premium. Thank you!"))
 	else:
 		get_button.disabled = false
-		get_button.text = tr("Get it on Google Play") if web \
-			else tr("Unlock Premium  ·  %s") % Billing.price_text
+		get_button.text = tr("Unlock Premium  ·  %s") % Billing.price_text
 
 
 ## Show a one-line status message (green for good news, soft red for a problem).
@@ -65,14 +79,11 @@ func _set_status(msg: String, ok := true) -> void:
 
 func _on_get_pressed() -> void:
 	if OS.has_feature("web"):
-		# No Play Billing in a browser: the button is the funnel to the Android app.
-		# Direct listing link, not Reviews.open_store_listing() (that would also
-		# silence the rate-this-app prompt as a side effect). window.open runs outside
-		# the DOM click event here, so strict popup blockers (Safari) may swallow it;
-		# fall back to navigating this tab rather than leaving a dead button.
-		JavaScriptBridge.eval(
-			"if (!window.open('%s', '_blank')) location.assign('%s');"
-			% [Reviews.LISTING_URL, Reviews.LISTING_URL], true)
+		# Opens the hosted checkout in a new tab; the key then arrives by email, so the
+		# button must NOT go into a "Processing…" state we can never resolve. No status
+		# either: nothing has been bought yet, and a green "your key is in your email"
+		# before paying would be a lie. The line appears on the way BACK (?ls=ok).
+		Billing.buy()
 		return
 	get_button.disabled = true
 	get_button.text = tr("Processing…")
@@ -80,6 +91,9 @@ func _on_get_pressed() -> void:
 
 
 func _on_restore_pressed() -> void:
+	if OS.has_feature("web"):
+		Billing.restore()  # opens the key prompt; status comes from its signals
+		return
 	_set_status(tr("Checking your purchases…"))
 	Billing.restore()
 

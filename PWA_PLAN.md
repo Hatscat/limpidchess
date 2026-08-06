@@ -329,8 +329,29 @@ attribution carries over via the in-game About screen. Nothing else changes.
       another reason the domain came before the launch).
     Cloudflare/R2 hosting stays the later option if bandwidth approaches the
     Pages soft cap; the domain living at Cloudflare makes that move trivial.
-17. Lemon Squeezy premium + "Redeem key" dialog if web demand shows up.
-    Implementation plan (~2-3 dev days code + ~1h store setup):
+17. Lemon Squeezy premium + "Redeem key" dialog. **Built 2026-08-04, wired to the
+    TEST store.** Store: "Lone Bee" (lonebee.lemonsqueezy.com), product "Limpid Chess
+    Premium" €4.99, tax-inclusive pricing ON (EU consumer prices must include VAT),
+    license keys ON with unlimited length AND unlimited activations (Safari evicts
+    storage, so a paying player must be able to re-paste their key forever).
+    Code: [lemon_squeezy.gd](scripts/lemon_squeezy.gd) (activate/validate, no API key
+    needed, CORS is `*`), a web branch in [billing.gd](scripts/billing.gd) behind the
+    same public API the Premium screen already used, key + instance persisted by
+    GameManager, and the browser's native prompt for key entry.
+    **GO-LIVE = ONE EDIT**: fill `LIVE_CHECKOUT_URL` / `LIVE_PRODUCT_IDS` and set
+    `TEST_STORE := false` in lemon_squeezy.gd. `build_web.sh --deploy` REFUSES to
+    publish while TEST_STORE is true (test cards would hand out free Premium), so the
+    mistake is impossible to make silently. Also update `Billing.WEB_PRICE` if the
+    dashboard price ever changes (no price API without a secret key).
+    Entitlement rules, hard-won from the review pass: a response is INVALID **only**
+    when the store positively denies the KEY (not found / disabled / expired, or a
+    key for another product); rate limits, WAF pages, 5xx, offline and unrecognised
+    payloads are all UNKNOWN and change nothing. A refused activation falls back to
+    validate, so an activation-limit rejection can never call a paying customer's key
+    unrecognised. The stored key is never deleted, so a mistaken revoke self-heals on
+    the next launch. Verified live against the real test key: activate, validate,
+    deactivate, invalid-key rejection, persistence across reload, and CORS.
+    Original plan (for reference):
     - **Store (dashboard)**: create the LS store + a one-time "Limpid Chess
       Premium" product at €4.99, license keys ON (activation limit ~5, generous
       multi-device), checkout success URL → `https://limpidchess.com/play/?ls=ok`.
