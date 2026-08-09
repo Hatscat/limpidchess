@@ -20,12 +20,12 @@ extends Node
 ## Shipping with TEST_STORE = true would hand out Premium for free (test cards work and
 ## test keys are accepted), so `web/build_web.sh --deploy` REFUSES to publish while it
 ## is set. That guard is the real protection; this comment is not.
-const TEST_STORE := true
+const TEST_STORE := false
 
 const TEST_CHECKOUT_URL := "https://lonebee.lemonsqueezy.com/checkout/buy/7c13932f-f04b-4075-ad2c-c02d3d2a8e0e"
 const TEST_PRODUCT_IDS: Array[int] = [1267657]
-const LIVE_CHECKOUT_URL := ""            ## TODO at go-live: the live-mode checkout url
-const LIVE_PRODUCT_IDS: Array[int] = []  ## TODO at go-live: the live-mode product id
+const LIVE_CHECKOUT_URL := "https://lonebee.lemonsqueezy.com/checkout/buy/c53c3897-df1c-484b-918f-d693d4fec7e2"
+const LIVE_PRODUCT_IDS: Array[int] = [1278251]
 
 ## Keys are accepted only for these products, so a license bought from any other store
 ## on the platform (they all share one API) can't unlock this game.

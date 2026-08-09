@@ -329,8 +329,10 @@ attribution carries over via the in-game About screen. Nothing else changes.
       another reason the domain came before the launch).
     Cloudflare/R2 hosting stays the later option if bandwidth approaches the
     Pages soft cap; the domain living at Cloudflare makes that move trivial.
-17. Lemon Squeezy premium + "Redeem key" dialog. **Built 2026-08-04, wired to the
-    TEST store.** Store: "Lone Bee" (lonebee.lemonsqueezy.com), product "Limpid Chess
+17. Lemon Squeezy premium + "Redeem key" dialog. **LIVE since 2026-08-06**
+    (`TEST_STORE := false`, product 1278251, live checkout url in lemon_squeezy.gd;
+    verified at switchover: the old test key is now rejected and the checkout opens
+    a Stripe `pk_live` cart). Built 2026-08-04 against the test store. Store: "Lone Bee" (lonebee.lemonsqueezy.com), product "Limpid Chess
     Premium" €4.99, tax-inclusive pricing ON (EU consumer prices must include VAT),
     license keys ON with unlimited length AND unlimited activations (Safari evicts
     storage, so a paying player must be able to re-paste their key forever).

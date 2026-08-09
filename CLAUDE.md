@@ -181,11 +181,19 @@ Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**).
   on top: spent only after the day's allowance, so day one offers 5 games + 3 puzzle
   runs and any leftover survives to later days. Granted through the save-load defaults
   (fresh installs, and once to existing saves on update).
-- **Premium**: one-time ~$3.99 → unlimited games + Face to Face. Entitlement is a local
-  flag (`GameManager.is_premium`), granted by the [`Billing`](scripts/billing.gd) autoload
-  (Google Play Billing) on a successful buy / restore / promo-code redemption. The price is
-  read live from Play (localized). Remaining setup (plugin install + Play Console product)
-  is documented in HOW_TO.md under "In-app purchase".
+- **Premium**: one-time → unlimited games + Face to Face. Entitlement is a local flag
+  (`GameManager.is_premium`), granted by the [`Billing`](scripts/billing.gd) autoload,
+  which fronts BOTH stores behind one API (`can_purchase` / `buy` / `restore` + signals):
+  - **Android**: Google Play Billing (~$3.99), on a successful buy / restore / promo
+    code. The price is read live from Play (localized). Setup notes in HOW_TO.md under
+    "In-app purchase". Grant-only: Play never auto-revokes.
+  - **Web**: Lemon Squeezy license keys (€4.99), see
+    [`lemon_squeezy.gd`](scripts/lemon_squeezy.gd). Buy opens the hosted checkout, the
+    key arrives by email, "I have a key" activates it. Only a positive store denial
+    revokes; every ambiguous answer (offline, rate limit, 5xx) keeps Premium, and the
+    key is never deleted, so a mistaken revoke self-heals. `WEB_PRICE` mirrors the
+    dashboard price by hand, and `build_web.sh --deploy` refuses to publish while
+    `TEST_STORE` is true.
 - No ads, ever. Don't add them.
 - **GPL is fine for a paid Android game** — GPL lets you sell the binary; you just
   must also offer the source. (We target Google Play, not the Apple App Store,
