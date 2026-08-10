@@ -32,6 +32,53 @@
 	var BG = '#171a1f';
 	var DEBUG = /[?&]debug=1\b/.test(location.search);
 
+	// --- live experiments for the "presents only on resize" bug --------------------------
+	//
+	// Confirmed in person on an iPhone 13 (Safari AND Chrome, which is WebKit too): the
+	// canvas is frozen in BOTH orientations and each rotation presents exactly one frame.
+	// So orientation is irrelevant; what presents a frame is a RESIZE. WebKit is not being
+	// told the canvas content changed, and only a layer-geometry change makes it re-read
+	// the drawing buffer.
+	//
+	// These three attack that directly. Test with the phone held still, no rotating.
+	//
+	//   ?d=anim        a 2px element running an infinite CSS transform animation. Forces
+	//                  the compositor to run every frame for something else on the page.
+	//                  If the canvas then presents, the fix is a hidden CSS animation.
+	//   ?d=canvasanim  the same animation applied to the canvas layer itself.
+	//   ?d=stepsize    alternate the canvas CSS height by 1px EVERY frame. Godot's
+	//                  updateSize() snaps it back on the next frame, so it oscillates,
+	//                  which is a real per-frame resize. (?d=nudge earlier used 0.5px at
+	//                  2 Hz, far too little and far too rare.)
+	var expMode = (/[?&]d=([a-z]+)/.exec(location.search) || [])[1] || '';
+
+	if (expMode === 'anim' || expMode === 'canvasanim') {
+		var st = document.createElement('style');
+		// Sub-pixel scale: invisible, but the compositor must service the layer every
+		// frame. A rotate() on a separate element (?d=anim) can be run entirely on its
+		// own layer without touching the canvas, which is probably why that one failed.
+		st.textContent = '@keyframes limpidspin{from{transform:rotate(0)}'
+			+ 'to{transform:rotate(360deg)}}'
+			+ '@keyframes limpidnudge{0%{transform:scale(1)}'
+			+ '50%{transform:scale(1.0004)}100%{transform:scale(1)}}';
+		document.head.appendChild(st);
+	}
+	var expCanvas = null;
+	var expApplied = 0;
+	var stepOn = false;
+
+	// Timestamped event ring, appended to the ?log=1 POST. The panel shows current state;
+	// this shows the SEQUENCE, which is what matters for "what does a rotation actually do
+	// that we cannot reproduce?".
+	var events = [];
+	var t0 = Date.now();
+	function logLine(msg) {
+		events.push(((Date.now() - t0) / 1000).toFixed(2) + 's  ' + msg);
+		if (events.length > 60) {
+			events.shift();
+		}
+	}
+
 	var errors = [];
 	var taps = 0;
 	var ups = 0;
@@ -206,6 +253,16 @@
 		return rafOrig(function (t) {
 			engFrames++;
 			var r = cb(t);
+			// After the engine's frame, so our change is what survives to the end of it.
+			if (expCanvas) {
+				var h = parseFloat(expCanvas.style.height);
+				if (h) {
+					stepOn = !stepOn;
+					expCanvas.style.height = (stepOn ? h - 1 : h + 1) + 'px';
+					expApplied++;
+				}
+			}
+			watchGeometry();
 			if (DEBUG) {
 				pollGL();
 				if (engFrames % 12 === 0) {   // ~5/s: readPixels forces a GPU sync
@@ -215,6 +272,22 @@
 			return r;
 		});
 	};
+
+	// Log every change to the canvas's geometry. A rotation presents exactly one frame, so
+	// whatever this records around a rotation IS the thing to reproduce.
+	var lastGeom = '';
+	function watchGeometry() {
+		var c = document.getElementById('canvas');
+		if (!c) {
+			return;
+		}
+		var g = c.width + 'x' + c.height + ' css ' + c.style.width + ',' + c.style.height
+			+ ' win ' + window.innerWidth + 'x' + window.innerHeight;
+		if (g !== lastGeom) {
+			lastGeom = g;
+			logLine('geom ' + g);
+		}
+	}
 
 	function tick(t) {
 		frames++;
@@ -425,6 +498,27 @@
 		render();
 	}
 
+	function applyExperiment(c) {
+		if (expMode === 'anim') {
+			var dot = document.createElement('div');
+			dot.setAttribute('style', 'position:fixed;left:0;top:0;width:2px;height:2px;'
+				+ 'background:#66bdd9;z-index:99997;pointer-events:none;'
+				+ 'animation:limpidspin 1s linear infinite');
+			document.body.appendChild(dot);
+		} else if (expMode === 'canvasanim') {
+			c.style.transformOrigin = '50% 50%';
+			c.style.animation = 'limpidnudge 0.5s linear infinite';
+			logLine('exp canvasanim: animation=' + c.style.animation);
+		} else if (expMode === 'stepsize') {
+			// Applied in the rAF wrapper AFTER Godot's callback, not before. Registering
+			// our own rAF at DOMContentLoaded put us ahead of emscripten's, so Godot's
+			// updateSize() reverted the change inside the same frame and the compositor
+			// never saw a single one of them.
+			expCanvas = c;
+			logLine('exp stepsize armed (applied after each engine frame)');
+		}
+	}
+
 	function watch() {
 		var t0 = Date.now();
 		var iv = setInterval(function () {
@@ -446,6 +540,15 @@
 		}, 500);
 	}
 
+	['resize', 'orientationchange', 'pageshow', 'visibilitychange',
+		'focus', 'blur'].forEach(function (ev) {
+		window.addEventListener(ev, function () {
+			logLine(ev + '  win ' + window.innerWidth + 'x' + window.innerHeight
+				+ ' dpr' + window.devicePixelRatio
+				+ (document.hidden ? ' HIDDEN' : ''));
+		});
+	});
+
 	function boot() {
 		if (location.search.indexOf('reset=1') !== -1) {
 			hardReset();
@@ -454,6 +557,7 @@
 		var c = document.getElementById('canvas');
 		if (c) {
 			probeCanvas(c);
+			applyExperiment(c);
 		}
 		promoteServiceWorker();
 		if (location.search.indexOf('log=1') !== -1) {
@@ -462,7 +566,12 @@
 			// prints it to a terminal instead of a phone screenshot.
 			setInterval(function () {
 				try {
-					fetch('/__log', { method: 'POST', body: diagnostics() });
+					fetch('/__log', {
+						method: 'POST',
+						body: diagnostics()
+							+ '\nexp ' + (expMode || 'none') + ' applied ' + expApplied
+							+ '\n--- events ---\n' + events.join('\n')
+					});
 				} catch (e) { /* offline or blocked */ }
 			}, 2000);
 		}
