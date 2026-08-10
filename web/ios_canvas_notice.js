@@ -1,20 +1,21 @@
-/* limpid:ios_portrait_notice — build_web.sh greps this marker to stay idempotent.
+/* limpid:ios_canvas_notice — build_web.sh greps this marker to stay idempotent.
  *
- * Mitigation for the unsolved iOS portrait freeze (see README.md, "OPEN BUG"). On some
- * iPhones WebKit never presents the WebGL canvas while the device is held in portrait:
- * the engine runs at 60 fps, input works, sound plays, the correct frame is composited
- * every frame, and the screen simply never updates. Rotating to landscape displays it.
+ * Honest message for the unsolved iOS canvas bug (see README.md, "OPEN BUG"). On some
+ * iPhones WebKit never presents canvas content until the viewport itself changes. The
+ * engine runs at 60 fps, input works, sound plays, the correct frame is composited every
+ * frame, and the screen simply never updates. Safari and Chrome alike, both orientations.
  *
- * We cannot detect the fault directly. The framebuffer is updating correctly, so nothing
- * readable from the page distinguishes an affected device from a healthy one, and only
- * some iPhones are affected — a blanket "rotate your phone" banner would be wrong for
- * everyone else.
+ * This file replaces an earlier "turn your phone sideways" hint, which was wrong: rotating
+ * presents exactly ONE frame, so a player following that advice gets a slideshow, not a
+ * game. On an affected device the web build is unusable, and saying so is more respectful
+ * than sending someone round in circles.
  *
- * So trigger on the user's behaviour instead: six taps within eight seconds, CLUSTERED
- * inside 60 px, with the device in portrait. Rate alone would be a false-positive machine
- * because Puzzles rewards fast play; the clustering is what separates someone jabbing at a
- * dead screen from someone happily tapping arrows all over the board. Healthy devices
- * essentially never see this; frozen ones see it within a few seconds of trying to play.
+ * We cannot detect the fault directly. The framebuffer updates correctly, so nothing
+ * readable from the page distinguishes an affected iPhone from a healthy one, and only
+ * some are affected. So trigger on behaviour: six taps within eight seconds, CLUSTERED
+ * inside 60 px. Rate alone would be a false-positive machine because Puzzles rewards fast
+ * play; the clustering is what separates someone jabbing at a dead screen from someone
+ * happily tapping arrows all over the board.
  *
  * Delete this file, and its injection in build_web.sh, once the underlying bug is fixed.
  */
@@ -23,13 +24,8 @@
 
 	var TAPS_NEEDED = 6;
 	var WINDOW_MS = 8000;
-	// Taps must also be CLUSTERED. Rate alone is not enough: Puzzles rewards fast play, so
-	// a happy player on a healthy phone can easily manage six taps in eight seconds, and
-	// telling them their screen is frozen would be worse than saying nothing. Someone
-	// staring at a dead screen jabs the same spot; someone playing taps arrows and buttons
-	// all over the board. Clustering is what separates frustration from flow.
 	var CLUSTER_PX = 60;
-	var STORAGE_KEY = 'limpid_rotate_hint_dismissed';
+	var STORAGE_KEY = 'limpid_ios_notice_dismissed';
 
 	var ua = navigator.userAgent || '';
 	var isIOS = /iPad|iPhone|iPod/.test(ua)
@@ -44,13 +40,21 @@
 	} catch (e) { /* private mode: just show it */ }
 
 	var TEXT = {
-		en: ['Screen not updating?', 'Turn your phone sideways to play. This is a bug in '
-			+ 'Safari on some iPhones, sorry about that.', 'Got it'],
-		fr: ['L’écran est figé ?', 'Tourne ton téléphone pour '
-			+ 'jouer. C’est un bug de Safari sur certains iPhone, désolé.',
-			'J’ai compris'],
-		es: ['¿La pantalla no se actualiza?', 'Gira el móvil para jugar. Es un '
-			+ 'fallo de Safari en algunos iPhone, lo sentimos.', 'Entendido']
+		en: ['Screen not updating?',
+			'Some iPhones hit a bug in Safari that stops the game screen refreshing. '
+				+ 'It is the browser, not your phone, and I am still chasing it. '
+				+ 'For now it works on a computer, or on Android.',
+			'OK'],
+		fr: ['L’écran ne se rafraîchit pas ?',
+			'Certains iPhone rencontrent un bug de Safari qui bloque l’affichage du jeu. '
+				+ 'Cela vient du navigateur, pas de ton téléphone, et je cherche encore. '
+				+ 'En attendant, ça marche sur ordinateur ou sur Android.',
+			'OK'],
+		es: ['¿La pantalla no se actualiza?',
+			'Algunos iPhone sufren un fallo de Safari que impide refrescar la pantalla '
+				+ 'del juego. Es el navegador, no tu teléfono, y sigo investigándolo. '
+				+ 'Por ahora funciona en un ordenador o en Android.',
+			'OK']
 	};
 	var lang = (navigator.language || 'en').slice(0, 2).toLowerCase();
 	var t = TEXT[lang] || TEXT.en;
@@ -68,10 +72,6 @@
 			maxY = Math.max(maxY, taps[i].y);
 		}
 		return (maxX - minX) <= CLUSTER_PX && (maxY - minY) <= CLUSTER_PX;
-	}
-
-	function portrait() {
-		return window.innerHeight > window.innerWidth;
 	}
 
 	function dismiss() {
@@ -98,7 +98,7 @@
 
 		var h = document.createElement('div');
 		h.setAttribute('style', 'font-weight:700;color:#66bdd9;margin-bottom:6px');
-		h.textContent = '↻  ' + t[0];
+		h.textContent = t[0];
 
 		var p = document.createElement('div');
 		p.setAttribute('style', 'color:#b0beca');
@@ -117,8 +117,10 @@
 	}
 
 	// Passive, never preventDefault: this must not interfere with input reaching Godot.
+	// No orientation check: the bug affects portrait AND landscape, which is exactly what
+	// the earlier version got wrong.
 	window.addEventListener('touchstart', function (e) {
-		if (shown || !portrait()) {
+		if (shown) {
 			return;
 		}
 		var p = (e.touches && e.touches[0]) ? e.touches[0] : e;
@@ -134,13 +136,4 @@
 			show();
 		}
 	}, { passive: true, capture: true });
-
-	// Rotating is the fix, so once they do it the hint has served its purpose.
-	window.addEventListener('orientationchange', function () {
-		setTimeout(function () {
-			if (box && !portrait()) {
-				dismiss();
-			}
-		}, 300);
-	});
 }());

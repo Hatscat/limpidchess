@@ -145,13 +145,13 @@ css = (
     "\t-webkit-touch-callout: none;\n"
     "}\n"
     "\t\t</style>\n")
-notice = pathlib.Path("web/ios_portrait_notice.js").read_text()
-assert "limpid:ios_portrait_notice" in notice, "marker missing from ios_portrait_notice.js"
-assert "limpid:ios_portrait_notice" not in page, "notice already injected"
+notice = pathlib.Path("web/ios_canvas_notice.js").read_text()
+assert "limpid:ios_canvas_notice" in notice, "marker missing from ios_canvas_notice.js"
+assert "limpid:ios_canvas_notice" not in page, "notice already injected"
 page = page.replace("</head>", css + "\t\t<script>\n" + diag + "\t\t</script>\n"
                     + "\t\t<script>\n" + notice + "\t\t</script>\n\t</head>", 1)
 html.write_text(page)
-print("index.html: canvas hardening + boot diagnostics + iOS portrait notice")
+print("index.html: canvas hardening + boot diagnostics + iOS canvas notice")
 EOF
 
 if [[ "${1:-}" == "--deploy" ]]; then
