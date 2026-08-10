@@ -19,121 +19,91 @@ where the game fails to boot can never receive the fix that would make it boot, 
 single bad deploy strands those users permanently, with no remote way to reach them.
 Costs one ~4 KB request per online launch. Do not revert it to save that request.
 
-## OPEN BUG: iOS Safari renders only in landscape (July 2026)
+## OPEN BUG: iOS never presents canvas content (August 2026)
 
-**Status: unsolved.** Android, desktop and *some* iPhones are fine. On affected iPhones
-the game is unusable in portrait. Handoff doc for a session with a real Safari console.
+**Status: unsolved, and believed to be a WebKit bug.** Android, desktop and *some* iPhones
+are fine. On an affected iPhone the web build is unusable. A ready-to-file report is in
+[WEBKIT_BUG.md](WEBKIT_BUG.md).
 
 ### Symptom, stated precisely
 
-It is **not** an input bug. Taps register, the tapped move plays its sound, and the game
-state advances. What fails is **presentation**: the canvas keeps showing a stale frame.
+Confirmed in person on an **iPhone 13**, in **Safari and Chrome alike** (both are WebKit),
+in **both orientations**:
 
-- **Portrait: frozen.** Deterministic, every load, private tab or not, installed PWA or
-  browser tab.
-- **Landscape: works normally.**
-- Rotating to landscape renders the pending state immediately (the move your friend
-  played 20 s ago appears). Rotating back to portrait freezes again, every time.
-- Rotating produces **exactly one correct frame**. A portrait screenshot taken after a
-  rotation shows a correctly *portrait-laid-out* scene, so the engine does re-run layout
-  and render for portrait dimensions. It simply never renders again after that.
+- The game is frozen on screen. The engine is not: input registers, taps play their sound,
+  the game state advances, and the correct frame is composited every frame.
+- **Rotating the device presents exactly ONE frame.** You can play the game by rotating
+  after every move. Nothing else advances the display.
 
-### Confirmed by measurement, on a frozen portrait screen
+An earlier remote diagnosis of "portrait freezes, landscape works" was **wrong**, and the
+mistake is instructive: in landscape Safari's toolbar auto-hides and reappears as you
+interact, resizing the viewport repeatedly, and each of those resizes presented a frame.
+Portrait's toolbar is stable, so nothing fired. Only watching it in person exposed that.
+
+### Confirmed by measurement, on a frozen screen
 
 | | Reading |
 |---|---|
-| Device | iPhone, iOS 18.1.1, Safari 18.1.1, dpr 3 |
+| Device | iPhone 13, iOS 18.x, dpr 3. Safari and Chrome both affected |
 | Engine main loop | 56-60 fps (rAF callbacks from emscripten, counted separately from ours) |
+| Draw calls | 767-6900/s, tracking real scene complexity: 22/frame on the menu, 39 after navigating, 115 with a board up |
+| **Composites to screen** | **equals the frame rate** (`to-screen 59/s` at 59 fps) |
+| Pixel readback | with `preserveDrawingBuffer: true`, the default framebuffer holds the *current* frame and changes exactly when the game navigates |
 | Canvas | `1170x1974`, CSS `390x658` at `@0,0` — exactly `window * dpr`, no offset |
-| GL drawing buffer | `1170x1974 ok` — matches the canvas, **not** clamped |
-| WebGL context | never lost (`webglcontextlost` never fires) |
-| Touch | reaches the canvas element, `down N up N`, 0 cancels, 0 drift |
-| Godot's own touch handler | runs on every tap (verified by wrapping it at registration) |
-| Listeners | `touchstart/end/move/cancel` + `mousedown` bound to the canvas, never removed |
+| GL drawing buffer | matches the canvas, never clamped |
+| WebGL context | never lost; `gl.getError()` clean every frame |
+| Touch | reaches the canvas, `down N up N`, 0 cancels; Godot's own handler runs on each |
 | Audio | `running` |
-| Console | only `ERROR: Condition "!is_inside_tree()" ... at: can_process (node.cpp:902)`, **identical on working Android**, so benign |
+| Console | only `ERROR: Condition "!is_inside_tree()" ... can_process (node.cpp:902)`, **identical on working Android**, so benign |
 
-Landscape for comparison: `window 750x304`, `canvas 2250x912 ok`, 60 fps. Nearly the same
-total pixels as portrait; less than half the height.
+So the engine renders the correct frame, every frame, and the display never shows it.
 
 ### Ruled out by measurement, do not re-investigate
 
-1. **Canvas/viewport offset** — canvas is exactly `window * dpr` at origin; `visualViewport`
-   matches the layout viewport with `offsetTop 0`.
-2. **Storage quota** — 91 MB used of a 39 GB quota.
-3. **Memory pressure / WebGL context loss** — context never lost, engine never stalls.
-4. **`touch-action` gesture stealing** — 0 `touchcancel`, 0 drift; adding
-   `touch-action:none` to the canvas changed nothing.
-5. **Missing synthesized mouse events** — `cursor:pointer` changed nothing.
-6. **Listener teardown** — `removeEventListener` on the canvas is never called, on either
-   platform.
-7. **Service worker / cache / stale pck** — private browsing runs no service worker and
-   fails identically, 3 of 3.
-8. **Safari browser chrome** — the installed standalone PWA fails the same way.
-9. **Compositing-layer promotion** — `transform: translateZ(0)` changed nothing.
-10. **Forcing a re-composite** — periodic `getBoundingClientRect`, `storage.estimate`,
-    opacity toggling, DOM writes, a bare timer, and dirtying `canvas.style.height` by a
-    half pixel: none of them unfreeze it.
-11. **Canvas backing-store height** — `?d=lowdpi` overrides `devicePixelRatio` to 1, so
-    portrait renders at `390x658` instead of `1170x1974`. Still frozen, so the 1974px
-    height (the one large asymmetry against landscape's 912px) is not the trigger.
-12. **WebKit itself** — Playwright's WebKit 26.5 on Linux, at the same viewport and dpr,
-    repaints normally in *both* orientations (see the harness below). Whatever iOS does
-    here, desktop WebKit does not share it.
-13. **Engine render-path GL errors** — the harness catches
-    `glBlitFramebuffer: Read and write color attachments cannot be the same image` from
-    Godot's Compatibility renderer, but only ~4 times during startup; steady state is
-    clean over 10 s. A real engine bug worth reporting upstream (compare
-    [PR #106267](https://github.com/godotengine/godot/pull/106267), which replaced the
-    final blit-to-screen with a shader copy in 4.5), but it stops after boot and so
-    cannot explain a freeze that persists. Note the project has no shaders, no
-    `BackBufferCopy` and no MSAA, so nothing in the game asks for that blit.
+**Not the engine.** Godot composites to the default framebuffer at full frame rate and the
+buffer provably holds the current scene.
 
-14. **Canvas aspect ratio** — `?d=wide` (canvas 1170x1053, ratio 1.11) and `?d=squat`
-    (1170x525, ratio 2.23) both give a portrait-held phone a decisively landscape-shaped
-    canvas. Both still freeze. So it is not the canvas geometry at all: **the trigger is
-    the physical device orientation**, independent of anything about the canvas.
-15. **Every WebGL context attribute reachable from JS** — `antialias` on/off,
-    `preserveDrawingBuffer: true`, `alpha: false`, `desynchronized: true`; plus
-    `gl.finish()` after every frame and a forced backing-store realloc 10x/s
-    (`?d=resize`, which mimics what a rotation does). None of them present the frame.
+**Not WebGL specifically.** A 2D canvas laid over the WebGL one, blitted 3306 times with
+`drawImage`, does not display either (`?d=mirror`). Nor does a CPU-backed 2D canvas via
+`willReadFrequently: true` (`?d=mirror2`).
 
-Worth knowing: browsers emit WebGL errors through internal logging, **not** through the
-page's `console.error`. That blind spot is now closed on-device by the `glerr` line in
-`boot_diagnostics.js`, which drains `gl.getError()` on Godot's own context every frame.
+**Not the canvas geometry.** Size is out: `devicePixelRatio` forced to 1 (canvas 390x658
+instead of 1170x1974) still freezes. Aspect is out: a decisively landscape-shaped canvas
+(1170x525, ratio 2.23) on a portrait-held phone still freezes.
 
-### What it is: Godot draws, WebKit never presents
+**Not any WebGL context attribute.** `antialias` on/off, `preserveDrawingBuffer: true`,
+`alpha: false`, `desynchronized: true`. Godot requests none of them, so browser defaults
+apply (`aa=true preserve=false alpha=true`).
 
-Measured on a frozen portrait iPhone with `?debug=1`:
+**Not compositor nudging.** `transform: translateZ(0)`, opacity toggling, a hidden element
+running an infinite CSS animation, `gl.finish()` every frame, periodic
+`getBoundingClientRect`, `storage.estimate`, DOM writes, a bare timer.
 
-```
-before taps:   raf 56 / engine 56fps   DRAW 1232/s   to-screen 56/s   blit 0/s
-after 9 taps:  raf 57 / engine 57fps   DRAW 2216/s   to-screen 57/s   blit 0/s
-later:         raf 60 / engine 60fps   DRAW 6900/s   to-screen 60/s   blit 0/s
-```
+**Not the canvas CSS box.** Alternating `canvas.style.height` by 1px *every frame*, applied
+after the engine's frame so it survives (1344 applications, logged): no effect.
 
-`to-screen` **equals the frame rate throughout**. Godot composites to the default
-framebuffer 56-60 times a second on a screen that looks dead. And the draw density tracks
-the real game state: 22 draws/frame on the home menu, 39 after navigating, 115 once a
-board is up. The game navigated two screens deep and rendered every frame of it while the
-display still showed the menu.
+**Not the backing store either.** Shrinking `canvas.width` before every engine frame so
+Godot reallocates and re-renders inside that frame: no effect. This is the closest
+synthetic analogue to a rotation and it still does not present.
 
-Confirmed independently by pixel readback with `preserveDrawingBuffer: true` (which makes
-`readPixels` trustworthy): the default framebuffer's contents changed exactly when the
-game navigated, then held steady, because a still chess board is a still image.
+**Not the service worker, cache, or a stale pck.** Private browsing runs no service worker
+and fails identically, 3 of 3.
 
-**So the engine renders the correct frame every frame and WebKit never puts it on screen.**
-Nothing here is fixable engine-side.
+**Not Safari's browser chrome.** The installed standalone PWA fails the same way.
 
-Godot requests **no WebGL context attributes at all**, so browser defaults apply:
-`antialias: true`, `preserveDrawingBuffer: false`, `alpha: true`. Overriding each of them
-individually changes nothing (see "Ruled out", item 15).
+**Not `touch-action`, listener teardown, storage quota, memory pressure or context loss.**
+All measured, all clean.
 
-### The mechanism, as far as it is understood
+**Not an engine GL error.** A `glBlitFramebuffer` warning appears ~4 times at startup and
+never again (steady state clean over 10 s), so it cannot explain a persistent freeze. Worth
+reporting upstream anyway; the project has no shaders, no `BackBufferCopy` and no MSAA, so
+nothing in the game asks for that blit. Compare
+[PR #106267](https://github.com/godotengine/godot/pull/106267).
 
-Godot polls the canvas size every frame from C++ via `_godot_js_display_size_update()`,
-which calls `GodotDisplayScreen.updateSize()` in `index.js`. That function only touches
-the canvas when the size actually changed:
+### The one thing that works, and why it cannot be faked
+
+Godot polls the canvas size every frame via `_godot_js_display_size_update()`, which calls
+`GodotDisplayScreen.updateSize()` and only touches the canvas when the size changed:
 
 ```js
 if (canvas.style.width !== csw || ... || canvas.height !== height) {
@@ -142,38 +112,75 @@ if (canvas.style.width !== csw || ... || canvas.height !== height) {
     GodotDisplayScreen._updateGL();
     return 1
 }
-return 0
 ```
 
-Rotation changes `window.innerWidth/innerHeight`, that branch fires, and one good frame
-reaches the screen. Held in portrait it returns 0 forever. **Why the normal per-frame
-render path presents in landscape but not in portrait is the open question.**
+A rotation changes `window.innerWidth/innerHeight`, that branch fires, and one frame
+reaches the screen. The event log captures it:
 
-Note that dirtying `canvas.style.height` by hand should also make that branch fire, and it
-did not help. So either that is not the operative difference, or the branch is not what
-actually unfreezes the screen on rotation.
+```
+2.14s  geom 1170x1995 css 390px,665px win 390x665     portrait
+6.36s  geom 2250x990  css 750px,330px win 750x330     after rotating
+```
+
+Every synthetic reproduction of that (CSS box, backing store, both, at up to 60 Hz) fails.
+What we cannot fake from JavaScript is the **viewport itself** changing, which forces
+WebKit to re-lay out and re-composite the whole page. That is the remaining candidate.
 
 ### Reproducing
 
-Affected iPhone, `https://limpidchess.com/play/`, portrait, do not rotate. Add `?debug=1`
-for the live panel: frame rates, the DRAW/to-screen counters, pixel readback, GL errors,
-canvas and drawing-buffer sizes, granted context attributes, tap counts, last error.
-`?reset=1` wipes the service worker and caches.
+Affected iPhone, the game, held still, no rotating. `?debug=1` gives the live panel;
+`?log=1` POSTs it to [tools/lan_server.py](tools/lan_server.py) every 2 s; `?reset=1` wipes
+the service worker and caches. The `geom` lines in the event log record every canvas and
+window geometry change, which is what identified the rotation path.
 
-Note 1 of 3 iPhones tested was never affected, so device or iOS build matters.
+1 of 3 iPhones tested was never affected, so device or iOS build matters.
 
-**Do not re-run the tester through more experiments without a new hypothesis.** Fifteen
-were tried and every one failed; the list above is what they cost.
+**Do not put a tester through more experiments without a new hypothesis.** Roughly twenty
+were tried; the list above is what they cost.
 
-### What to try with a real Safari console
+### One free question never answered
 
-- Whether WebKit's compositor ever marks the canvas layer dirty in portrait (Layers /
-  Timelines panel). That is the one thing no page-level probe can see, and it is now the
-  only open question.
-- Whether a minimal WebGL page (a spinning triangle, no Godot) reproduces it on the same
-  device. If it does, this is a clean WebKit bug report and nothing to do with Godot.
-- Report the startup `glBlitFramebuffer` error upstream while you are in there. It is not
-  the cause, but the Compatibility renderer should not emit it on WebGL.
+While the canvas is frozen, **does the diagnostics panel keep counting?** It is plain DOM
+text updated once a second. If the DOM updates while no canvas does, the fault is specific
+to composited canvas layers and the root layer is fine. If the DOM is frozen too, nothing
+on the page presents and the scope is far larger. Ten seconds of looking, and it changes
+what the bug report should say.
+
+### What a real Safari console would still add
+
+- Whether WebKit ever marks the canvas layer dirty (Layers / Timelines panel). No
+  page-level probe can see this, and it is now the only open question.
+- Whether a **minimal WebGL page** (a spinning triangle, no Godot) reproduces it on the
+  same device. If it does, this is a clean WebKit bug with no Godot involved, and that is
+  the single most valuable thing anyone could add to the report.
+
+### Shipped mitigation: web/ios_canvas_notice.js
+
+The bug is unsolved and every JS-reachable lever is exhausted, so the build ships an honest
+message rather than a fix. It cannot detect the fault (the framebuffer updates correctly,
+so nothing distinguishes an affected iPhone from a healthy one) and only some devices are
+affected, so it triggers on **behaviour**: six taps within eight seconds, clustered inside
+60 px. That is what a frozen screen feels like from the player's side, and clustering is
+what stops a fast Puzzles player triggering it.
+
+It replaced an earlier "turn your phone sideways" hint, which was actively wrong: rotating
+presents one frame, so anyone following it got a slideshow. The current text says the
+browser is at fault, not their phone, and points at desktop or Android.
+
+### Methodology notes, learned the hard way
+
+- **Verify the experiment ran.** Two experiments were silently broken by their own code
+  (one overwrote its CSS animation with `none`; one applied its change before the engine
+  frame so Godot reverted it in the same frame) and both were recorded as negative results.
+  The panel now reports the active mode and an application count for exactly this reason.
+- **Re-run a known-good control in the same build.** Several conclusions were invalidated
+  because "?debug=1 works" had been measured on an older deploy.
+- **Confirm what the tester actually did.** A whole evening was lost because the tester was
+  rotating between attempts without mentioning it, which made a deterministic bug look
+  intermittent, and weeks were lost to "landscape works", which was an artifact of Safari's
+  toolbar resizing the viewport.
+- **Watch it in person if you possibly can.** Ten minutes with the device disproved the
+  central assumption of the whole remote investigation.
 
 ### A separate failure mode: corrupted wasm download
 
@@ -198,15 +205,6 @@ The same thing can happen to a real user on a flaky mobile connection, and the s
 worker will happily cache a corrupt-but-`200` response. That is what the boot watchdog and
 `?reset=1` exist for: after 40 s stalled, the panel offers **Reset and reload**, which
 wipes caches and refetches. Keep both.
-
-### Methodology notes, learned the hard way
-
-- **Every test round must re-run a known-good control in the same build.** Several
-  conclusions were invalidated because "?debug=1 works" was measured on an older deploy.
-- **Confirm exactly what the tester did.** A whole evening was lost because the tester was
-  rotating the device between attempts without mentioning it, which made a deterministic
-  bug look intermittent.
-- Single trials are worthless against a bug you believe may be flaky. Repeat, and count.
 
 ## tools/webkit_check.mjs — running the build in WebKit locally
 
