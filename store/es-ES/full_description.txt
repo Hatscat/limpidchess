@@ -11,7 +11,7 @@ Elige una jugada y se revela su calidad:
 • Azul = una jugada correcta
 • Rojo = un error grave
 
-Ganas monedas por encontrar la mejor jugada, y una nota en lenguaje sencillo te muestra cuál era la jugada más fuerte y por qué. Aquí los errores nunca son un castigo, son la lección, así que mejoras un poco en cada turno. Pronto empezarás a ver las buenas jugadas tú solo.
+Cada jugada se puntúa al instante, y una nota en lenguaje sencillo te muestra cuál era la jugada más fuerte y por qué. Aquí los errores nunca son un castigo, son la lección, así que mejoras un poco en cada turno. Pronto empezarás a ver las buenas jugadas tú solo.
 
 La mejor jugada siempre está ahí, solo tienes que verla.
 

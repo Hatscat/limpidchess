@@ -60,9 +60,8 @@ const MOVE_DECENT := Color(0.46, 0.66, 0.95, 1)
 ## A tempting mistake — the blunder option. Warm, soft red.
 const MOVE_BLUNDER := Color(0.91, 0.49, 0.44, 1)
 
-## Reward currencies / feedback accents.
-const COIN_BEST := Color(0.98, 0.80, 0.34, 1)   ## gold "best move" coin
-const COIN_BLUNDER := Color(0.78, 0.45, 0.40, 1) ## the "blunder" coin tally
+## Feedback accent.
+const ACCENT_GOLD := Color(0.98, 0.80, 0.34, 1) ## gold win tally beside the trophy badge
 
 # --- Type scale (font sizes in px) ---
 

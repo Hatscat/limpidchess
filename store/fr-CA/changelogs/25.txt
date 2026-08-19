@@ -1,6 +1,6 @@
 Bonjour le monde! Limpid Chess est disponible. 🎉
 
-À chaque tour, trois coups s'affichent, et l'un d'eux est le meilleur. Trouve-le, comprends pourquoi, gagne des pièces. Des échecs fluides qui ne te bloquent jamais.
+À chaque tour, trois coups s'affichent, et l'un d'eux est le meilleur. Trouve-le, comprends pourquoi, progresse. Des échecs fluides qui ne te bloquent jamais.
 
 • Des bots sympathiques pour tous les niveaux
 • Une revue coup par coup après chaque partie

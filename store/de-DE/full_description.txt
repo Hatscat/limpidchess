@@ -11,7 +11,7 @@ Wähle einen Zug, und er zeigt seine Qualität:
 • Blau = ein passabler Zug
 • Rot = ein Patzer
 
-Du verdienst Münzen, wenn du den besten Zug findest, und eine leicht verständliche Notiz zeigt dir, welcher Zug der stärkste war und warum. Fehler sind hier nie eine Strafe, sondern die Lektion, so wirst du mit jeder Runde ein bisschen besser. Bald erkennst du die guten Züge ganz von allein.
+Jeder Zug wird sofort bewertet, und eine leicht verständliche Notiz zeigt dir, welcher Zug der stärkste war und warum. Fehler sind hier nie eine Strafe, sondern die Lektion, so wirst du mit jeder Runde ein bisschen besser. Bald erkennst du die guten Züge ganz von allein.
 
 Der beste Zug ist immer da, du musst ihn nur sehen.
 

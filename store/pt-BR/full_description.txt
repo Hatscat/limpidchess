@@ -11,7 +11,7 @@ Escolha uma jogada e ela revela a qualidade:
 • Azul = uma jogada ok
 • Vermelho = um erro grave
 
-Você ganha moedas ao identificar a melhor jogada, e uma nota em linguagem simples mostra qual era a jogada mais forte e por quê. Aqui os erros nunca são punição, são a lição, então você fica um pouco melhor a cada turno. Logo você começa a enxergar as boas jogadas sozinho.
+Cada jogada é avaliada na hora, e uma nota em linguagem simples mostra qual era a jogada mais forte e por quê. Aqui os erros nunca são punição, são a lição, então você fica um pouco melhor a cada turno. Logo você começa a enxergar as boas jogadas sozinho.
 
 A melhor jogada está sempre lá, você só precisa enxergá-la.
 

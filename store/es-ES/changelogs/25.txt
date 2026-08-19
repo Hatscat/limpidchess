@@ -1,6 +1,6 @@
 ¡Hola mundo! Limpid Chess ya está aquí. 🎉
 
-En cada turno ves tres jugadas, y una es la mejor. Encuéntrala, descubre por qué y gana monedas. Ajedrez fluido que no te deja atascado.
+En cada turno ves tres jugadas, y una es la mejor. Encuéntrala, descubre por qué y mejora. Ajedrez fluido que no te deja atascado.
 
 • Bots amables para todos los niveles
 • Una revisión jugada a jugada tras cada partida

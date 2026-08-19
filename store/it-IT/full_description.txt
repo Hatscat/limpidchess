@@ -11,7 +11,7 @@ Scegli una mossa e si rivela la qualità:
 • Blu = una mossa ok
 • Rosso = un errore grave
 
-Guadagni monete quando individui la mossa migliore, e una nota in parole semplici ti mostra qual era la mossa più forte e perché. Qui gli errori non sono mai una punizione, sono la lezione, così migliori a ogni singolo turno. Presto inizierai a vedere le mosse buone tutto da solo.
+Ogni mossa viene valutata subito, e una nota in parole semplici ti mostra qual era la mossa più forte e perché. Qui gli errori non sono mai una punizione, sono la lezione, così migliori a ogni singolo turno. Presto inizierai a vedere le mosse buone tutto da solo.
 
 La mossa migliore è sempre lì, devi solo vederla.
 

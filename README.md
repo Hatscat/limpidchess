@@ -28,7 +28,7 @@
 Most chess apps drop a beginner onto a blank board of thirty legal moves, and they freeze.
 Limpid Chess removes that friction: **every turn it surfaces exactly three moves**, the best, a
 "not bad" one, and a blunder, drawn as plain numbered arrows. You don't get told which is which.
-You pick, and only then do the colors, a symbol, and a coin reveal how you did. Mistakes are the
+You pick, and only then do the colors, a symbol, and a grade reveal how you did. Mistakes are the
 lesson, never the punishment.
 
 > "The move is there, but you must see it."
@@ -49,7 +49,7 @@ is fun at any level.
 1. **Find the best.** Three moves, one color, no hints.
 2. **See why.** Pick one and the qualities reveal: green is best, blue is OK, red is the blunder,
    each with a clear symbol so it reads without relying on color.
-3. **Learn.** Collect a coin, see what the best move was, and slowly start spotting the good moves
+3. **Learn.** Get your grade, see what the best move was, and slowly start spotting the good moves
    yourself.
 
 <p align="center">
@@ -114,7 +114,7 @@ Building the native Android Stockfish and exporting the app are covered in
 
 Shipped:
 
-- [x] The three-move mechanic, opponents, coins, and the move-by-move game review
+- [x] The three-move mechanic, opponents, move grading, and the move-by-move game review
 - [x] **Puzzles**: a rising-difficulty streak of tactics from the
       [Lichess open puzzle database](https://database.lichess.org/) (CC0), one wrong move ends the
       run, beat your best streak, one attempt a day for free players

@@ -11,7 +11,7 @@ Bir hamle seç ve kalitesi ortaya çıksın:
 • Mavi = idare eder bir hamle
 • Kırmızı = bir gaf
 
-En iyi hamleyi bulduğunda madeni para kazanırsın ve sade bir dille yazılmış bir not, en güçlü hamlenin ne olduğunu ve nedenini gösterir. Burada hatalar asla bir ceza değildir, dersin ta kendisidir, böylece her turda biraz daha keskinleşirsin. Kısa süre sonra iyi hamleleri kendi başına görmeye başlarsın.
+Her hamlen anında değerlendirilir ve sade bir dille yazılmış bir not, en güçlü hamlenin ne olduğunu ve nedenini gösterir. Burada hatalar asla bir ceza değildir, dersin ta kendisidir, böylece her turda biraz daha keskinleşirsin. Kısa süre sonra iyi hamleleri kendi başına görmeye başlarsın.
 
 En iyi hamle her zaman oradadır, onu görmen yeterlidir.
 

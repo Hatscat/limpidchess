@@ -127,7 +127,7 @@ func _make_row(bot: Dictionary) -> Button:
 		var count := Label.new()
 		count.text = str(wins)
 		count.add_theme_font_size_override("font_size", UI.FONT_CAPTION)
-		count.modulate = UI.COIN_BEST
+		count.modulate = UI.ACCENT_GOLD
 		count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		win_badge.add_child(trophy)
 		win_badge.add_child(count)

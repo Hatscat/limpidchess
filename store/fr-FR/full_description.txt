@@ -11,7 +11,7 @@ Choisis un coup et sa qualité se révèle :
 • Bleu = un coup correct
 • Rouge = une gaffe
 
-Tu gagnes des pièces quand tu repères le meilleur coup, et une explication toute simple te montre quel était le coup le plus fort, et pourquoi. Ici une erreur n'est jamais une punition, c'est la leçon, alors tu progresses un peu à chaque tour. Très vite, tu commences à voir les bons coups tout seul.
+Chaque coup joué est noté aussitôt, et une explication toute simple te montre quel était le coup le plus fort, et pourquoi. Ici une erreur n'est jamais une punition, c'est la leçon, alors tu progresses un peu à chaque tour. Très vite, tu commences à voir les bons coups tout seul.
 
 Le meilleur coup est toujours là, il suffit de le voir.
 

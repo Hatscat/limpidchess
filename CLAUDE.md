@@ -14,7 +14,7 @@ The core idea (inspired by *Lazy Chess*): instead of a blank board of 30 legal
 moves, **every turn we surface exactly three** — the **best** move, a **"not
 bad"** move, and a **blunder** — drawn as interactive arrows. The three are shown
 **neutrally** (numbered badges, one colour); the player must *find* the best one.
-On their pick we **reveal** the qualities (green / blue / red), award coins,
+On their pick we **reveal** the qualities (green / blue / red), grade the move,
 and explain what the best move was. Errors are the lesson, not the punishment.
 
 > "The move is there, but you must see it." — Tartakower
@@ -55,7 +55,7 @@ UCI), with the GDScript engine kept as a fallback when Stockfish is unavailable.
 
 ```
 GameManager (autoload)         scripts/game_manager.gd
-  navigation + all persistent state (premium, daily games, coins, stats)
+  navigation + all persistent state (premium, daily games, stats)
 
 ChessRules (RefCounted)        scripts/chess/chess_rules.gd
   THE source of truth for legality. Board state, legal move generation,
@@ -85,7 +85,7 @@ Scenes                         scenes/*.tscn (+ scripts/*.gd)
 
 Data flow per human turn lives in [`scripts/game.gd`](scripts/game.gd):
 `analyse (Stockfish MultiPV, or fallback rank_moves) → select_options → shuffle →
-board.set_options → (player taps) → grade_move → award coins → board.reveal →
+board.set_options → (player taps) → grade_move → board.reveal →
 play → bot replies`. Every game: **random player colour**, and **White's first
 move is an auto-chosen random good opening** (so positions stay fresh).
 
@@ -167,12 +167,13 @@ Rules:
 |---|---|
 | The three offered moves | **options** (`best` / `decent` / `blunder`) |
 | Quality reveal after a pick | **reveal** |
-| Reward currency | **best coin** (gold) and **blunder coin** |
+| Verdict on a pick | **grade** (Best / Great / Good / Inaccuracy / Mistake / Blunder) |
 | Opponent | **bot** (from `BotRoster`); never "AI player" |
 | Local two-player mode | **Face to Face** (premium; code identifier stays `pass_and_play`) |
 | Engine evaluation unit | **centipawns** (cp) |
 
-Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**).
+Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**), and
+"coins" / any reward currency (cancelled feature, must never return to copy).
 
 ## 💸 Business model (keep it generous)
 
@@ -292,5 +293,5 @@ explicitly ("layout not visually verified") rather than implying it works.
 ## ✅ Definition of success
 
 A beginner opens the app, taps Play, and on every turn sees three clear moves.
-They pick one, learn instantly whether it was best, collect a coin, and slowly
+They pick one, learn instantly whether it was best, and slowly
 start *seeing* the good moves themselves. Smooth, kind, and quietly educational.

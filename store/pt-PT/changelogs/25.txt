@@ -1,6 +1,6 @@
 Olá, mundo! O Limpid Chess chegou. 🎉
 
-Em cada turno vês três jogadas, e uma delas é a melhor. Encontra-a, percebe porquê e ganha moedas. Xadrez fluido que não te bloqueia.
+Em cada turno vês três jogadas, e uma delas é a melhor. Encontra-a, percebe porquê e evolui. Xadrez fluido que não te bloqueia.
 
 • Bots simpáticos para todos os níveis
 • Uma revisão jogada a jogada depois de cada partida

@@ -1,6 +1,6 @@
 Hello world! Limpid Chess is out. 🎉
 
-Every turn you get three moves, and one of them is the best. Find it, see why, collect coins. Smooth chess that keeps you moving.
+Every turn you get three moves, and one of them is the best. Find it, see why, get better. Smooth chess that keeps you moving.
 
 • Friendly bots for every level
 • A move-by-move review after each game

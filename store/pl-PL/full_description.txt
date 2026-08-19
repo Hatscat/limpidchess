@@ -11,7 +11,7 @@ Wybierz ruch, a odsłoni się jego jakość:
 • Niebieski = ruch w porządku
 • Czerwony = gafa
 
-Zdobywasz monety za wypatrzenie najlepszego ruchu, a prosta notatka wyjaśnia, jaki ruch był najsilniejszy i dlaczego. Błędy nigdy nie są tu karą, są lekcją, więc z każdą turą idzie ci coraz lepiej. Wkrótce zaczynasz samodzielnie dostrzegać dobre ruchy.
+Każdy twój ruch od razu dostaje ocenę, a prosta notatka wyjaśnia, jaki ruch był najsilniejszy i dlaczego. Błędy nigdy nie są tu karą, są lekcją, więc z każdą turą idzie ci coraz lepiej. Wkrótce zaczynasz samodzielnie dostrzegać dobre ruchy.
 
 Najlepszy ruch jest zawsze na szachownicy, musisz go tylko dostrzec.
 

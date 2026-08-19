@@ -1,6 +1,6 @@
 Witaj świecie! Limpid Chess jest już dostępny. 🎉
 
-W każdej turze widzisz trzy ruchy, a jeden z nich jest najlepszy. Znajdź go, zobacz dlaczego, zbieraj monety. Płynne szachy, w których się nie zacinasz.
+W każdej turze widzisz trzy ruchy, a jeden z nich jest najlepszy. Znajdź go, zobacz dlaczego, rozwijaj się. Płynne szachy, w których się nie zacinasz.
 
 • Przyjazne boty na każdy poziom
 • Analiza ruch po ruchu po każdej partii

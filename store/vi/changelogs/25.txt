@@ -1,6 +1,6 @@
 Xin chào! Limpid Chess đã ra mắt. 🎉
 
-Mỗi lượt bạn thấy ba nước đi, và một trong số đó là hay nhất. Hãy tìm ra nó, hiểu vì sao, và nhận xu. Cờ vua mượt mà, không làm bạn bế tắc.
+Mỗi lượt bạn thấy ba nước đi, và một trong số đó là hay nhất. Hãy tìm ra nó, hiểu vì sao, và tiến bộ. Cờ vua mượt mà, không làm bạn bế tắc.
 
 • Các bot thân thiện cho mọi trình độ
 • Xem lại từng nước đi sau mỗi ván

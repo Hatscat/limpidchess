@@ -11,7 +11,7 @@ Chọn một nước và chất lượng của nó sẽ hiện ra:
 • Xanh dương = nước tạm ổn
 • Đỏ = nước sai lầm nặng
 
-Bạn nhận được xu khi phát hiện ra nước hay nhất, và một lời ghi chú dễ hiểu sẽ cho bạn biết nước mạnh nhất là gì và tại sao. Ở đây, sai lầm không bao giờ là hình phạt, mà là bài học, nên mỗi lượt bạn lại tinh ý hơn một chút. Chẳng mấy chốc bạn sẽ tự mình nhìn ra những nước đi hay.
+Mỗi nước đi của bạn được chấm điểm ngay, và một lời ghi chú dễ hiểu sẽ cho bạn biết nước mạnh nhất là gì và tại sao. Ở đây, sai lầm không bao giờ là hình phạt, mà là bài học, nên mỗi lượt bạn lại tinh ý hơn một chút. Chẳng mấy chốc bạn sẽ tự mình nhìn ra những nước đi hay.
 
 Nước đi hay nhất luôn ở đó, bạn chỉ cần nhìn ra nó.
 

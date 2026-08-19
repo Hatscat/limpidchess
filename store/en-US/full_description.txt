@@ -11,7 +11,7 @@ Pick a move and it reveals the quality:
 • Blue = an ok move
 • Red = a blunder
 
-You earn coins for spotting the best move, and a plain-language note shows you what the strongest move was and why. Mistakes are never a punishment here, they are the lesson, so you get a little sharper every single turn. Soon you start seeing the good moves all by yourself.
+Each pick is graded on the spot, and a plain-language note shows you what the strongest move was and why. Mistakes are never a punishment here, they are the lesson, so you get a little sharper every single turn. Soon you start seeing the good moves all by yourself.
 
 The best move is always there, you just have to see it.
 
