@@ -51,6 +51,7 @@ IDEAL FÜR
 • Alle, die erstarren und nicht wissen, was sie ziehen sollen
 • Spieler, die schnelle Schachaufgaben und Schachtaktik in jeder Partie wollen
 • Einzelspieler-Schach für unterwegs, ohne Internet
+• Fans von Schachvarianten und neuen Ideen
 
 Limpid Chess ist Open Source (GPL-3.0), mit Godot entwickelt und nutzt die Schach-Engine Stockfish. Quellcode: https://github.com/Hatscat/limpidchess
 

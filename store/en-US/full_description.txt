@@ -51,6 +51,7 @@ GREAT FOR
 • Anyone who freezes and does not know what to play
 • Players who want quick chess puzzles and chess tactics in every game
 • Single player chess on the go, no internet needed
+• Fans of chess variants and fresh twists on classic chess
 
 Limpid Chess is open source (GPL-3.0), built with Godot, and uses the Stockfish chess engine. Source: https://github.com/Hatscat/limpidchess
 

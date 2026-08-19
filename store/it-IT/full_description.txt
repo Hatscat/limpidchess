@@ -51,6 +51,7 @@ PERFETTO PER
 • Chiunque si blocchi e non sappia cosa giocare
 • Chi vuole puzzle e tattica scacchistica veloci in ogni partita
 • Scacchi per giocatore singolo in movimento, senza bisogno di internet
+• Appassionati di varianti degli scacchi e nuove idee
 
 Limpid Chess è open source (GPL-3.0), realizzato con Godot e usa il motore scacchistico Stockfish. Codice sorgente: https://github.com/Hatscat/limpidchess
 

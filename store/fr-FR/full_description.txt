@@ -35,8 +35,8 @@ GENTIL, SIMPLE ET PRIVÉ
 • Pas de pub, jamais
 • Pas de compte, pas d'inscription, pas de jeu en ligne
 • Une seule sauvegarde locale sur ton appareil, rien n'est collecté sur toi
-• Un échiquier 2D épuré et soigné, avec une palette douce et des couleurs calmes, agréables pour les yeux
-• Livré avec la police OpenDyslexic, adaptée à la dyslexie pour une lecture facile
+• Un échiquier 2D épuré, avec une palette douce et des couleurs agréables pour les yeux
+• Livré avec la police OpenDyslexic, adaptée à la dyslexie
 • Disponible en 13 langues
 
 JOUE À TA MANIÈRE
@@ -51,6 +51,7 @@ PARFAIT POUR
 • Toute personne qui se fige et ne sait pas quoi jouer
 • Ceux qui veulent des puzzles et des tactiques d'échecs rapides à chaque partie
 • Les échecs en solo, où que tu sois, sans connexion internet
+• Les amateurs de variantes d'échecs et de nouveautés
 
 Limpid Chess est open source (GPL-3.0), développé avec Godot, et utilise le moteur d'échecs Stockfish. Code source : https://github.com/Hatscat/limpidchess
 

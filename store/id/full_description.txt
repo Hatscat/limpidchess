@@ -51,6 +51,7 @@ COCOK UNTUK
 • Siapa pun yang terpaku dan tidak tahu harus melangkah apa
 • Pemain yang ingin teka-teki dan taktik catur cepat di setiap permainan
 • Catur pemain tunggal di mana saja, tanpa perlu internet
+• Penggemar varian catur dan ide-ide baru
 
 Limpid Chess bersifat open source (GPL-3.0), dibuat dengan Godot, dan menggunakan mesin catur Stockfish. Kode sumber: https://github.com/Hatscat/limpidchess
 

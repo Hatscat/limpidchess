@@ -51,6 +51,7 @@ KENDİ TARZINDA OYNA
 • Donup kalan ve ne oynayacağını bilemeyen herkes
 • Her oyunda hızlı satranç bulmacaları ve satranç taktikleri isteyen oyuncular
 • İnternet gerektirmeden, hareket halinde tek kişilik satranç
+• Satranç varyantlarını sevenler
 
 Limpid Chess açık kaynaklıdır (GPL-3.0), Godot ile geliştirilmiştir ve Stockfish satranç motorunu kullanır. Kaynak kodu: https://github.com/Hatscat/limpidchess
 

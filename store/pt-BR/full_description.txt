@@ -51,6 +51,7 @@ JOGUE DO SEU JEITO
 • Qualquer um que trava e não sabe o que jogar
 • Jogadores que querem desafios e táticas de xadrez rápidos em cada partida
 • Xadrez para um jogador em qualquer lugar, sem precisar de internet
+• Fãs de variantes de xadrez e de novas ideias no tabuleiro
 
 O Limpid Chess é de código aberto (GPL-3.0), feito com Godot e usa o motor de xadrez Stockfish. Código-fonte: https://github.com/Hatscat/limpidchess
 

@@ -51,6 +51,7 @@ IDEAL PARA
 • Cualquiera que se queda bloqueado y no sabe qué jugar
 • Quienes buscan puzzles de ajedrez y tácticas rápidas en cada partida
 • Ajedrez para un jugador donde quieras, sin internet
+• Fans de las variantes de ajedrez y de giros nuevos
 
 Limpid Chess es de código abierto (GPL-3.0), está hecho con Godot y usa el motor de ajedrez Stockfish. Código fuente: https://github.com/Hatscat/limpidchess
 

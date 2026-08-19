@@ -51,6 +51,7 @@ TUYỆT VỜI CHO
 • Bất cứ ai bị đơ và không biết đi nước nào
 • Người chơi muốn câu đố cờ vua nhanh và chiến thuật cờ vua trong mỗi ván
 • Chơi cờ vua một mình khi di chuyển, không cần internet
+• Người thích các biến thể cờ vua
 
 Limpid Chess là phần mềm mã nguồn mở (GPL-3.0), được xây dựng bằng Godot, và sử dụng engine cờ vua Stockfish. Mã nguồn: https://github.com/Hatscat/limpidchess
 
