@@ -171,9 +171,17 @@ Rules:
 | Opponent | **bot** (from `BotRoster`); never "AI player" |
 | Local two-player mode | **Face to Face** (premium; code identifier stays `pass_and_play`) |
 | Engine evaluation unit | **centipawns** (cp) |
+| Consecutive puzzles solved in a run | **streak** (Puzzle Rush only; `puzzle_streak`) |
+| Consecutive days played (the Home flame) | **day streak** (always qualified; `day_streak`) |
 
 Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**), and
 "coins" / any reward currency (cancelled feature, must never return to copy).
+
+> **Never write a bare "Streak" for the daily counter.** `Streak` is already the Puzzle Rush
+> key and is translated as a *run-of-things* word in all 13 locales (fr *Série*, es *Racha*,
+> ru *Серия*). The daily one is a separate key, **`Day streak`**, translated as a *run-of-days*
+> word (fr *Jours d'affilée*, es *Días seguidos*, uk *Днів поспіль*). Reusing either word for
+> the other counter makes the two indistinguishable in every non-English build.
 
 ## 💸 Business model (keep it generous)
 

@@ -783,6 +783,16 @@ func _on_option_chosen(opt: Dictionary) -> void:
 
 	_play_move(move, review_entry)
 	_player_moves += 1  # a move the human actually chose (not the auto-opening / bot)
+	# One move played is what counts a day toward the Home streak: EFFORT, never a result. This
+	# audience loses most of its games, so a streak that asked for a win would punish the loss
+	# twice. Fires on the first move rather than at game over, so a game interrupted halfway (a
+	# phone call, a flat battery) has already counted. mark_played_today() is idempotent for the
+	# rest of the day, so an undo that re-hits this line is harmless.
+	# The usual `if not GameManager.pass_and_play` guard is DELIBERATELY omitted: Face to Face is
+	# still real chess, it spends no allowance, and telling someone their evening game didn't
+	# count would be a shame moment for nothing.
+	if _player_moves == 1 and not _puzzle_review_mode:
+		GameManager.mark_played_today()
 	_push_eval_after_move(move)
 	board.clear_options()
 	_advance()

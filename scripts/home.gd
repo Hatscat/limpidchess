@@ -11,6 +11,16 @@ extends Control
 @onready var lang_picker: Control = %LanguagePicker   ## the scrollable language chooser (scales to ~15 languages)
 @onready var lang_picker_list: VBoxContainer = %List  ## rows built per language in _build_lang_picker
 @onready var sound_toggle: Button = %SoundToggle
+@onready var reminder_toggle: Button = %ReminderToggle
+@onready var eyebrow: Label = %Eyebrow             ## "FIND · THE · BEST · MOVE" (shown at streak 0)
+@onready var streak_row: Control = %StreakRow      ## flame + "Day streak: N" (shown from 1 up)
+@onready var streak_label: Label = %StreakLabel
+@onready var streak_sheet: Control = %StreakSheet  ## the tap-to-explain sheet
+@onready var streak_big: Label = %StreakBig
+@onready var streak_best: Label = %StreakBest
+@onready var streak_rule_grace: Label = %Rule3     ## carries the grace window, so it can't drift from the constant
+@onready var settings_card: Control = %Card          ## Settings card: hugs its content, so its height varies
+@onready var settings_close: Button = %CloseX        ## pinned to the card's corner in code, see _place_settings_close
 @onready var reset_btn: Button = %ResetBtn
 @onready var daily_limit: DailyLimitDialog = %DailyLimit
 
@@ -21,9 +31,12 @@ func _ready() -> void:
 
 	settings_overlay.visible = false
 	lang_picker.visible = false
+	streak_sheet.visible = false
+	settings_card.resized.connect(_place_settings_close)
 
 	_refresh_games()
 	_refresh_puzzle_button()
+	_refresh_streak()
 	_refresh_language_btn()
 	_route_checkout_return()
 	# Calm moment after a positive game: ask for a Play rating (gated to once, 2nd+ game).
@@ -67,6 +80,62 @@ func _refresh_puzzle_button() -> void:
 		puzzle_best.text = tr("Best: %d") % GameManager.puzzle_highscore
 
 
+## The row under the title carries the tagline for a new player and their day streak once they
+## have one. It reuses this slot rather than adding a fourth TopBar pill because the bar had no
+## room: measured BEFORE this change, TitleVBox sat at 387px against a 341px minimum in Ukrainian
+## (the eyebrow, not the title, was what pinned it), leaving 46px where a pill plus its 28px
+## separation needs about 100. Swapping the slot instead FREES width: the streak row is narrower
+## than the eyebrow, so the minimum drops to the 311px title and every locale gains slack.
+## (Re-measuring today therefore shows 311, not 341: the 341 is the state this replaced.)
+## Well targeted rather than a compromise, too: the tagline exists to explain the game to someone
+## who has never played, who is exactly who has no streak yet.
+func _refresh_streak() -> void:
+	var n: int = GameManager.day_streak_now()
+	streak_row.visible = n > 0
+	eyebrow.visible = n <= 0
+	if n > 0:
+		# Built in code, so it must be rebuilt on a live language change (see _on_language_chosen).
+		# Composed as "<word>: <n>" rather than a "%d day streak" sentence so no locale has to
+		# agree a number with a plural it cannot see.
+		streak_label.text = "%s: %d" % [tr("Day streak"), n]
+
+
+## Tapping the streak opens a small sheet explaining how it works: what counts a day, that losing
+## still counts, and that days off are forgiven. Beginners should never have to guess the rule.
+## Unlike the games pill this never routes to Premium: the streak is not a paywall.
+func _on_streak_input(event: InputEvent) -> void:
+	# Touch only, same convention as _on_games_input: with emulate_touch_from_mouse a mouse click
+	# also arrives here as an emulated touch, so a second mouse branch would fire this twice.
+	var touch := event as InputEventScreenTouch
+	if touch == null or not touch.pressed:
+		return
+	if GameManager.day_streak_now() <= 0:
+		return  # the tagline is showing, there is nothing to explain yet
+	_refresh_streak_sheet()
+	streak_sheet.visible = true
+
+
+func _refresh_streak_sheet() -> void:
+	streak_big.text = "%s: %d" % [tr("Day streak"), GameManager.day_streak_now()]
+	streak_best.text = tr("Best: %d") % GameManager.day_streak_best
+	# Built from the constant rather than spelled out in the scene, so the promise can never drift
+	# from the rule. (The phrasing assumes a plural; a grace window of 1 would want its own string.)
+	streak_rule_grace.text = tr("Days off are fine. Come back within %d days and your streak keeps going.") \
+			% GameManager.STREAK_GRACE_DAYS
+
+
+func _on_streak_sheet_close() -> void:
+	streak_sheet.visible = false
+
+
+## Tap the dim outside the card to dismiss (close on RELEASE, like the other overlays).
+func _on_streak_sheet_dim_input(event: InputEvent) -> void:
+	# Touch only, see _on_dim_input.
+	var touch := event as InputEventScreenTouch
+	if touch != null and not touch.pressed:
+		_on_streak_sheet_close()
+
+
 ## The daily-games pill is tappable: it routes to Premium (which explains the daily limit and
 ## offers unlimited play), so a player puzzled by the counter learns what it means.
 func _on_games_input(event: InputEvent) -> void:
@@ -87,12 +156,20 @@ func _on_play_pressed() -> void:
 ## gesture dismisses dialogs just like their close buttons. With nothing open, Home is the root: back
 ## leaves the app (default), so we don't consume it.
 func _notification(what: int) -> void:
+	# Home can sit open across midnight, or (on web) while another tab plays a game. Re-read the
+	# streak on focus so the row never shows a stale number. Cheap: it's a pure reader.
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		if is_node_ready():  # a focus event can land before @onready has resolved the nodes
+			_refresh_streak()
+		return
 	if what != NOTIFICATION_WM_GO_BACK_REQUEST:
 		return
 	if lang_picker.visible:
 		_on_lang_picker_close()
 	elif settings_overlay.visible:
 		_on_settings_close()
+	elif streak_sheet.visible:
+		_on_streak_sheet_close()
 	elif daily_limit.visible:
 		daily_limit.close()
 
@@ -121,8 +198,19 @@ func _on_pass_play_pressed() -> void:
 func _on_settings_pressed() -> void:
 	_refresh_language_btn()
 	_refresh_sound_btn()
+	_refresh_reminder_btn()
 	reset_btn.visible = OS.is_debug_build()  # dev-only convenience
 	settings_overlay.visible = true
+	_place_settings_close()
+
+
+## Pin the close button to the Settings card's top-right corner. The card is a PanelContainer that
+## sizes to its content, and that content differs by platform and build (the Reminder row is Android
+## only, the Reset row is debug only), so a fixed offset in the scene would be right for at most one
+## of the three. Re-run whenever the card resizes, since the layout settles a frame after opening.
+func _place_settings_close() -> void:
+	var r := settings_card.get_rect()
+	settings_close.position = Vector2(r.end.x - settings_close.size.x - 20, r.position.y + 14)
 
 
 func _on_settings_close() -> void:
@@ -147,15 +235,12 @@ func _on_dim_input(event: InputEvent) -> void:
 		_on_settings_close()
 
 
-## The sound toggle is a full-width button (big tap target, matches the language
-## rows): accent border + "On" when enabled, subtle border + "Off" when muted.
-func _refresh_sound_btn() -> void:
-	var on := GameManager.sound_enabled
-	sound_toggle.text = tr("Sound: %s") % (tr("On") if on else tr("Off"))
-	# Speaker glyph reflects the state: waves when on, muted (slashed) when off.
-	sound_toggle.icon = load("res://assets/icons/sound_on.png" if on else "res://assets/icons/sound_off.png")
-	sound_toggle.add_theme_constant_override("icon_max_width", 30)
-	sound_toggle.add_theme_constant_override("h_separation", 12)
+## Shared chrome for the Settings on/off rows (sound, reminder): a full-width button with a big
+## tap target matching the language rows, accent-bordered when on and subtle when off.
+func _style_toggle(btn: Button, on: bool, icon_path: String) -> void:
+	btn.icon = load(icon_path)
+	btn.add_theme_constant_override("icon_max_width", 30)
+	btn.add_theme_constant_override("h_separation", 12)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = UI.SURFACE
 	sb.content_margin_left = 16
@@ -163,9 +248,16 @@ func _refresh_sound_btn() -> void:
 	sb.set_corner_radius_all(16)
 	sb.set_border_width_all(2 if on else 1)
 	sb.border_color = UI.ACCENT if on else UI.BORDER_SUBTLE
-	sound_toggle.add_theme_stylebox_override("normal", sb)
-	sound_toggle.add_theme_stylebox_override("hover", sb)
-	sound_toggle.add_theme_stylebox_override("pressed", sb)
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	btn.add_theme_stylebox_override("pressed", sb)
+
+
+func _refresh_sound_btn() -> void:
+	var on := GameManager.sound_enabled
+	sound_toggle.text = tr("Sound: %s") % (tr("On") if on else tr("Off"))
+	# Speaker glyph reflects the state: waves when on, muted (slashed) when off.
+	_style_toggle(sound_toggle, on, "res://assets/icons/sound_on.png" if on else "res://assets/icons/sound_off.png")
 
 
 func _on_sound_pressed() -> void:
@@ -173,6 +265,25 @@ func _on_sound_pressed() -> void:
 	_refresh_sound_btn()
 	if GameManager.sound_enabled:
 		Audio.play("move")  # a little confirmation blip
+
+
+## The daily reminder is a single notification that carries either "keep your streak" or "your free
+## games are back" (see Notifications). Premium players can receive it too now, so the old implicit
+## "premium means silence" opt-out is replaced by this explicit switch.
+func _refresh_reminder_btn() -> void:
+	# Notifications only exist on Android. On the web build and on desktop the plugin is absent and
+	# the switch could never do anything, so the row is hidden rather than offered as a dead control.
+	# Only the visibility is platform-dependent: the label and chrome are always built, so the row
+	# is never left half-rendered if something else shows it (a dev screenshot, a future platform).
+	reminder_toggle.visible = Notifications.is_available()
+	var on := GameManager.reminder_enabled
+	reminder_toggle.text = tr("Reminder: %s") % (tr("On") if on else tr("Off"))
+	_style_toggle(reminder_toggle, on, "res://assets/icons/bell_on.png" if on else "res://assets/icons/bell_off.png")
+
+
+func _on_reminder_pressed() -> void:
+	GameManager.set_reminder_enabled(not GameManager.reminder_enabled)
+	_refresh_reminder_btn()
 
 
 func _on_reset_pressed() -> void:
@@ -269,5 +380,7 @@ func _on_language_chosen(code: String) -> void:
 	# code must be refreshed. Settings stays open, now showing the new language on its Language row.
 	_refresh_games()
 	_refresh_puzzle_button()
+	_refresh_streak()
 	_refresh_sound_btn()
+	_refresh_reminder_btn()
 	_refresh_language_btn()

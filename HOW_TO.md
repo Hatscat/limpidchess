@@ -240,10 +240,17 @@ make the source and the exact Stockfish build you ship available.
   localized price, grant-only). Remaining: create + activate the `premium_unlock` managed product in
   Play Console, then ship a new AAB. On desktop/dev (no Play singleton) the buy flow is a local grant
   in a debug build, otherwise a no-op. (Reset for testing via the dev "Reset save" button, above.)
-- **In-app review + daily-reset notification**: done in code. [`Reviews`](scripts/reviews.gd) asks
+- **In-app review + daily reminder**: done in code. [`Reviews`](scripts/reviews.gd) asks
   for a Play rating once after the 2nd non-loss game; [`Notifications`](scripts/notifications.gd)
-  schedules a "your free games are back" reminder for tomorrow morning when a free player runs out
-  (cancelled when they have games again or go Premium). Both resolve the plugin's `class_name` nodes
+  owns ONE alarm slot (id 1001) and `refresh_daily_nudge()` decides which of two messages it
+  carries: "A game today?" in the evening for a player whose **day streak** is about to lapse
+  (anchored to `last_streak_date + GameManager.STREAK_GRACE_DAYS`, so an active player never
+  reaches it), else the original "your free games are back" morning reminder for free players.
+  One slot means the two can never double-nag. Premium keeps the streak nudge (it no longer
+  cancels everything), and the player can switch the whole thing off in Settings
+  (`GameManager.reminder_enabled`; the row is hidden where the plugin is absent). The Android 13+
+  POST_NOTIFICATIONS dialog is only raised from a game/puzzle start or that Settings switch, never
+  mid-move or at boot. Both resolve the plugin's `class_name` nodes
   dynamically, so they no-op until the addons are installed: drop in
   [godot-inapp-review](https://github.com/godot-mobile-plugins/godot-inapp-review) (`InappReview`) and
   [godot-notification-scheduler](https://github.com/godot-mobile-plugins/godot-notification-scheduler)

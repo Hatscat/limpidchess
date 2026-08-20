@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://cwkkjgcgnb61c" path="res://scenes/daily_limit_dialog.tscn" id="9_daily"]
 [ext_resource type="Texture2D" uid="uid://dx6lvqxgecy1e" path="res://assets/icons/puzzle.png" id="10_puzzle"]
 [ext_resource type="Texture2D" uid="uid://b45tyfks031n7" path="res://assets/icons/info_round.svg" id="11_info"]
+[ext_resource type="Texture2D" uid="uid://dk5ixea8nri3p" path="res://assets/icons/fire.png" id="12_fire"]
 
 [sub_resource type="StyleBoxFlat" id="sb_pill"]
 content_margin_left = 14.0
@@ -122,11 +123,41 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Limpid Chess"
 
-[node name="Eyebrow" type="Label" parent="TopBar/TitleVBox" unique_id=1107559247]
+[node name="SubSlot" type="HBoxContainer" parent="TopBar/TitleVBox" unique_id=1107559248]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="Eyebrow" type="Label" parent="TopBar/TitleVBox/SubSlot" unique_id=1107559247]
+unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.45)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "FIND · THE · BEST · MOVE"
+vertical_alignment = 1
+
+[node name="StreakRow" type="HBoxContainer" parent="TopBar/TitleVBox/SubSlot" unique_id=1107559249]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Flame" type="TextureRect" parent="TopBar/TitleVBox/SubSlot/StreakRow" unique_id=1107559250]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("12_fire")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StreakLabel" type="Label" parent="TopBar/TitleVBox/SubSlot/StreakRow" unique_id=1107559251]
+unique_name_in_owner = true
+modulate = Color(0.98, 0.8, 0.34, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Day streak: 5"
+vertical_alignment = 1
 
 [node name="GamesPill" type="PanelContainer" parent="TopBar" unique_id=1686939591]
 layout_mode = 2
@@ -156,7 +187,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 104.0
+offset_top = 128.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -377,6 +408,7 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
 [node name="Card" type="PanelContainer" parent="SettingsOverlay" unique_id=322232654]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -384,9 +416,7 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -300.0
-offset_top = -235.0
 offset_right = 300.0
-offset_bottom = 235.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("sb_card")
@@ -409,6 +439,15 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 22
 text = "Sound"
+alignment = 0
+
+[node name="ReminderToggle" type="Button" parent="SettingsOverlay/Card/VBox" unique_id=421554719]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 22
+text = "Reminder"
 alignment = 0
 
 [node name="LanguageBtn" type="Button" parent="SettingsOverlay/Card/VBox" unique_id=2034737097]
@@ -453,6 +492,7 @@ theme_override_styles/hover = SubResource("sb_ghost")
 text = "Reset save (dev)"
 
 [node name="CloseX" type="Button" parent="SettingsOverlay" unique_id=1146732594]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -546,21 +586,140 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
+[node name="StreakSheet" type="Control" parent="." unique_id=1995633700]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="StreakSheet" unique_id=1995633701]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Card" type="PanelContainer" parent="StreakSheet" unique_id=1995633702]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -300.0
+offset_right = 300.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_card")
+
+[node name="VBox" type="VBoxContainer" parent="StreakSheet/Card" unique_id=1995633703]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Flame" type="TextureRect" parent="StreakSheet/Card/VBox" unique_id=1995633704]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("12_fire")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StreakBig" type="Label" parent="StreakSheet/Card/VBox" unique_id=1995633705]
+unique_name_in_owner = true
+modulate = Color(0.98, 0.8, 0.34, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Day streak: 5"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="StreakBest" type="Label" parent="StreakSheet/Card/VBox" unique_id=1995633706]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Best: 5"
+horizontal_alignment = 1
+
+[node name="Rule1" type="Label" parent="StreakSheet/Card/VBox" unique_id=1995633707]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "One game or one puzzle counts the day."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Rule2" type="Label" parent="StreakSheet/Card/VBox" unique_id=1995633708]
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Win or lose, it always counts."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Rule3" type="Label" parent="StreakSheet/Card/VBox" unique_id=1995633709]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Days off are fine. Come back within %d days and your streak keeps going."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Rule4" type="Label" parent="StreakSheet/Card/VBox" unique_id=1995633710]
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Your best is always kept."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="CloseX" type="Button" parent="StreakSheet" unique_id=1995633711]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 216.0
+offset_top = -286.0
+offset_right = 280.0
+offset_bottom = -222.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+icon = ExtResource("8_close")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
 [node name="DailyLimit" parent="." unique_id=1995633521 instance=ExtResource("9_daily")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
 
 [connection signal="gui_input" from="TopBar/GamesPill" to="." method="_on_games_input"]
+[connection signal="gui_input" from="TopBar/TitleVBox/SubSlot" to="." method="_on_streak_input"]
 [connection signal="pressed" from="TopBar/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="Center/VBox/PlayCard" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="Center/VBox/PuzzleRush" to="." method="_on_puzzle_pressed"]
 [connection signal="pressed" from="Center/VBox/PassPlay" to="." method="_on_pass_play_pressed"]
 [connection signal="gui_input" from="SettingsOverlay/Dim" to="." method="_on_dim_input"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/SoundToggle" to="." method="_on_sound_pressed"]
+[connection signal="pressed" from="SettingsOverlay/Card/VBox/ReminderToggle" to="." method="_on_reminder_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/LanguageBtn" to="." method="_on_language_btn_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/AboutBtn" to="." method="_on_about_pressed"]
 [connection signal="pressed" from="SettingsOverlay/Card/VBox/ResetBtn" to="." method="_on_reset_pressed"]
 [connection signal="pressed" from="SettingsOverlay/CloseX" to="." method="_on_settings_close"]
 [connection signal="gui_input" from="LanguagePicker/Dim" to="." method="_on_lang_picker_dim_input"]
 [connection signal="pressed" from="LanguagePicker/CloseX" to="." method="_on_lang_picker_close"]
+[connection signal="gui_input" from="StreakSheet/Dim" to="." method="_on_streak_sheet_dim_input"]
+[connection signal="pressed" from="StreakSheet/CloseX" to="." method="_on_streak_sheet_close"]

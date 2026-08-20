@@ -401,6 +401,11 @@ func _on_option_chosen(opt: Dictionary) -> void:
 ## A full puzzle is solved: bump the streak, advance the difficulty, beat, then the next puzzle.
 func _puzzle_solved(g: int) -> void:
 	_streak += 1
+	# The first puzzle solved counts the day for the Home streak, so puzzles are a full
+	# alternative to a game. Deliberately NOT gated on MIN_STREAK_TO_COUNT: a run dies on the
+	# first wrong move and a free player gets one run a day, so a 3-puzzle bar would be a skill
+	# gate a beginner might never clear. Idempotent for the rest of the day.
+	GameManager.mark_played_today()
 	_update_header()
 	await get_tree().create_timer(CORRECT_HOLD).timeout
 	if g != _gen:

@@ -27,6 +27,9 @@ func _process(_d: float) -> bool:
 		gm.is_premium = false
 		gm.games_today = 0                       # -> "3 / 3 today"
 		gm.puzzle_highscore = 15                 # -> "Best: 15" on the Puzzles button
+		gm.day_streak = 12                       # -> the flame row under the title
+		gm.day_streak_best = 12
+		gm.last_streak_date = Time.get_date_string_from_system()  # counted today, so it reads as live
 		gm.puzzle_index = -1                     # no parked run -> "New puzzle streak" state
 		gm.puzzle_streak = 0
 		gm.pending_review_check = false          # never pop the rating dialog in a shot

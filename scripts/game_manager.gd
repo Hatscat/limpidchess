@@ -50,6 +50,14 @@ const WELCOME_BONUS_PUZZLES := 2
 ## Sentinel "remaining games" for premium players (any value > 0 unlocks play).
 const UNLIMITED_GAMES := 999
 
+## Day streak: how large a GAP (in days) still continues the run. 3 means "come back
+## within three days and your streak keeps going", which is exactly what it takes to
+## survive a weekend (play Friday, next play Monday = a gap of 3). Deliberately generous:
+## the audience includes kids whose tablet is put away at weekends, and a counter that
+## resets on them every single week would teach them to stop caring about it.
+## Lower it to 2 (one day off) or 1 (strictly consecutive) by changing this one number.
+const STREAK_GRACE_DAYS := 3
+
 # --- Persistent state ---
 var is_premium := false
 ## Web only: the Lemon Squeezy license key that bought Premium, its activation instance,
@@ -64,6 +72,10 @@ var license_checked_date := ""
 var returned_from_checkout := false
 var language := ""           ## chosen UI locale code; "" = follow the device language
 var sound_enabled := true    ## sound-effect cues on/off
+## Daily reminder notification on/off. Premium players can now be nudged too (the
+## slot carries the streak reminder as well as the free-games one), so the implicit
+## "premium means no notifications" opt-out is replaced by this explicit one.
+var reminder_enabled := true
 var last_review_prompt_date := "" ## "YYYY-MM-DD" we last auto-showed the rating prompt (cap: once/day)
 var review_done := false           ## player engaged with rating once → stops the automatic pre-prompt
 var games_today := 0
@@ -78,6 +90,16 @@ var bonus_puzzles := WELCOME_BONUS_PUZZLES
 var games_played := 0         ## gates the review prompt + reset reminder; refunded by cancel_game
 var bot_wins: Dictionary = {} ## bot id (String) -> times the human has beaten that bot (int)
 var puzzle_highscore := 0     ## longest Puzzle Rush streak ever reached (saved)
+
+# --- Day streak (the Home flame) ---
+# Days the player actually PLAYED, not days elapsed: a gap of up to STREAK_GRACE_DAYS
+# keeps the run going. Counted on EFFORT (a move played / a puzzle solved), never on a
+# result, because this audience loses most of its games. Distinct from the Puzzle Rush
+# "streak" (consecutive solved puzzles) in every way: different field, different save
+# key, different user-facing word ("Day streak").
+var day_streak := 0           ## current run of played days; 0 = never played / lapsed
+var day_streak_best := 0      ## longest run ever reached. Never decreases, never expires.
+var last_streak_date := ""    ## "YYYY-MM-DD" of the last day that counted toward the streak
 
 # A parked (in-progress) puzzle run, so a player can quit and resume their streak later. We save just
 # the streak length and the CURRENT puzzle's data index (the puzzle restarts from move 1 on resume, so
@@ -99,6 +121,9 @@ func _ready() -> void:
 	_roll_day()
 	_check_web_update()
 	_check_checkout_return()
+	# NB: the boot re-arm of the daily reminder lives in Notifications._on_initialized, not here.
+	# Autoloads are added in project.godot order and GameManager is first, so `Notifications`
+	# does not resolve yet at this point.
 
 
 # --- Web/PWA update-at-boot ---
@@ -199,10 +224,15 @@ func set_sound_enabled(on: bool) -> void:
 ## we regain focus, UPGRADE-ONLY, so this tab's next full-file _save() can't wipe the
 ## Premium the other tab just bought. Never downgrades: only the store revokes.
 func _notification(what: int) -> void:
-	if what != NOTIFICATION_APPLICATION_FOCUS_IN or not OS.has_feature("web") or is_premium:
+	if what != NOTIFICATION_APPLICATION_FOCUS_IN or not OS.has_feature("web"):
 		return
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
+		return
+	# The streak merge runs on EVERY focus-in, not only when premium is being picked up: the
+	# other tab may simply have played a game while this one sat idle.
+	_merge_streak_from_disk(cfg)
+	if is_premium:
 		return
 	if not bool(cfg.get_value("player", "is_premium", false)):
 		return
@@ -211,6 +241,18 @@ func _notification(what: int) -> void:
 	license_checked_date = str(cfg.get_value("premium", "license_checked_date", license_checked_date))
 	is_premium = true
 	premium_changed.emit()
+
+
+## Web multi-tab: the other tab may have played (and bumped the streak) while this tab sat
+## idle with a stale copy. Merge UPGRADE-ONLY, so this tab's next full-file _save() can't
+## roll the count back. Same reasoning as the premium merge above: never downgrade.
+func _merge_streak_from_disk(cfg: ConfigFile) -> void:
+	var disk_streak: int = int(cfg.get_value("stats", "day_streak", 0))
+	var disk_date: String = str(cfg.get_value("stats", "last_streak_date", ""))
+	if disk_date > last_streak_date:  # ISO dates sort lexicographically, so > means "more recent"
+		last_streak_date = disk_date
+		day_streak = disk_streak
+	day_streak_best = maxi(day_streak_best, int(cfg.get_value("stats", "day_streak_best", 0)))
 
 
 func set_license(key: String, instance_id: String) -> void:
@@ -240,6 +282,7 @@ func reset_save() -> void:
 	is_premium = false
 	language = ""
 	sound_enabled = true
+	reminder_enabled = true
 	last_review_prompt_date = ""
 	review_done = false
 	games_today = 0
@@ -254,6 +297,9 @@ func reset_save() -> void:
 	games_played = 0
 	bot_wins.clear()
 	puzzle_highscore = 0
+	day_streak = 0
+	day_streak_best = 0
+	last_streak_date = ""
 	puzzle_streak = 0
 	puzzle_index = -1
 	current_bot = {}
@@ -404,6 +450,9 @@ func count_puzzle() -> void:
 	else:
 		bonus_puzzles = max(0, bonus_puzzles - 1)
 	_save()
+	# Starting a run is a polite moment to ask for the notification permission, same as starting a
+	# game. Without this a puzzles-only player would never be asked (they never reach _count_game).
+	Notifications.refresh_daily_nudge(true)
 
 
 ## Undo the start-time count for a run the player left before the 4th puzzle (barely played), so it
@@ -428,14 +477,11 @@ func _count_game() -> void:
 		else:
 			bonus_games = max(0, bonus_games - 1)
 	_save()
-	# Free players get a daily "your free games are back" reminder (the games reset every day), so a
-	# player who forgets a day still gets nudged the next. Re-anchored to tomorrow on each game, and
-	# dropped for Premium (unlimited games). Gated to 2+ games played so the notification-permission
-	# ask lands on an engaged player, not on their very first game (matches should_ask_review).
-	if is_premium:
-		Notifications.cancel_reset_reminder()
-	elif games_played >= 2:
-		Notifications.schedule_reset_reminder()
+	# One alarm slot carries whichever daily nudge is currently true (keep-your-streak, or
+	# "your free games are back"), so the two can never double-nag. Notifications decides which.
+	# Starting a game is the one moment we allow the Android permission dialog: the player is
+	# between screens, not mid-move, and a reminder about coming back makes sense to them here.
+	Notifications.refresh_daily_nudge(true)
 
 
 ## Reset the daily counter when the local date changes.
@@ -490,8 +536,8 @@ func set_premium(value: bool) -> void:
 	is_premium = value
 	premium_changed.emit()
 	_save()
-	if value:
-		Notifications.cancel_reset_reminder()  # unlimited games now → drop any pending reminder
+	# Premium drops the free-games nudge but keeps the streak one, so re-decide rather than cancel.
+	Notifications.refresh_daily_nudge()
 
 
 ## Auto-prompt for a Play rating at most once per calendar day, only after the player is engaged
@@ -512,6 +558,66 @@ func mark_review_done() -> void:
 	_save()
 
 
+# --- Day streak ---
+
+## Whole days between a stored "YYYY-MM-DD" and today, in LOCAL time. Returns a large
+## number for an empty / malformed date so callers treat it as "no streak to continue".
+## Both ends are anchored at 12:00 so a daylight-saving shift (max 1h) can never round a
+## 1-day gap to 0 or 2. The dicts go through the same UTC conversion, so the difference
+## is correct even though neither instant is really noon UTC.
+func _days_since(date_str: String) -> int:
+	if date_str == "":
+		return 9999
+	var parts := date_str.split("-")
+	if parts.size() != 3:
+		return 9999  # corrupt / hand-edited save: don't crash, just don't continue a streak
+	var then := {"year": int(parts[0]), "month": int(parts[1]), "day": int(parts[2]),
+			"hour": 12, "minute": 0, "second": 0}
+	var now_parts := Time.get_date_string_from_system().split("-")
+	var now := {"year": int(now_parts[0]), "month": int(now_parts[1]), "day": int(now_parts[2]),
+			"hour": 12, "minute": 0, "second": 0}
+	var delta: int = Time.get_unix_time_from_datetime_dict(now) - Time.get_unix_time_from_datetime_dict(then)
+	return int(round(float(delta) / 86400.0))
+
+
+## The streak to SHOW right now. A pure reader: it never mutates and never saves, so Home
+## can call it on every repaint. A lapsed run reads as 0 here while day_streak still holds
+## the old value; the reset is only written when the player next plays (see mark_played_today),
+## so the app can never greet someone by taking their streak away.
+func day_streak_now() -> int:
+	if last_streak_date == "":
+		return 0
+	return day_streak if _days_since(last_streak_date) <= STREAK_GRACE_DAYS else 0
+
+
+## Count today toward the day streak. Idempotent for the rest of the day, so every caller can
+## fire it freely. Called on EFFORT (the first move of a game, the first puzzle solved), never
+## on a result: a beginner who loses all three games still kept their streak, which is the
+## whole point. See STREAK_GRACE_DAYS for how large a gap still continues the run.
+func mark_played_today() -> void:
+	var today := Time.get_date_string_from_system()
+	if last_streak_date == today:
+		return  # already counted today
+	var gap: int = _days_since(last_streak_date)
+	if gap <= 0:
+		return  # clock moved backwards (or flew west over the date line): never break, never grow
+	day_streak = day_streak + 1 if gap <= STREAK_GRACE_DAYS else 1
+	last_streak_date = today
+	if day_streak > day_streak_best:
+		day_streak_best = day_streak
+	_save()
+	Notifications.refresh_daily_nudge()  # re-anchor the reminder to the new deadline
+
+
+## Daily reminder notification on/off (Settings). Re-arms or cancels the single alarm slot.
+func set_reminder_enabled(value: bool) -> void:
+	reminder_enabled = value
+	_save()
+	# Switching it ON is an explicit request for notifications, so the permission dialog is welcome
+	# here; switching it off never needs one.
+	Notifications.refresh_daily_nudge(value)
+
+
 # --- Persistence ---
 
 func _save() -> void:
@@ -519,6 +625,7 @@ func _save() -> void:
 	cfg.set_value("player", "is_premium", is_premium)
 	cfg.set_value("player", "language", language)
 	cfg.set_value("player", "sound_enabled", sound_enabled)
+	cfg.set_value("player", "reminder_enabled", reminder_enabled)
 	cfg.set_value("player", "last_review_prompt_date", last_review_prompt_date)
 	cfg.set_value("player", "review_done", review_done)
 	cfg.set_value("daily", "games_today", games_today)
@@ -532,6 +639,9 @@ func _save() -> void:
 	cfg.set_value("premium", "license_checked_date", license_checked_date)
 	cfg.set_value("stats", "games_played", games_played)
 	cfg.set_value("stats", "puzzle_highscore", puzzle_highscore)
+	cfg.set_value("stats", "day_streak", day_streak)
+	cfg.set_value("stats", "day_streak_best", day_streak_best)
+	cfg.set_value("stats", "last_streak_date", last_streak_date)
 	cfg.set_value("stats", "puzzle_streak", puzzle_streak)
 	cfg.set_value("stats", "puzzle_index", puzzle_index)
 	for bot_id: String in bot_wins:  # ConfigFile has no nested values: one key per bot
@@ -547,6 +657,7 @@ func _load() -> void:
 	is_premium = bool(cfg.get_value("player", "is_premium", false))
 	language = str(cfg.get_value("player", "language", ""))
 	sound_enabled = bool(cfg.get_value("player", "sound_enabled", true))
+	reminder_enabled = bool(cfg.get_value("player", "reminder_enabled", true))
 	last_review_prompt_date = str(cfg.get_value("player", "last_review_prompt_date", ""))
 	review_done = bool(cfg.get_value("player", "review_done", false))
 	games_today = int(cfg.get_value("daily", "games_today", 0))
@@ -562,6 +673,12 @@ func _load() -> void:
 	license_checked_date = str(cfg.get_value("premium", "license_checked_date", ""))
 	games_played = int(cfg.get_value("stats", "games_played", 0))
 	puzzle_highscore = int(cfg.get_value("stats", "puzzle_highscore", 0))
+	# Defaults of 0 / "" mean a save that predates the day streak starts at zero and counts
+	# 1 on the player's next move. We deliberately do NOT backfill from last_play_date or
+	# games_played: a number the player didn't earn would read as a bug, not a gift.
+	day_streak = int(cfg.get_value("stats", "day_streak", 0))
+	day_streak_best = int(cfg.get_value("stats", "day_streak_best", 0))
+	last_streak_date = str(cfg.get_value("stats", "last_streak_date", ""))
 	puzzle_streak = int(cfg.get_value("stats", "puzzle_streak", 0))
 	puzzle_index = int(cfg.get_value("stats", "puzzle_index", -1))
 	bot_wins.clear()

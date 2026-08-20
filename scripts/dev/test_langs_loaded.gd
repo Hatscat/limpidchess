@@ -6,6 +6,22 @@ extends SceneTree
 ##   godot --headless --path . -s res://scripts/dev/test_langs_loaded.gd
 
 const NEW := ["pt", "de", "it", "ru", "tr", "pl", "id", "vi", "uk", "el"]
+## Every locale we ship, for the row-completeness check below.
+const ALL := ["fr", "es", "pt", "de", "it", "ru", "tr", "pl", "id", "vi", "uk", "el"]
+## The day-streak strings. A missing CSV row produces NO error at all, it just falls back to raw
+## English in that locale, so it has to be asserted explicitly.
+const STREAK_KEYS := [
+	"Day streak",
+	"One game or one puzzle counts the day.",
+	"Win or lose, it always counts.",
+	"Days off are fine. Come back within %d days and your streak keeps going.",
+	"Your best is always kept.",
+	"Reminder: %s",
+	"A game today?",
+	"Play one game and your days keep counting.",
+	"Daily reminder",
+	"A gentle nudge to come back and play.",
+]
 
 
 func _initialize() -> void:
@@ -29,6 +45,24 @@ func _initialize() -> void:
 		if not (plain_ok and ph_ok and cred_ok):
 			ok = false
 		print("  %s: 'You win!'->'%s'  ph_ok=%s  credits_translated=%s" % [code, win, ph_ok, cred_ok])
+
+	# Day-streak rows: present in every locale, and their format placeholders survived translation
+	# (a %d that came back as %s would crash the format operator at runtime).
+	for code in ALL:
+		TranslationServer.set_locale(code)
+		var missing: Array = []
+		for k: String in STREAK_KEYS:
+			var t := TranslationServer.translate(k)
+			if t == k:
+				missing.append(k)
+			elif k.contains("%d") and not String(t).contains("%d"):
+				missing.append(k + " (lost %d)")
+			elif k.contains("%s") and not String(t).contains("%s"):
+				missing.append(k + " (lost %s)")
+		if not missing.is_empty():
+			ok = false
+			print("  FAIL streak keys in ", code, ": ", missing)
+	print("  streak keys: checked %d in %d locales" % [STREAK_KEYS.size(), ALL.size()])
 
 	TranslationServer.set_locale("en")
 	print("LANGS LOADED TEST: ", "PASS" if ok else "FAIL")
