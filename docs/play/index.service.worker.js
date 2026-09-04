@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1786362935|3775142';
+const CACHE_VERSION = '1788549703|5103722';
 /** @type {string} */
 const CACHE_PREFIX = 'Limpid Chess-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
