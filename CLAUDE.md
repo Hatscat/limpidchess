@@ -274,6 +274,8 @@ godot --headless --path . -s res://scripts/dev/validate.gd
 # Old-domain save hand-over: import rules (writes the save, so a throwaway HOME) + Worker routing:
 T=$(mktemp -d) && HOME=$T XDG_DATA_HOME=$T/.local/share godot --headless --path . -s res://scripts/dev/test_moved_save.gd
 node --test web/old_domain/worker.test.mjs
+# Web save sync between open tabs (merge rules; same throwaway HOME):
+T=$(mktemp -d) && HOME=$T XDG_DATA_HOME=$T/.local/share godot --headless --path . -s res://scripts/dev/test_tab_sync.gd
 
 # Stockfish integration (UCI pipe, threaded analyse/best_move, and full self-play):
 godot --headless --path . -s res://scripts/dev/test_engine.gd
@@ -306,6 +308,11 @@ explicitly ("layout not visually verified") rather than implying it works.
   that hands each browser's save to the new address (`GameManager._adopt_moved_save`).
   Never put a plain redirect on its `/play/` (old service workers turn it into an error
   page), and keep the domain registered.
+- **Web tabs share one save but not one memory.** Each tab is its own Godot instance that
+  reads IndexedDB once, at boot, and a stale tab's save overwrites the others'. Saves are
+  announced on a BroadcastChannel and merged (`GameManager._merge_other_tab`). A new
+  persisted field needs a rule there (upgrade-only, or in `TAB_LATEST_WINS`), or two open
+  tabs will fight over it.
 
 ## ✅ Definition of success
 

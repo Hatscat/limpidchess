@@ -117,6 +117,7 @@ var pending_review_check := false  ## set after a positive game; consumed on Hom
 
 func _ready() -> void:
 	_load()
+	_join_other_tabs()
 	_adopt_moved_save()
 	_apply_locale()
 	_roll_day()
@@ -194,7 +195,7 @@ const MOVED_SAVE_MAX_CHARS := 16384
 ## Every line ConfigFile.save() writes for OUR save: a [section], or key=value where the value
 ## is a bool, an int or a plain string. The payload is untrusted (anyone can craft such a link)
 ## and ConfigFile.parse() would build Objects and load Resources from text, so any other shape
-## is refused before it gets parsed.
+## is refused before it gets parsed. Saves announced by other tabs go through the same check.
 const MOVED_SAVE_LINE := "^(\\[[A-Za-z0-9_]+\\]|[A-Za-z0-9_]+=(true|false|-?[0-9]{1,18}|\"[^\"\\\\]*\"))$"
 const MOVED_SAVE_DATE := "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
 
@@ -225,7 +226,12 @@ func _decode_moved_save(fragment: String) -> ConfigFile:
 		return null
 	while b64.length() % 4 != 0:
 		b64 += "="
-	var text := Marshalls.base64_to_raw(b64).get_string_from_utf8()
+	return _parse_save_text(Marshalls.base64_to_raw(b64).get_string_from_utf8())
+
+
+## A save's text -> the parsed save, or null unless it has exactly the plain shape and the
+## types this game writes.
+func _parse_save_text(text: String) -> ConfigFile:
 	var plain := RegEx.create_from_string(MOVED_SAVE_LINE)
 	for line: String in text.split("\n"):
 		var trimmed := line.strip_edges()
@@ -363,20 +369,163 @@ func set_sound_enabled(on: bool) -> void:
 
 # --- Web license (Lemon Squeezy; see Billing) ---
 
-## Web: another tab (the one that came back from the checkout) may have redeemed a key
-## while this tab sat idle with a stale copy of the save. Re-read the entitlement when
-## we regain focus, UPGRADE-ONLY, so this tab's next full-file _save() can't wipe the
-## Premium the other tab just bought. Never downgrades: only the store revokes.
-func _notification(what: int) -> void:
-	if what != NOTIFICATION_APPLICATION_FOCUS_IN or not OS.has_feature("web"):
+# --- Web: the other open tabs of the game ---
+
+## Every tab or installed window of the web game is its own Godot instance, and each one reads
+## IndexedDB once, at boot. So a tab never sees what another tab saved (the key just redeemed in
+## the tab that came back from the checkout, a game played elsewhere), and its next _save() puts
+## its own stale copy back over it: IDBFS rewrites every file whose timestamp differs. Each save
+## is therefore announced on a BroadcastChannel and merged into the running state of the others,
+## and a tab coming back into view re-reads the save from IndexedDB for anything it missed while
+## frozen. (Godot never sends NOTIFICATION_APPLICATION_FOCUS_IN on the web, so a focus-based
+## re-read cannot work.)
+
+## These follow whichever tab changed them last; everything else merges upgrade-only.
+const TAB_LATEST_WINS := ["player/language", "player/sound_enabled", "player/reminder_enabled",
+		"stats/puzzle_streak", "stats/puzzle_index"]
+
+var _tabs: JavaScriptObject = null      ## the BroadcastChannel this tab posts on
+var _tabs_cb: JavaScriptObject = null   ## kept referenced, or the bridge drops the callback
+var _tab_values := {}                   ## TAB_LATEST_WINS values as last saved or adopted
+
+
+func _join_other_tabs() -> void:
+	_tab_values.clear()
+	_tabs_changed(_to_config())  # the baseline: what this tab starts from is not "changed"
+	if not OS.has_feature("web"):
 		return
-	var cfg := ConfigFile.new()
-	if cfg.load(SAVE_PATH) != OK:
+	_tabs_cb = JavaScriptBridge.create_callback(_on_other_tab_saved)
+	var window: JavaScriptObject = JavaScriptBridge.get_interface("window")
+	if window == null or _tabs_cb == null:
 		return
-	# The streak merge runs on EVERY focus-in, not only when premium is being picked up: the
-	# other tab may simply have played a game while this one sat idle.
-	_merge_streak_from_disk(cfg)
+	window.set("_limpidOtherTabSaved", _tabs_cb)
+	# The IndexedDB read is the old-domain bridge's (web/old_domain/worker.js): versionless, so
+	# it can never upgrade or block Godot's own database, and a missing one is never created.
+	JavaScriptBridge.eval("""
+		(function (path) {
+			if (window.BroadcastChannel) {
+				window._limpidTabs = new BroadcastChannel('limpid-save');
+				window._limpidTabs.onmessage = function (e) {
+					if (typeof e.data === 'string') window._limpidOtherTabSaved(e.data);
+				};
+			}
+			document.addEventListener('visibilitychange', function () {
+				if (document.visibilityState !== 'visible' || !window.indexedDB) return;
+				var req = indexedDB.open('/userfs');
+				req.onupgradeneeded = function () { req.transaction.abort(); };
+				req.onerror = function (e) { e.preventDefault(); };
+				req.onsuccess = function () {
+					var db = req.result;
+					if (!db.objectStoreNames.contains('FILE_DATA')) { db.close(); return; }
+					var get = db.transaction('FILE_DATA', 'readonly').objectStore('FILE_DATA').get(path);
+					get.onsuccess = function () {
+						db.close();
+						var c = get.result && get.result.contents;
+						if (c && ArrayBuffer.isView(c)) {
+							window._limpidOtherTabSaved(JSON.stringify({ changed: [],
+								cfg: new TextDecoder().decode(new Uint8Array(c.buffer, c.byteOffset, c.byteLength)) }));
+						}
+					};
+					get.onerror = function () { db.close(); };
+				};
+			});
+		})(%s);
+	""" % JSON.stringify(ProjectSettings.globalize_path(SAVE_PATH)), true)
+	_tabs = JavaScriptBridge.get_interface("_limpidTabs")
+
+
+## Announce a save to the other tabs, with the TAB_LATEST_WINS keys this tab itself changed.
+func _tell_other_tabs(cfg: ConfigFile) -> void:
+	var changed := _tabs_changed(cfg)
+	if _tabs != null:
+		_tabs.postMessage(JSON.stringify({"cfg": cfg.encode_to_text(), "changed": changed}))
+
+
+## The TAB_LATEST_WINS keys whose value in `cfg` differs from the last saved or adopted one,
+## which becomes `cfg`'s.
+func _tabs_changed(cfg: ConfigFile) -> Array[String]:
+	var changed: Array[String] = []
+	for k: String in TAB_LATEST_WINS:
+		var parts := k.split("/")
+		var value: Variant = cfg.get_value(parts[0], parts[1])
+		if not _tab_values.has(k) or _tab_values[k] != value:
+			changed.append(k)
+		_tab_values[k] = value
+	return changed
+
+
+## From another tab: '{"cfg": <save text>, "changed": [...]}', posted by its _tell_other_tabs(),
+## or read back from IndexedDB when this tab comes into view (then nothing counts as changed).
+func _on_other_tab_saved(args: Array) -> void:
+	if args.is_empty() or typeof(args[0]) != TYPE_STRING:
+		return
+	var json := JSON.new()
+	if json.parse(str(args[0])) != OK:
+		return
+	var msg: Variant = json.data
+	if typeof(msg) != TYPE_DICTIONARY or typeof(msg.get("cfg")) != TYPE_STRING:
+		return
+	var cfg := _parse_save_text(str(msg["cfg"]))
+	if cfg == null:
+		return
+	var changed: Array = []
+	if typeof(msg.get("changed")) == TYPE_ARRAY:
+		changed = msg["changed"]
+	_merge_other_tab(cfg, changed)
+
+
+## Merge another tab's save into this tab's running state. Nothing is saved here: this tab's
+## next _save() carries both tabs' progress, and saving now would only echo between tabs.
+func _merge_other_tab(cfg: ConfigFile, changed: Array) -> void:
 	_merge_premium_from(cfg)
+	if license_key == "":  # a revoked key is still proof of purchase: Billing re-checks it at boot
+		license_key = str(cfg.get_value("premium", "license_key", ""))
+		license_instance = str(cfg.get_value("premium", "license_instance", ""))
+	_merge_streak_from_disk(cfg)
+	games_played = maxi(games_played, int(cfg.get_value("stats", "games_played", 0)))
+	puzzle_highscore = maxi(puzzle_highscore, int(cfg.get_value("stats", "puzzle_highscore", 0)))
+	if cfg.has_section("bot_wins"):
+		for bot_id: String in cfg.get_section_keys("bot_wins"):
+			var wins: int = int(cfg.get_value("bot_wins", bot_id, 0))
+			bot_wins[bot_id] = maxi(int(bot_wins.get(bot_id, 0)), wins)
+	review_done = review_done or bool(cfg.get_value("player", "review_done", false))
+	var their_prompt := str(cfg.get_value("player", "last_review_prompt_date", ""))
+	if their_prompt > last_review_prompt_date:
+		last_review_prompt_date = their_prompt
+	# Both tabs spend the same day's allowance and the same welcome credit.
+	var their_day := str(cfg.get_value("daily", "last_play_date", ""))
+	if their_day > last_play_date:
+		last_play_date = their_day
+		games_today = int(cfg.get_value("daily", "games_today", 0))
+		reviews_today = int(cfg.get_value("daily", "reviews_today", 0))
+		puzzles_today = int(cfg.get_value("daily", "puzzles_today", 0))
+	elif their_day == last_play_date:
+		games_today = maxi(games_today, int(cfg.get_value("daily", "games_today", 0)))
+		reviews_today = maxi(reviews_today, int(cfg.get_value("daily", "reviews_today", 0)))
+		puzzles_today = maxi(puzzles_today, int(cfg.get_value("daily", "puzzles_today", 0)))
+	if cfg.has_section_key("daily", "bonus_games"):
+		bonus_games = mini(bonus_games, int(cfg.get_value("daily", "bonus_games")))
+	if cfg.has_section_key("daily", "bonus_puzzles"):
+		bonus_puzzles = mini(bonus_puzzles, int(cfg.get_value("daily", "bonus_puzzles")))
+	for k: Variant in changed:
+		var key := str(k)
+		var parts := key.split("/")
+		if key not in TAB_LATEST_WINS or not cfg.has_section_key(parts[0], parts[1]):
+			continue
+		var value: Variant = cfg.get_value(parts[0], parts[1])
+		_tab_values[key] = value  # adopted, not changed here: never announced back as ours
+		match key:
+			"player/language":
+				language = str(value)
+				_apply_locale()
+			"player/sound_enabled":
+				sound_enabled = bool(value)
+			"player/reminder_enabled":
+				reminder_enabled = bool(value)
+			"stats/puzzle_streak":
+				puzzle_streak = int(value)
+			"stats/puzzle_index":
+				puzzle_index = int(value)
 
 
 ## Take the Premium unlock found in `cfg` (another tab's save, or the one handed over from
@@ -392,8 +541,9 @@ func _merge_premium_from(cfg: ConfigFile) -> void:
 
 
 ## Web multi-tab: the other tab may have played (and bumped the streak) while this tab sat
-## idle with a stale copy. Merge UPGRADE-ONLY, so this tab's next full-file _save() can't
-## roll the count back. Same reasoning as the premium merge above: never downgrade.
+## idle with a stale copy (see _merge_other_tab). Merge UPGRADE-ONLY, so this tab's next
+## full-file _save() can't roll the count back. Same reasoning as the premium merge: never
+## downgrade.
 func _merge_streak_from_disk(cfg: ConfigFile) -> void:
 	var disk_streak: int = int(cfg.get_value("stats", "day_streak", 0))
 	var disk_date: String = str(cfg.get_value("stats", "last_streak_date", ""))
@@ -769,7 +919,9 @@ func set_reminder_enabled(value: bool) -> void:
 # --- Persistence ---
 
 func _save() -> void:
-	_to_config().save(SAVE_PATH)
+	var cfg := _to_config()
+	cfg.save(SAVE_PATH)
+	_tell_other_tabs(cfg)
 
 
 ## The whole persistent state, as _save() writes it.

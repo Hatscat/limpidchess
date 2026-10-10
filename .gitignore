@@ -32,6 +32,8 @@ native/**/*.os
 
 # Claude local only files
 .claude/
+# Wrangler's local cache (holds the Cloudflare account id)
+.wrangler/
 # Python bytecode (from scripts/dev tooling)
 __pycache__/
 *.pyc

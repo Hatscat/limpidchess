@@ -76,9 +76,8 @@ which broke its audio worklets and Stockfish in all three engines).
   removes it; re-opening it only repeats the upgrade-only merge.
 - A player who starts fresh on the new address before ever opening the old one keeps
   their new save; the old one is merged in (upgrade-only) whenever they later open an old
-  link or icon. If another tab of the new game is open during a hand-over, that tab's next
-  save can overwrite it (web instances never re-read each other's saves); the next visit to
-  the old address hands it over again.
+  link or icon. Other open tabs of the new game pick the hand-over up through the save sync
+  between tabs (`GameManager._join_other_tabs`).
 
 ## Cutover runbook
 
