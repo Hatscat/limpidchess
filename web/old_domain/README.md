@@ -96,7 +96,7 @@ Before, any day (nothing visible changes):
    domains > Add a domain: **limpidchess.com** (TXT `_github-pages-challenge-hatscat` in the
    limpidchess.com zone). lonebee.games is already verified there and covers its
    subdomains. This stops anyone else claiming limpidchess.com on GitHub once no repo uses
-   it. Keep both TXT records forever.
+   it. Keep both TXT records (the limpidchess.com one for as long as you own that domain).
 4. Cloudflare, zone **limpidchess.com**: check Rules (Redirect Rules, Bulk Redirects, Page
    Rules) for anything matching limpidchess.com; none may cover `/play/`. Optionally turn on
    SSL/TLS > Edge Certificates > Always Use HTTPS (the Worker upgrades http itself anyway).
@@ -158,10 +158,12 @@ After:
     `https://limpidchess.lonebee.games/sitemap.xml`. A warning about `/play/` not being a
     301 is expected. Bing has no move tool: import the sites from Search Console and submit
     the sitemap.
-13. Keep limpidchess.com registered for good (auto-renew ON; it expires 2027-07-18) and
-    keep the Worker running. Old icons, bookmarks, receipts and backlinks depend on it, and
-    the old origin still holds players' saves and license keys: whoever owned the domain
-    next could read them.
+13. limpidchess.com is paid until **2027-07-18** and auto-renew is OFF, by decision
+    (2026-10-10: no web sales, so no license keys sit in the old origin's storage). Keep the
+    Worker running until then. When it lapses, old links, bookmarks and installed web icons
+    stop working, players who never came back keep their old save stranded, and whoever
+    registers the domain next controls that address (and the old origin's leftover saves).
+    Keep **lonebee.games** on auto-renew: it is the game's home now.
 
 ## Rollback
 

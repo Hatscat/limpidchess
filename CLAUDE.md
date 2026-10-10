@@ -307,7 +307,8 @@ explicitly ("layout not visually verified") rather than implying it works.
   (2026-10). The old domain is a Cloudflare Worker ([web/old_domain/](web/old_domain/README.md))
   that hands each browser's save to the new address (`GameManager._adopt_moved_save`).
   Never put a plain redirect on its `/play/` (old service workers turn it into an error
-  page), and keep the domain registered.
+  page). The domain is paid until 2027-07-18 and deliberately not renewed (no web sales);
+  keep the Worker running until then.
 - **Web tabs share one save but not one memory.** Each tab is its own Godot instance that
   reads IndexedDB once, at boot, and a stale tab's save overwrites the others'. Saves are
   announced on a BroadcastChannel and merged (`GameManager._merge_other_tab`). A new

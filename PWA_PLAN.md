@@ -335,7 +335,8 @@ attribution carries over via the in-game About screen. Nothing else changes.
     is verified on the Hatscat account. Keep it DNS-only: the orange cloud also blocks
     GitHub's certificate RENEWALS, not just the first issue (limpidchess.com's GitHub
     cert sat in `bad_authz` behind the proxy, set to expire 2026-10-16).
-    limpidchess.com stays registered for good and is now a Cloudflare Worker: a bridge
+    limpidchess.com is paid until 2027-07-18 and will not be renewed (no web sales, so
+    no license keys to protect on the old origin). Until then it is a Cloudflare Worker: a bridge
     page hands each browser's save to the new address in the URL fragment
     (`GameManager._adopt_moved_save`) and everything else 301s. Never a plain redirect
     on its /play/: see [web/old_domain/README.md](web/old_domain/README.md).
