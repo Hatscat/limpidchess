@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://limpidchess.lonebee.games/sitemap.xml

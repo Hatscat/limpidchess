@@ -117,6 +117,7 @@ var pending_review_check := false  ## set after a positive game; consumed on Hom
 
 func _ready() -> void:
 	_load()
+	_adopt_moved_save()
 	_apply_locale()
 	_roll_day()
 	_check_web_update()
@@ -181,6 +182,149 @@ func _check_checkout_return() -> void:
 	returned_from_checkout = true
 
 
+# --- Web: the save handed over from the old address ---
+
+## Until 2026-10 the web game lived at limpidchess.com. Browser saves are bound to their
+## address, so that domain stays up as a Cloudflare Worker (web/old_domain/worker.js) whose
+## bridge page reads the save this browser kept there and comes here with it in the URL
+## fragment: #lc-move=<base64url of limpid_chess.cfg>. A fragment never reaches a server.
+const MOVED_SAVE_PREFIX := "#lc-move="
+## A real save is well under 2 KB, so anything much bigger is not one of ours.
+const MOVED_SAVE_MAX_CHARS := 16384
+## Every line ConfigFile.save() writes for OUR save: a [section], or key=value where the value
+## is a bool, an int or a plain string. The payload is untrusted (anyone can craft such a link)
+## and ConfigFile.parse() would build Objects and load Resources from text, so any other shape
+## is refused before it gets parsed.
+const MOVED_SAVE_LINE := "^(\\[[A-Za-z0-9_]+\\]|[A-Za-z0-9_]+=(true|false|-?[0-9]{1,18}|\"[^\"\\\\]*\"))$"
+const MOVED_SAVE_DATE := "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+
+
+## Web boot: adopt the save handed over from limpidchess.com, if this visit carries one.
+func _adopt_moved_save() -> void:
+	if not OS.has_feature("web"):
+		return
+	var fragment: Variant = JavaScriptBridge.eval("location.hash", true)
+	if typeof(fragment) != TYPE_STRING or not str(fragment).begins_with(MOVED_SAVE_PREFIX):
+		return
+	# Out of the address bar first, whatever happens next: a reload, a bookmark or an installed
+	# shortcut must never replay it.
+	JavaScriptBridge.eval("history.replaceState(null, '', location.pathname + location.search)", true)
+	var moved := _decode_moved_save(str(fragment))
+	if moved != null:
+		_take_moved_save(moved)
+
+
+## "#lc-move=<base64url>" -> the parsed save, or null if anything about it is off.
+func _decode_moved_save(fragment: String) -> ConfigFile:
+	if not fragment.begins_with(MOVED_SAVE_PREFIX):
+		return null
+	var b64 := fragment.substr(MOVED_SAVE_PREFIX.length()).replace("-", "+").replace("_", "/")
+	if b64.is_empty() or b64.length() > MOVED_SAVE_MAX_CHARS or b64.length() % 4 == 1:
+		return null
+	if RegEx.create_from_string("^[A-Za-z0-9+/]+$").search(b64) == null:
+		return null
+	while b64.length() % 4 != 0:
+		b64 += "="
+	var text := Marshalls.base64_to_raw(b64).get_string_from_utf8()
+	var plain := RegEx.create_from_string(MOVED_SAVE_LINE)
+	for line: String in text.split("\n"):
+		var trimmed := line.strip_edges()
+		if trimmed != "" and plain.search(trimmed) == null:
+			return null
+	var cfg := ConfigFile.new()
+	if cfg.parse(text) != OK or not cfg.has_section("player"):
+		return null
+	# _load() and the merge run bool() and int() on these values: bool() of a String is a script
+	# error and int() would quietly coerce one ("12abc" -> 12), so every key this game saves must
+	# arrive with the type it saves it with. Keys it no longer saves (older versions) are never
+	# read, so any plain value is fine there.
+	var reference := _to_config()
+	for section: String in cfg.get_sections():
+		for key: String in cfg.get_section_keys(section):
+			var want: int = TYPE_NIL
+			if section == "bot_wins":
+				want = TYPE_INT
+			elif reference.has_section_key(section, key):
+				want = typeof(reference.get_value(section, key))
+			if want != TYPE_NIL and typeof(cfg.get_value(section, key)) != want:
+				return null
+	return cfg
+
+
+## The first save at this address is the old one, as is. If the player already started here
+## too, keep this save and merge in only what can never hurt them, UPGRADE-ONLY: Premium, the
+## day streak and the lifetime records. Daily counters, the welcome credit, a parked puzzle run
+## and settings stay as they are here. The bridge hands the old save over on every visit to the
+## old address, and browser history can replay the link, so this must stay idempotent.
+func _take_moved_save(moved: ConfigFile) -> void:
+	_sanitize_moved_save(moved)
+	if not FileAccess.file_exists(SAVE_PATH):
+		moved.save(SAVE_PATH)
+		_load()
+		return
+	_merge_moved_streak(moved)
+	_merge_premium_from(moved)
+	if license_key == "":  # a revoked key is still proof of purchase: Billing re-checks it at boot
+		license_key = str(moved.get_value("premium", "license_key", ""))
+		license_instance = str(moved.get_value("premium", "license_instance", ""))
+	games_played = maxi(games_played, int(moved.get_value("stats", "games_played", 0)))
+	puzzle_highscore = maxi(puzzle_highscore, int(moved.get_value("stats", "puzzle_highscore", 0)))
+	if moved.has_section("bot_wins"):
+		for bot_id: String in moved.get_section_keys("bot_wins"):
+			var wins: int = int(moved.get_value("bot_wins", bot_id, 0))
+			bot_wins[bot_id] = maxi(int(bot_wins.get(bot_id, 0)), wins)
+	review_done = review_done or bool(moved.get_value("player", "review_done", false))
+	_save()
+
+
+## Anyone can craft a hand-over link, so before it is adopted or merged: Premium crosses only
+## together with the license key that bought it (every web unlock has one), and Billing
+## re-checks that key on this very boot, so a made-up key comes back INVALID while an offline
+## boot keeps it, fail-open as designed. Counters stay in range and dates in the past, so a
+## link can neither hand out free games nor freeze the day streak.
+func _sanitize_moved_save(moved: ConfigFile) -> void:
+	if str(moved.get_value("premium", "license_key", "")) == "":
+		moved.set_value("player", "is_premium", false)
+	moved.set_value("premium", "license_checked_date", "")
+	var today := Time.get_date_string_from_system()
+	var date_shape := RegEx.create_from_string(MOVED_SAVE_DATE)
+	for section: String in moved.get_sections():
+		for key: String in moved.get_section_keys(section):
+			var value: Variant = moved.get_value(section, key)
+			if typeof(value) == TYPE_INT:
+				moved.set_value(section, key, maxi(int(value), -1 if key == "puzzle_index" else 0))
+			elif typeof(value) == TYPE_STRING and key.ends_with("_date"):
+				var date := str(value)
+				if date != "" and date_shape.search(date) == null:
+					moved.set_value(section, key, "")
+				elif date > today:  # ISO dates sort lexicographically
+					moved.set_value(section, key, today)
+	for credit: Array in [["bonus_games", WELCOME_BONUS_GAMES], ["bonus_puzzles", WELCOME_BONUS_PUZZLES]]:
+		if moved.has_section_key("daily", credit[0]):
+			moved.set_value("daily", credit[0], mini(int(moved.get_value("daily", credit[0])), int(credit[1])))
+	var code := str(moved.get_value("player", "language", ""))
+	if code != "" and not LANGUAGES.any(func(l: Dictionary) -> bool: return l["code"] == code):
+		moved.set_value("player", "language", "")
+
+
+## The two addresses kept two separate runs, so "the most recent one wins" (the tab rule) could
+## show a smaller live streak. Runs whose last days are within the grace window chain together:
+## keep the longer one. Otherwise the more recent run is the live one.
+func _merge_moved_streak(moved: ConfigFile) -> void:
+	var their_streak: int = int(moved.get_value("stats", "day_streak", 0))
+	var their_date: String = str(moved.get_value("stats", "last_streak_date", ""))
+	day_streak_best = maxi(day_streak_best, int(moved.get_value("stats", "day_streak_best", 0)))
+	if their_date == "":
+		return
+	if last_streak_date != "" and absi(_days_since(their_date) - _days_since(last_streak_date)) <= STREAK_GRACE_DAYS:
+		day_streak = maxi(day_streak, their_streak)
+	elif their_date > last_streak_date:
+		day_streak = their_streak
+	if their_date > last_streak_date:
+		last_streak_date = their_date
+	day_streak_best = maxi(day_streak_best, day_streak)
+
+
 # --- Language ---
 
 ## Apply the saved locale, or fall back to the device language (then English).
@@ -232,9 +376,13 @@ func _notification(what: int) -> void:
 	# The streak merge runs on EVERY focus-in, not only when premium is being picked up: the
 	# other tab may simply have played a game while this one sat idle.
 	_merge_streak_from_disk(cfg)
-	if is_premium:
-		return
-	if not bool(cfg.get_value("player", "is_premium", false)):
+	_merge_premium_from(cfg)
+
+
+## Take the Premium unlock found in `cfg` (another tab's save, or the one handed over from
+## the old address), UPGRADE-ONLY: never downgrades, only the store revokes.
+func _merge_premium_from(cfg: ConfigFile) -> void:
+	if is_premium or not bool(cfg.get_value("player", "is_premium", false)):
 		return
 	license_key = str(cfg.get_value("premium", "license_key", license_key))
 	license_instance = str(cfg.get_value("premium", "license_instance", license_instance))
@@ -621,6 +769,11 @@ func set_reminder_enabled(value: bool) -> void:
 # --- Persistence ---
 
 func _save() -> void:
+	_to_config().save(SAVE_PATH)
+
+
+## The whole persistent state, as _save() writes it.
+func _to_config() -> ConfigFile:
 	var cfg := ConfigFile.new()
 	cfg.set_value("player", "is_premium", is_premium)
 	cfg.set_value("player", "language", language)
@@ -646,7 +799,7 @@ func _save() -> void:
 	cfg.set_value("stats", "puzzle_index", puzzle_index)
 	for bot_id: String in bot_wins:  # ConfigFile has no nested values: one key per bot
 		cfg.set_value("bot_wins", bot_id, bot_wins[bot_id])
-	cfg.save(SAVE_PATH)
+	return cfg
 
 
 func _load() -> void:

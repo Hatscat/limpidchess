@@ -10,9 +10,9 @@
  * to report. This turns that into a visible message plus one-tap recovery, and gives a
  * phone-only tester something to screenshot.
  *
- *   <page>          watchdog only: panel appears if boot stalls past BOOT_TIMEOUT_MS
+ *   <page>          watchdog only: panel appears if loading makes no progress for BOOT_TIMEOUT_MS
  *   <page>?debug=1  live pass-through panel + the GL instrumentation below
- *   <page>?reset=1  wipe service worker + caches, then boot clean
+ *   <page>?reset=1  wipe service worker + caches, then boot clean (keeps ?ls=ok and #lc-move=)
  *   <page>?log=1    POST the panel text to /__log every 2 s (web/tools/lan_server.py)
  *
  * COST: everything expensive is gated behind ?debug=1. The pixel sampler forces a GPU sync
@@ -355,7 +355,9 @@
 		}
 	}
 
-	/** Drop the service worker and every cache, then reload clean. */
+	/** Drop the service worker and every cache, then reload clean. Keeps what the page carries
+	 *  for the game: the checkout return (?ls=ok) and the save handed over from the old address
+	 *  (#lc-move=, see web/old_domain/), which the game has not read yet if boot never finished. */
 	function hardReset() {
 		var jobs = [];
 		if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
@@ -369,7 +371,9 @@
 			}).catch(function () {}));
 		}
 		Promise.all(jobs).then(function () {
-			location.replace(location.pathname + '?fresh=' + Date.now());
+			location.replace(location.pathname + '?fresh=' + Date.now()
+				+ (/[?&]ls=ok\b/.test(location.search) ? '&ls=ok' : '')
+				+ (location.hash.indexOf('#lc-move=') === 0 ? location.hash : ''));
 		});
 	}
 
@@ -456,22 +460,34 @@
 	}
 
 	function watch() {
-		var t0 = Date.now();
+		// Stalled means no progress for BOOT_TIMEOUT_MS, not a slow download: a cold first visit
+		// is ~12 MB, and every returning player makes one after the move to a new address.
+		var lastMove = Date.now();
+		var lastValue = -1;
 		var iv = setInterval(function () {
 			// Godot's shell removes #status once startGame() resolves.
 			if (!document.getElementById('status')) {
 				started = true;
 				clearInterval(iv);
+				if (overlay && !passThrough) {
+					// It got there after all: take the "could not start" panel down again.
+					overlay.remove();
+					overlay = null;
+					pre = null;
+				}
 				render();
 				return;
 			}
-			if (Date.now() - t0 > BOOT_TIMEOUT_MS) {
-				clearInterval(iv);
-				if (!overlay) {
-					build('Limpid Chess could not start',
-						'Loading stalled. That is usually a bad cached copy, or the device '
-						+ 'running out of memory. Tap below to clear it and try again.');
-				}
+			var bar = document.getElementById('status-progress');
+			var value = bar ? Number(bar.value) || 0 : 0;
+			if (value !== lastValue) {
+				lastValue = value;
+				lastMove = Date.now();
+			}
+			if (Date.now() - lastMove > BOOT_TIMEOUT_MS && !overlay) {
+				build('Limpid Chess could not start',
+					'Loading stalled. That is usually a bad cached copy, or the device '
+					+ 'running out of memory. Tap below to clear it and try again.');
 			}
 		}, 500);
 	}

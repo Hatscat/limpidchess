@@ -1,0 +1,17 @@
+# The Cloudflare Worker that keeps limpidchess.com alive after the move (README.md).
+# Deploy from this folder: npx wrangler login, then npx wrangler deploy.
+# Or skip wrangler and paste worker.js into the dashboard (README.md, step 5).
+name = "limpidchess-com"
+main = "worker.js"
+compatibility_date = "2026-10-08"
+workers_dev = false
+
+# Both hostnames stay proxied (orange cloud) in the limpidchess.com zone: a route only runs on
+# proxied records. Set each route's request-limit failure mode to "Fail closed" in the dashboard.
+[[routes]]
+pattern = "limpidchess.com/*"
+zone_name = "limpidchess.com"
+
+[[routes]]
+pattern = "www.limpidchess.com/*"
+zone_name = "limpidchess.com"

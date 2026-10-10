@@ -19,6 +19,11 @@ where the game fails to boot can never receive the fix that would make it boot, 
 single bad deploy strands those users permanently, with no remote way to reach them.
 Costs one ~4 KB request per online launch. Do not revert it to save that request.
 
+Consequence: the shell's URL must always answer with a direct 200. The worker hands its
+network answer to the page, and browsers refuse a redirected one for a page load (an error
+page in Chrome and Safari). That is why the old address limpidchess.com is a bridge page,
+not a redirect: see [old_domain/README.md](old_domain/README.md).
+
 ## OPEN BUG: iOS never presents canvas content (August 2026)
 
 **Status: unsolved, and believed to be a WebKit bug.** Android, desktop and *some* iPhones

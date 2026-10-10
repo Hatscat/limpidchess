@@ -271,6 +271,10 @@ godot --headless --path . -s res://scripts/dev/perft_test.gd
 # Whole-project smoke (instantiates every scene + drives the game pipeline):
 godot --headless --path . -s res://scripts/dev/validate.gd
 
+# Old-domain save hand-over: import rules (writes the save, so a throwaway HOME) + Worker routing:
+T=$(mktemp -d) && HOME=$T XDG_DATA_HOME=$T/.local/share godot --headless --path . -s res://scripts/dev/test_moved_save.gd
+node --test web/old_domain/worker.test.mjs
+
 # Stockfish integration (UCI pipe, threaded analyse/best_move, and full self-play):
 godot --headless --path . -s res://scripts/dev/test_engine.gd
 godot --headless --path . -s res://scripts/dev/test_selfplay.gd
@@ -297,6 +301,11 @@ explicitly ("layout not visually verified") rather than implying it works.
   the result back via `call_deferred` / a signal.
 - **Don't trust a movegen change without perft.** Subtle bugs (ep discovered
   check, castling through check, underpromotion) hide until perft catches them.
+- **limpidchess.com is load-bearing.** The site moved to `limpidchess.lonebee.games`
+  (2026-10). The old domain is a Cloudflare Worker ([web/old_domain/](web/old_domain/README.md))
+  that hands each browser's save to the new address (`GameManager._adopt_moved_save`).
+  Never put a plain redirect on its `/play/` (old service workers turn it into an error
+  page), and keep the domain registered.
 
 ## ✅ Definition of success
 

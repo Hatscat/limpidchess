@@ -329,6 +329,16 @@ attribution carries over via the in-game About screen. Nothing else changes.
       another reason the domain came before the launch).
     Cloudflare/R2 hosting stays the later option if bandwidth approaches the
     Pages soft cap; the domain living at Cloudflare makes that move trivial.
+    **2026-10: moved to `limpidchess.lonebee.games`**, the Lone Bee hub where each game
+    gets a subdomain (like drawmycode.lonebee.games). `docs/CNAME` holds it; DNS is a
+    DNS-only CNAME `limpidchess` → `hatscat.github.io` in the lonebee.games zone, which
+    is verified on the Hatscat account. Keep it DNS-only: the orange cloud also blocks
+    GitHub's certificate RENEWALS, not just the first issue (limpidchess.com's GitHub
+    cert sat in `bad_authz` behind the proxy, set to expire 2026-10-16).
+    limpidchess.com stays registered for good and is now a Cloudflare Worker: a bridge
+    page hands each browser's save to the new address in the URL fragment
+    (`GameManager._adopt_moved_save`) and everything else 301s. Never a plain redirect
+    on its /play/: see [web/old_domain/README.md](web/old_domain/README.md).
 17. Lemon Squeezy premium + "Redeem key" dialog. **LIVE since 2026-08-06**
     (`TEST_STORE := false`, product 1278251, live checkout url in lemon_squeezy.gd;
     verified at switchover: the old test key is now rejected and the checkout opens
@@ -356,7 +366,8 @@ attribution carries over via the in-game About screen. Nothing else changes.
     Original plan (for reference):
     - **Store (dashboard)**: create the LS store + a one-time "Limpid Chess
       Premium" product at €4.99, license keys ON (activation limit ~5, generous
-      multi-device), checkout success URL → `https://limpidchess.com/play/?ls=ok`.
+      multi-device), checkout success URL → `https://limpidchess.lonebee.games/play/?ls=ok`
+      (limpidchess.com/play/?ls=ok before the 2026-10 move; the bridge still forwards it).
       Do everything in TEST MODE first (test cards + test license keys).
     - **Code, in [billing.gd](scripts/billing.gd)** (stay the single entitlement
       façade; web branch gated on `OS.has_feature("web")`, mirroring how
