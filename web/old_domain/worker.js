@@ -26,7 +26,7 @@ const NEW_ORIGIN = 'https://limpidchess.lonebee.games';
 // Set to true once the new address is verified (README, cutover step 10), then redeploy. From
 // then on the Worker never asks the new site or GitHub anything: no probe, no pass-through, no
 // "moving" page, whatever later happens to either of them.
-const MOVED = false;
+const MOVED = true;  // set on 2026-10-10, after the move was verified
 const SW_PATH = '/play/index.service.worker.js';
 const BRIDGE_PATHS = ['/play', '/play/', '/play/index.html'];
 const HOME_PATHS = ['/', '/index.html'];
@@ -34,9 +34,10 @@ const STATUS_PATH = '/__move-status';
 
 export default {
 	async fetch(request, env) {
-		// env.NEW_ORIGIN and env.MOVED exist for local tests only (worker.test.mjs, e2e_check.mjs).
+		// env.NEW_ORIGIN and env.MOVED ('1' or '0') exist for local tests only (worker.test.mjs,
+		// e2e_check.mjs): tests of the cutover states run with MOVED '0'.
 		const newOrigin = (env && env.NEW_ORIGIN) || NEW_ORIGIN;
-		const moved = MOVED || (env && env.MOVED === '1');
+		const moved = env && env.MOVED !== undefined ? env.MOVED === '1' : MOVED;
 		const url = new URL(request.url);
 		// The save lives in the https origin, so upgrade on this host before anything else.
 		if (url.protocol === 'http:') {

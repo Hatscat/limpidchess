@@ -29,7 +29,7 @@ after(() => server.close());
 const PAGE_VISIT = { 'sec-fetch-mode': 'navigate', 'sec-fetch-dest': 'document' };
 
 function call(url, headers = {}) {
-	return worker.fetch(new Request(url, { headers }), { NEW_ORIGIN: NEW });
+	return worker.fetch(new Request(url, { headers }), { NEW_ORIGIN: NEW, MOVED: '0' });
 }
 
 test('the old worker script gets the 200 kill switch, never a redirect', async () => {
@@ -128,7 +128,7 @@ test('until the new address serves valid HTTPS: pass through, or a 503 "moving" 
 		return new Response(origin.body, { status: origin.status });
 	};
 	t.after(() => { globalThis.fetch = realFetch; });
-	const go = (path, headers = {}) => fresh.fetch(new Request('https://limpidchess.com' + path, { headers }), {});
+	const go = (path, headers = {}) => fresh.fetch(new Request('https://limpidchess.com' + path, { headers }), { MOVED: '0' });
 
 	let res = await go('/play/', PAGE_VISIT);
 	assert.equal(res.status, 200, 'before the switch: untouched pass-through');
@@ -196,6 +196,19 @@ test('HEAD during the certificate gap gets the 503 too, like GET', async (t) => 
 		return new Response(method === 'HEAD' ? null : "<h1>There isn't a GitHub Pages site here.</h1>", { status: 404 });
 	};
 	t.after(() => { globalThis.fetch = realFetch; });
-	const res = await fresh.fetch(new Request('https://limpidchess.com/play/', { method: 'HEAD' }), {});
+	const res = await fresh.fetch(new Request('https://limpidchess.com/play/', { method: 'HEAD' }), { MOVED: '0' });
 	assert.equal(res.status, 503);
+});
+
+test('as deployed (no test env): moved for good, nothing fetched', async (t) => {
+	const fresh = (await import('./worker.js?as-deployed')).default;
+	const realFetch = globalThis.fetch;
+	let fetched = 0;
+	globalThis.fetch = async () => { fetched++; throw new TypeError('must not be called'); };
+	t.after(() => { globalThis.fetch = realFetch; });
+	const res = await fresh.fetch(new Request('https://limpidchess.com/__move-status'), {});
+	assert.equal(await res.text(),
+		'limpidchess.com worker: moved for good, sending players to https://limpidchess.lonebee.games\n');
+	assert.equal((await fresh.fetch(new Request('https://limpidchess.com/play/'), {})).status, 200);
+	assert.equal(fetched, 0);
 });
