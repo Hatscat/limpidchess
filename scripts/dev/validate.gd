@@ -5,17 +5,66 @@ extends SceneTree
 ## Instantiates every scene (running _ready → catches missing nodes / bad paths /
 ## parse errors) and drives a few full turns through ChessRules + ChessBot so the
 ## game pipeline is exercised. Watch the log for ERROR / SCRIPT ERROR lines.
+## `... validate.gd -- --itch` runs the same pass as the itch.io build (see Itch), and also
+## checks that its Premium screen shows no price and no key button, and that its one button
+## leads out (`-- --itch --itch-android` for the Android variant).
+##
+## Everything runs on the first frame, not in _initialize(): the root only enters the tree
+## after _initialize() returns, so a scene added and freed there never gets its _ready().
+## Some _ready()s save (puzzle_rush parks a new run), so the player's save is put back
+## exactly as it was afterwards: validate runs against the developer's real save.
 
-func _initialize() -> void:
+var _ran := false
+
+
+func _process(_delta: float) -> bool:
+	if _ran:
+		return false
+	_ran = true
+	# Autoloads are not identifiers in a -s script, hence the lookup.
+	var gm: Node = root.get_node("GameManager")
+	var save_path: String = gm.get_script().get_script_constant_map()["SAVE_PATH"]
+	var had_save := FileAccess.file_exists(save_path)
+	var before: PackedByteArray = FileAccess.get_file_as_bytes(save_path) if had_save else PackedByteArray()
+	var ok := _validate()
+	if had_save:
+		var f := FileAccess.open(save_path, FileAccess.WRITE)
+		f.store_buffer(before)
+		f.close()
+	elif FileAccess.file_exists(save_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
+	print(">>> VALIDATE DONE" if ok else ">>> VALIDATE FAILED")
+	quit(0 if ok else 1)
+	return false
+
+
+func _validate() -> bool:
+	var ok := true
 	print("=== SCENES ===")
 	for s in ["home", "bots", "premium", "about", "game", "puzzle_rush"]:
 		var ps: PackedScene = load("res://scenes/%s.tscn" % s)
 		if ps == null:
 			print("  ", s, "  *** LOAD FAILED ***")
+			ok = false
 			continue
 		var inst: Node = ps.instantiate()
-		root.add_child(inst)  # runs _ready synchronously
-		print("  ", s, "  ready ok")
+		root.add_child(inst)  # inside the tree: runs _ready synchronously
+		print("  ", s, "  ready ok" if inst.is_node_ready() else "  *** NOT READY ***")
+		ok = ok and inst.is_node_ready()
+		if s == "premium" and Itch.on:
+			# itch.io: no price, no key button, and one button out, unless already Premium.
+			var premium: bool = root.get_node("GameManager").get("is_premium")
+			var get_button: Button = inst.get_node("%GetButton")
+			var restore_button: Button = inst.get_node("%RestoreButton")
+			var price_label: Label = inst.get_node("%PriceLabel")
+			var label: String = inst.tr("Get it on Google Play") if Itch.android \
+					else inst.tr("Play on the website")
+			var no_price: String = inst.tr("Premium is a one-time purchase in the Android app or on the website.")
+			var links_out := not restore_button.visible and get_button.visible != premium \
+					and (premium or get_button.text == label) and price_label.text == no_price
+			print("  premium (itch)  ", "links out ok" if links_out
+					else "*** WRONG: '%s' / '%s' ***" % [get_button.text, price_label.text])
+			ok = ok and links_out
 		root.remove_child(inst)
 		inst.free()
 
@@ -46,6 +95,4 @@ func _initialize() -> void:
 	var r2 := ChessRules.new()
 	r2.set_fen("r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3")
 	print("  fen: ", r2.get_fen())
-
-	print(">>> VALIDATE DONE")
-	quit(0)
+	return ok

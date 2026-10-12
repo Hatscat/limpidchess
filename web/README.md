@@ -5,6 +5,92 @@ inside the pck. The whole folder is `.gdignore`d; on a Web export the
 `limpid_export` plugin copies `engine/*` into the export directory
 (see `addons/limpid_export/web_export_plugin.gd`).
 
+## itch.io build
+
+`web/build_web.sh --itch` exports the **"Web (itch)"** preset into `build/itch/` and zips it
+into `build/limpid-chess-itch-<version>.zip` (`index.html` at the root): the HTML5 upload for
+lone-bee.itch.io/limpid-chess. It is the website's build with these differences, all listed
+in [`scripts/itch.gd`](../scripts/itch.gd) (`Itch.on`, from the preset's feature tag `itch`):
+
+- **No PWA.** itch.io serves every HTML5 game from ONE origin, `html-classic.itch.zone` (each
+  build in its own `/html/<id>/` folder), in an unsandboxed iframe of its page. That origin's
+  service workers and caches belong to every itch game, so this build has none, and the boot
+  watchdog's reset never touches them: it downloads our own files again instead (`ITCH` and
+  `OWN_FILES` in boot_diagnostics.js, stamped by the script). The script asserts that no
+  worker, manifest or offline page shipped, and that the pck carries the `itch` feature tag:
+  without it, the zip would be the website build under another name, Lemon Squeezy and all.
+  It ships no page icons either (`html/export_icon=false`: a frame never shows them), hence
+  10 files against the website's 18.
+- **Nothing sold.** An itch HTML5 page can only take donations. Billing starts no Lemon
+  Squeezy client, and the Premium screen keeps the benefits, shows no price, and leads out:
+  the Google Play listing on Android (`utm_source=itch.io&utm_campaign=premium`), the website
+  everywhere else. The itch page is a funnel to the Android app.
+- **Its own save database.** Every Godot game on itch shares the IndexedDB database
+  `/userfs`, and Emscripten's sync deletes or rewinds the files a game does not hold in
+  memory, so a second Godot game open in another tab could roll back or delete our save. The
+  script sets `GODOT_CONFIG.persistentPaths` to our user folder, which IDBFS then keeps in a
+  database of its own; GameManager's tab re-read takes the name from `GODOT_CONFIG` too.
+  Moving it after launch would need a one-time save migration.
+- **No PWA update check** at boot (`GameManager._check_web_update`): there is nothing to
+  update, and `navigator.locks.query()` throws in Firefox's third-party frame.
+
+itch saves are separate from the website's and the app's (another origin, partitioned under
+itch.io). Chrome and Firefox keep them; WebKit (Safari, and every browser on iPhone and iPad)
+keeps third-party storage only until the browser quits, so there the whole save starts over:
+settings, stats, the daily counters, the welcome credit and the Day streak. Accepted: the
+website and the app are where progress lasts.
+
+Size: 10 files, about 48 MB unpacked, a 17.5 MB zip, against itch's limits of 1,000 files,
+500 MB and 200 MB per file (the script asserts them). itch gzips html, js, wasm and pck when
+it unpacks an upload, so a first visit downloads about 18 MB. It never serves brotli (`.br`
+files come back re-encoded), so don't ship any.
+
+On the itch page's edit screen:
+
+- Kind of project **HTML**. Upload the zip and tick "This file will be played in the
+  browser", or push the folder with butler instead
+  (`butler push build/itch lone-bee/limpid-chess:html5 --userversion <version>`, then tag
+  the channel as HTML5 once). One or the other per page. Each butler push lands in a new
+  `/html/<id>-<build>/` folder on the same origin, so saves survive updates.
+- Embed in page at **500 × 900**, **Mobile friendly** with orientation **Portrait** (phones
+  always launch the game on tap: fullscreen on Android, enlarged within the page on iPhone),
+  **Click to play** on (the first load is about 18 MB), scrollbars off. Fullscreen button on:
+  itch draws it over the game's bottom-right corner, so check on the draft that nothing there
+  needs tapping.
+- **Never** tick "SharedArrayBuffer support". The build is single-threaded and does not need
+  it, and it moves the game to another origin (`html.itch.zone`), stranding every save.
+- Pricing **No payments**, not "$0 or donate": the terms and the privacy page say nothing is
+  sold or paid on itch.io.
+- Languages: exactly the 13 that ship (English, French, Spanish, Portuguese, German, Italian,
+  Russian, Turkish, Polish, Indonesian, Vietnamese, Ukrainian, Greek). itch can delist a page
+  that claims languages it lacks.
+- App Store Links: Google Play, with `&utm_source=itch.io&utm_campaign=badge`. Code license
+  GPL-3.0, a "Source code" link, and the source line in the description right under the
+  game, with a "Stockfish (GPL-3.0)" credit (GPLv3 §6(d): clear directions next to the object
+  code).
+- Theme, Layout, Screenshots: **Sidebar**, or itch hides the screenshots of a page that has a
+  game.
+
+Before uploading, `tools/itch_check.mjs` runs the build the way itch serves it, in Chromium,
+Firefox and WebKit: from a folder of another site, in a frame with itch's own attributes,
+storage partitioned and the popup blocker on, with nothing leaving the machine. It checks the
+boot, the paths, Stockfish and a game's option arrows, that no service worker exists, the save
+in its own database, the Premium screen's link-out (on desktop and on an Android phone), the
+tab re-read, the stalled-boot "Download again", and that the console shows no GDScript error.
+Labels drawn on the canvas are only in its screenshots: look at them.
+
+```bash
+# once, deliberately outside the repo (as for old_domain/e2e_check.mjs)
+(mkdir -p /tmp/pwtest && cd /tmp/pwtest && npm init -y && npm install playwright \
+	&& npx playwright install chromium firefox webkit)
+
+web/build_web.sh --itch
+PW_DIR=/tmp/pwtest node web/tools/itch_check.mjs              # all three browsers, ~6 min
+PW_DIR=/tmp/pwtest node web/tools/itch_check.mjs chromium     # or name some
+web/build_web.sh && PW_DIR=/tmp/pwtest node web/tools/itch_check.mjs --website   # the website
+                                         # build's tab re-read must still open '/userfs'
+```
+
 ## Service worker: navigations are network-first
 
 `build_web.sh` patch 4 makes **navigations only** network-first, with a 2.5 s timeout and
@@ -284,8 +370,16 @@ entry and can never 404 offline. It only adds **passive** listeners and never ca
 | `/play/?reset=1` | Wipes service worker + caches immediately, then boots clean. Sendable to anyone stuck. |
 
 It also mirrors `console.error`/`console.warn` into the panel, since Godot prints its own
-failures to a console nobody can open on a phone, and promotes a service worker stuck in
-`waiting` (see the network-first section above).
+failures to a console nobody can open on a phone, and, on the website, promotes a service
+worker stuck in `waiting` (see the network-first section above).
+
+In the itch.io build (`ITCH`), the reset button reads **Download again**: it fetches our own
+files once more past the HTTP cache (itch caches every file for a month), one at a time,
+draining each body instead of holding it, then reloads. The button turns to "Downloading…"
+and ignores further taps; a download that receives nothing for 20 s is given up; and if the
+game finished booting meanwhile, it is not reloaded. It never touches service workers or
+Cache Storage, which on itch's shared origin belong to every itch game. itch sets the frame's
+URL, so `?debug=1`, `?reset=1` and `?log=1` can't reach players there.
 
 The **`glerr`** line is the important one. Browsers emit WebGL errors through internal
 logging, not through `console.error`, so no page hook can see them and a phone has no

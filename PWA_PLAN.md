@@ -111,7 +111,9 @@ proportionate by construction):
   wasm served from R2 (free egress). Unlimited free static bandwidth, brotli, and a
   `_headers` file if ever needed. Netlify's new credit pricing (~15 GB/month free) is
   out; itch.io is fine as a *mirror* for discovery but can't be the PWA home (iframe
-  on a foreign origin, manifest never attaches to our brand).
+  on a foreign origin, manifest never attaches to our brand). **2026-10:** built as
+  exactly that, a separate PWA-less build (`web/build_web.sh --itch`), see
+  [web/README.md, "itch.io build"](web/README.md#itchio-build).
 - **Release discipline**: the PWA cache is versioned at export time, so every release
   is a full re-export (never just swap the pck). Wire `pwa_needs_update()` /
   `pwa_update()` so players actually get new versions. And test offline-relaunch once

@@ -200,6 +200,26 @@ The first export installs the gradle build template into `android/` (git-ignored
 Note: a release AAB will run the **fallback** engine until the native Stockfish
 build above is wired in.
 
+## itch.io build (HTML5 upload)
+
+The web game on lone-bee.itch.io, a funnel to the Android app: same free tier, nothing sold
+in itch's frame. What differs from the website build, and the page settings, are in
+[web/README.md](web/README.md#itchio-build).
+
+```bash
+godot --headless --path . -s res://scripts/dev/validate.gd -- --itch   # the itch branches
+web/build_web.sh --itch           # → build/itch/ + build/limpid-chess-itch-<version>.zip
+```
+
+Then upload the zip on the page's edit screen (Kind of project: HTML, "This file will be
+played in the browser"), or push the folder with
+[butler](https://itch.io/docs/butler/): `butler login` once, then
+`butler push build/itch lone-bee/limpid-chess:html5 --userversion <version>`. Use one or the
+other for a page, never both. Before uploading, run the itch frame check
+(`web/tools/itch_check.mjs`, see web/README.md). The exact source of every build you upload
+must be public on GitHub by the time that build goes live (GPL-3.0), and the page must say
+where, right under the game.
+
 ## Save data (and resetting it)
 
 All persistent state lives in ONE plain-text ConfigFile: `user://limpid_chess.cfg`

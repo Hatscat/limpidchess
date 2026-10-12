@@ -15,6 +15,10 @@
  *   <page>?reset=1  wipe service worker + caches, then boot clean (keeps ?ls=ok and #lc-move=)
  *   <page>?log=1    POST the panel text to /__log every 2 s (web/tools/lan_server.py)
  *
+ * The itch.io build (build_web.sh --itch stamps ITCH below) runs on html-classic.itch.zone, ONE
+ * origin shared by every itch.io game: its service workers and caches belong to all of them. There
+ * this file never touches either; its reset downloads our own files again instead (OWN_FILES).
+ *
  * COST: everything expensive is gated behind ?debug=1. The pixel sampler forces a GPU sync
  * and the draw counters wrap every WebGL draw call, so neither may run for real players.
  * Keep it that way.
@@ -27,6 +31,10 @@
 	'use strict';
 
 	var BOOT_TIMEOUT_MS = 40000;
+	// Stamped by build_web.sh --itch (asserted there, so keep these two lines exactly as they are):
+	// the itch.io build, and the files its reset downloads again.
+	var ITCH = false;
+	var OWN_FILES = [];
 	var ACCENT = '#66bdd9';
 	var DIM = '#b0beca';
 	var BG = '#171a1f';
@@ -358,7 +366,16 @@
 	/** Drop the service worker and every cache, then reload clean. Keeps what the page carries
 	 *  for the game: the checkout return (?ls=ok) and the save handed over from the old address
 	 *  (#lc-move=, see web/old_domain/), which the game has not read yet if boot never finished. */
+	var resetting = false;
 	function hardReset() {
+		if (resetting) {
+			return;  // a second tap must not start a second download
+		}
+		resetting = true;
+		if (ITCH) {
+			refetchOwnFiles();
+			return;
+		}
 		var jobs = [];
 		if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
 			jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
@@ -377,6 +394,69 @@
 		});
 	}
 
+	/** The itch.io build's reset: there is no service worker, but itch caches every file for a
+	 *  month, so a corrupt download can sit in the HTTP cache. Fetch our own files again past
+	 *  that cache, one at a time, draining each body as it arrives instead of holding it (a
+	 *  phone that stalled for lack of memory is not asked to hold the 38 MB wasm), then reload.
+	 *  Never the origin's service workers or caches: on itch those are every game's. */
+	function refetchOwnFiles() {
+		var chain = Promise.resolve();
+		OWN_FILES.forEach(function (name) {
+			chain = chain.then(function () {
+				return refetch(name).catch(function () { /* offline or stalled: the reload shows it */ });
+			});
+		});
+		chain.then(function () {
+			if (started) {
+				return;  // it booted after all while we downloaded: never reload a running game
+			}
+			// Never back to ?reset=1, which would start all of this over again.
+			var url = new URL(location.href);
+			url.searchParams.delete('reset');
+			if (url.href === location.href) {
+				location.reload();  // replace() to the same URL reloads nothing when it has a #fragment
+			} else {
+				location.replace(url.href);
+			}
+		});
+	}
+
+	// A download that receives nothing for this long is given up, so stalling again cannot
+	// strand the player on the panel: the reload then shows where things stand.
+	var REFETCH_STALL_MS = 20000;
+
+	/** One own file, fetched past the HTTP cache, its body drained as it arrives. */
+	function refetch(name) {
+		var abort = window.AbortController ? new AbortController() : null;
+		var timer = 0;
+		function rearm() {
+			clearTimeout(timer);
+			if (abort) {
+				timer = setTimeout(function () { abort.abort(); }, REFETCH_STALL_MS);
+			}
+		}
+		rearm();
+		var init = abort ? { cache: 'reload', signal: abort.signal } : { cache: 'reload' };
+		return fetch(name, init).then(function (r) {
+			if (!r.body || !r.body.getReader) {
+				return;
+			}
+			var reader = r.body.getReader();
+			function drain() {
+				rearm();
+				return reader.read().then(function (s) {
+					return s.done ? undefined : drain();
+				});
+			}
+			return drain();
+		}).then(function () {
+			clearTimeout(timer);
+		}, function (e) {
+			clearTimeout(timer);
+			throw e;
+		});
+	}
+
 	// Promote a service worker held in `waiting`. 'claim' makes it skipWaiting + claim
 	// WITHOUT navigating clients, unlike 'update', so it cannot interrupt a game in
 	// another tab: this page keeps what it loaded, the next launch gets the new cache.
@@ -384,7 +464,7 @@
 	// which strands a worker indefinitely for anyone browsing with other tabs open.
 	// Deploy hygiene, so a bad build is always fixable by shipping a good one. Keep it.
 	function promoteServiceWorker() {
-		if (!navigator.serviceWorker || !navigator.serviceWorker.getRegistration) {
+		if (ITCH || !navigator.serviceWorker || !navigator.serviceWorker.getRegistration) {
 			return;
 		}
 		navigator.serviceWorker.getRegistration().then(function (reg) {
@@ -447,11 +527,16 @@
 
 		if (!passThrough) {
 			var btn = document.createElement('button');
-			btn.textContent = 'Reset and reload';
+			btn.textContent = ITCH ? 'Download again' : 'Reset and reload';
 			btn.setAttribute('style', 'margin-top:14px;padding:12px 18px;font-size:15px;'
 				+ 'border:0;border-radius:8px;background:' + ACCENT + ';color:#0f1216;'
 				+ 'font-weight:700');
-			btn.addEventListener('click', hardReset);
+			btn.addEventListener('click', function () {
+				// The itch reset downloads ~48 MB before anything else changes: say so.
+				btn.disabled = true;
+				btn.textContent = ITCH ? 'Downloading…' : 'Resetting…';
+				hardReset();
+			});
 			overlay.appendChild(btn);
 		}
 
@@ -485,9 +570,11 @@
 				lastMove = Date.now();
 			}
 			if (Date.now() - lastMove > BOOT_TIMEOUT_MS && !overlay) {
-				build('Limpid Chess could not start',
-					'Loading stalled. That is usually a bad cached copy, or the device '
-					+ 'running out of memory. Tap below to clear it and try again.');
+				build('Limpid Chess could not start', ITCH
+					? 'Loading stalled. That is usually a bad download, or the device '
+						+ 'running out of memory. Tap below to download it again.'
+					: 'Loading stalled. That is usually a bad cached copy, or the device '
+						+ 'running out of memory. Tap below to clear it and try again.');
 			}
 		}, 500);
 	}

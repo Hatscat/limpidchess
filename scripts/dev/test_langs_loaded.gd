@@ -22,6 +22,12 @@ const STREAK_KEYS := [
 	"Daily reminder",
 	"A gentle nudge to come back and play.",
 ]
+## The itch.io build's Premium screen (premium.gd _refresh_itch), checked the same way.
+const ITCH_KEYS := [
+	"Premium is a one-time purchase in the Android app or on the website.",
+	"Get it on Google Play",
+	"Play on the website",
+]
 
 
 func _initialize() -> void:
@@ -46,12 +52,12 @@ func _initialize() -> void:
 			ok = false
 		print("  %s: 'You win!'->'%s'  ph_ok=%s  credits_translated=%s" % [code, win, ph_ok, cred_ok])
 
-	# Day-streak rows: present in every locale, and their format placeholders survived translation
-	# (a %d that came back as %s would crash the format operator at runtime).
+	# Day-streak and itch rows: present in every locale, and their format placeholders survived
+	# translation (a %d that came back as %s would crash the format operator at runtime).
 	for code in ALL:
 		TranslationServer.set_locale(code)
 		var missing: Array = []
-		for k: String in STREAK_KEYS:
+		for k: String in STREAK_KEYS + ITCH_KEYS:
 			var t := TranslationServer.translate(k)
 			if t == k:
 				missing.append(k)
@@ -61,8 +67,8 @@ func _initialize() -> void:
 				missing.append(k + " (lost %s)")
 		if not missing.is_empty():
 			ok = false
-			print("  FAIL streak keys in ", code, ": ", missing)
-	print("  streak keys: checked %d in %d locales" % [STREAK_KEYS.size(), ALL.size()])
+			print("  FAIL keys in ", code, ": ", missing)
+	print("  streak + itch keys: checked %d in %d locales" % [STREAK_KEYS.size() + ITCH_KEYS.size(), ALL.size()])
 
 	TranslationServer.set_locale("en")
 	print("LANGS LOADED TEST: ", "PASS" if ok else "FAIL")

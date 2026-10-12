@@ -141,8 +141,10 @@ var _pwa_solo_cb: JavaScriptObject = null
 ## the new version's cache starts empty and the reload would strand the player on
 ## the offline page instead of the playable cached game). Worst case we run one
 ## version behind until the next solo online launch: the standard PWA pattern.
+## The itch.io build has no service worker to update, and in Firefox's third-party frame
+## navigator.locks.query() throws on every boot, so it skips all of this (see Itch).
 func _check_web_update() -> void:
-	if not OS.has_feature("web"):
+	if not OS.has_feature("web") or Itch.on:
 		return
 	_pwa_solo_cb = JavaScriptBridge.create_callback(_on_pwa_solo_boot)
 	var window: JavaScriptObject = JavaScriptBridge.get_interface("window")
@@ -401,8 +403,20 @@ func _join_other_tabs() -> void:
 	window.set("_limpidOtherTabSaved", _tabs_cb)
 	# The IndexedDB read is the old-domain bridge's (web/old_domain/worker.js): versionless, so
 	# it can never upgrade or block Godot's own database, and a missing one is never created.
+	# IDBFS names each database after its mount point: Godot's default '/userfs', or the user
+	# folder the itch.io build mounts as its own (GODOT_CONFIG.persistentPaths, see Itch). The
+	# page's config is the one source of truth, so a build with either mount reads the right one.
 	JavaScriptBridge.eval("""
 		(function (path) {
+			function saveDatabase() {
+				var mounts = (typeof GODOT_CONFIG !== 'undefined' && GODOT_CONFIG.persistentPaths) || ['/userfs'];
+				var best = '';
+				mounts.forEach(function (m) {
+					m = String(m);
+					if (path.indexOf(m + '/') === 0 && m.length > best.length) best = m;
+				});
+				return best || '/userfs';
+			}
 			if (window.BroadcastChannel) {
 				window._limpidTabs = new BroadcastChannel('limpid-save');
 				window._limpidTabs.onmessage = function (e) {
@@ -411,7 +425,7 @@ func _join_other_tabs() -> void:
 			}
 			document.addEventListener('visibilitychange', function () {
 				if (document.visibilityState !== 'visible' || !window.indexedDB) return;
-				var req = indexedDB.open('/userfs');
+				var req = indexedDB.open(saveDatabase());
 				req.onupgradeneeded = function () { req.transaction.abort(); };
 				req.onerror = function (e) { e.preventDefault(); };
 				req.onsuccess = function () {

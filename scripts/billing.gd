@@ -17,6 +17,10 @@ extends Node
 ## arrives by email, and redeem() activates it (see [LemonSqueezy]). The one place web differs
 ## from the grant-only rule is a key the store POSITIVELY rejects (refund / chargeback), and even
 ## then only when we could actually reach the store; anything ambiguous keeps Premium.
+##
+## The itch.io build sells nothing: an itch HTML5 page can only take donations, so no Lemon
+## Squeezy client is started, nothing is ever granted, and buy() opens where Premium is sold
+## for this device instead (Itch.premium_url: the Play listing on Android, else the website).
 
 signal price_updated(formatted: String)   ## the localized price string changed
 signal purchase_succeeded                  ## Premium granted (buy or restore)
@@ -54,6 +58,8 @@ var _redeeming := false        ## a key activation is in flight (guards double t
 
 func _ready() -> void:
 	if OS.has_feature("web"):
+		if Itch.on:
+			return  # nothing is sold in itch's frame: no store client, no license checks
 		_ls = LemonSqueezy.new()
 		add_child(_ls)
 		price_text = WEB_PRICE
@@ -95,7 +101,11 @@ func can_purchase() -> bool:
 
 ## Launch the Google Play purchase flow for Premium. The outcome arrives via on_purchase_updated.
 ## On web, open the Lemon Squeezy checkout instead; the player returns with a key by email.
+## On itch.io, open where Premium is sold; no signal follows, as nothing is bought here.
 func buy() -> void:
+	if Itch.on:
+		OS.shell_open(Itch.premium_url())
+		return
 	if _ls != null:
 		_open_checkout()
 		return

@@ -7,6 +7,8 @@ extends Control
 ## buttons call Billing. Promo codes are redeemed outside the app via a prefilled Play redeem
 ## link, then picked up by Billing's launch/resume reconcile (no in-app redeem button). On
 ## desktop/dev (no Play) Billing degrades gracefully and a debug build grants locally.
+## The itch.io build sells nothing here: the screen lists the benefits and leads out to where
+## Premium is sold (see _refresh_itch and Itch).
 
 @onready var get_button: Button = %GetButton
 @onready var restore_button: Button = %RestoreButton
@@ -53,6 +55,9 @@ func _notification(what: int) -> void:
 ## On web there is no Play Billing: the same buttons drive the Lemon Squeezy checkout and
 ## the license-key redeem instead (see Billing), so only their labels differ.
 func _refresh() -> void:
+	if Itch.on:
+		_refresh_itch()
+		return
 	var web := OS.has_feature("web")
 	var premium := GameManager.is_premium
 	price_label.text = tr("%s · one-time, forever") % Billing.price_text
@@ -70,6 +75,21 @@ func _refresh() -> void:
 		get_button.text = tr("Unlock Premium  ·  %s") % Billing.price_text
 
 
+## itch.io: an itch HTML5 page can only take donations, so nothing is sold in its frame. The
+## benefits stay, the price goes, and the one button leads to where Premium is sold for this
+## device: the Google Play listing on Android, the website everywhere else (Billing.buy opens it).
+func _refresh_itch() -> void:
+	var premium := GameManager.is_premium
+	price_label.text = tr("Premium is a one-time purchase in the Android app or on the website.")
+	get_button.visible = not premium
+	get_button.disabled = false
+	get_button.text = tr("Get it on Google Play") if Itch.android else tr("Play on the website")
+	restore_button.visible = false
+	status_label.visible = premium
+	if premium:
+		_set_status(tr("✓ You're Premium. Thank you!"))
+
+
 ## Show a one-line status message (green for good news, soft red for a problem).
 func _set_status(msg: String, ok := true) -> void:
 	status_label.text = msg
@@ -78,7 +98,7 @@ func _set_status(msg: String, ok := true) -> void:
 
 
 func _on_get_pressed() -> void:
-	if OS.has_feature("web"):
+	if OS.has_feature("web") or Itch.on:
 		# Opens the hosted checkout in a new tab; the key then arrives by email, so the
 		# button must NOT go into a "Processing…" state we can never resolve. No status
 		# either: nothing has been bought yet, and a green "your key is in your email"
@@ -109,8 +129,7 @@ func _on_purchase_succeeded() -> void:
 
 
 func _on_purchase_failed(message: String) -> void:
-	get_button.disabled = false
-	get_button.text = tr("Unlock Premium  ·  %s") % Billing.price_text
+	_refresh()  # re-enables the button with this build's own label
 	if message != "":  # empty = user cancelled; just re-enable, no error shown
 		_set_status(message, false)
 

@@ -78,6 +78,7 @@ BotRoster (static data)        scripts/chess/bot_roster.gd
   opponents: name, avatar, elo, sf_skill/movetime (Stockfish) + depth/weakness (fallback)
 
 Quotes (static data)           scripts/quotes.gd       Tartakower & friends
+Itch (static)                  scripts/itch.gd   the itch.io build's switch + all it changes
 ChessBoard (Control)           scripts/ui/chess_board.gd  custom _draw + hit-test
 Scenes                         scenes/*.tscn (+ scripts/*.gd)
   home · bots · premium · about · game · nav_bar (reusable)
@@ -201,8 +202,13 @@ Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**), a
     key arrives by email, "I have a key" activates it. Only a positive store denial
     revokes; every ambiguous answer (offline, rate limit, 5xx) keeps Premium, and the
     key is never deleted, so a mistaken revoke self-heals. `WEB_PRICE` mirrors the
-    dashboard price by hand, and `build_web.sh --deploy` refuses to publish while
-    `TEST_STORE` is true.
+    dashboard price by hand, and `build_web.sh --deploy` and `--itch` refuse to build
+    while `TEST_STORE` is true.
+  - **itch.io** (`lone-bee.itch.io`): nothing is sold in itch's frame (an itch HTML5 page
+    can only take donations), and no Lemon Squeezy client is started. Same free tier; the
+    Premium screen links out instead, to the Play listing on Android (UTM-tagged) and to the
+    website elsewhere: the itch page is a funnel to the Android app. All of it behind
+    [`Itch.on`](scripts/itch.gd).
 - No ads, ever. Don't add them.
 - **GPL is fine for a paid Android game** — GPL lets you sell the binary; you just
   must also offer the source. (We target Google Play, not the Apple App Store,
@@ -219,8 +225,8 @@ ships **Stockfish** (GPL-3.0). This was a deliberate reversal of the earlier
   (1) publish the full corresponding source (the whole game + the exact Stockfish
   build) at a public repo; (2) point users to it + the GPL-3.0 licence. The
   About screen carries a low-key "Source & licenses" link and a "Stockfish
-  (GPL-3.0)" credit (keep them), and the Play listing must repeat the source
-  link (GPLv3 §6(d): clear directions next to the download). No open-source
+  (GPL-3.0)" credit (keep them), and the Play listing and the itch.io page must
+  repeat the source link (GPLv3 §6(d): clear directions next to the download). No open-source
   *marketing* is required. Public source repo: `github.com/Hatscat/limpidchess`.
 - Because we link/bundle Stockfish, **the whole app is GPL-3.0** — keep it that
   way; don't add proprietary-only code paths that would violate it.
@@ -241,7 +247,10 @@ and a **subprocess** (`pipe`, worker thread). None → GDScript fallback.
   GitHub Pages and iOS Safari. Files live in [`web/engine/`](web/README.md)
   (`.gdignore`d); the `limpid_export` plugin copies them beside `index.html` on Web
   export. The Web preset must keep excluding `addons/stockfish/*` (the GDExtension
-  has no wasm build and errors the export). See [PWA_PLAN.md](PWA_PLAN.md).
+  has no wasm build and errors the export). See [PWA_PLAN.md](PWA_PLAN.md). The itch.io
+  build is the same export from the **"Web (itch)"** preset (`web/build_web.sh --itch`):
+  keep the two Web presets identical except name, export path, `runnable`,
+  `custom_features` (`itch`), PWA (off) and `html/export_icon` (off: a frame shows no icons).
 - **Android:** can't spawn a subprocess (W^X), so Stockfish is compiled in via the
   GDExtension under [`native/`](native/NATIVE_BUILD.md) — a godot-cpp binding
   embedding **Stockfish 11** (classical, no NNUE net → tiny). Build with
@@ -270,6 +279,17 @@ godot --headless --path . -s res://scripts/dev/perft_test.gd
 
 # Whole-project smoke (instantiates every scene + drives the game pipeline):
 godot --headless --path . -s res://scripts/dev/validate.gd
+# ...as the itch.io build (Itch.on; also checks its Premium screen: no price, no key button,
+# one button out). validate puts the player's save back as it was (some _ready()s save):
+godot --headless --path . -s res://scripts/dev/validate.gd -- --itch
+
+# Web builds: the website's PWA into build/web (--deploy also copies it to docs/play),
+# or the itch.io build into build/itch + build/limpid-chess-itch-<version>.zip:
+web/build_web.sh
+web/build_web.sh --itch
+# The itch build in real browsers, served the way itch serves it (Playwright outside the
+# repo, setup in web/README.md "itch.io build"; nothing leaves the machine):
+PW_DIR=/tmp/pwtest node web/tools/itch_check.mjs [chromium] [firefox] [webkit]
 
 # Old-domain save hand-over: import rules (writes the save, so a throwaway HOME) + Worker routing:
 T=$(mktemp -d) && HOME=$T XDG_DATA_HOME=$T/.local/share godot --headless --path . -s res://scripts/dev/test_moved_save.gd
@@ -314,6 +334,15 @@ explicitly ("layout not visually verified") rather than implying it works.
   announced on a BroadcastChannel and merged (`GameManager._merge_other_tab`). A new
   persisted field needs a rule there (upgrade-only, or in `TAB_LATEST_WINS`), or two open
   tabs will fight over it.
+- **itch.io's game host is shared.** The itch build runs on `html-classic.itch.zone`, ONE
+  origin for every itch HTML5 game: never ship it a service worker, and never touch that
+  origin's service workers or caches (the boot watchdog's reset has an itch variant for this).
+  Every Godot game there shares the IndexedDB `/userfs`, whose sync deletes or rewinds files a
+  game does not hold, so `build_web.sh --itch` mounts the save folder as its own database
+  (`persistentPaths`); moving it after launch would need a save migration. Never tick itch's
+  "SharedArrayBuffer support": it moves the game to another origin (`html.itch.zone`) and
+  leaves every existing save behind on the old one.
+  itch saves are separate from the website's, and WebKit drops them when the browser quits.
 
 ## ✅ Definition of success
 
