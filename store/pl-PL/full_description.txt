@@ -4,7 +4,7 @@ Koniec z bezradnym wpatrywaniem się w mylącą szachownicę, bez pomysłu na ru
 
 JAK TO DZIAŁA
 
-W każdej turze trzy ruchy są rysowane bezpośrednio na szachownicy jako neutralne, ponumerowane strzałki. Jeden to najlepszy ruch, jeden jest "niezły", a jeden to gafa. Na początku wszystkie wyglądają tak samo, więc musisz znaleźć ten najsilniejszy.
+W każdej turze trzy ruchy są rysowane bezpośrednio na szachownicy jako neutralne strzałki. Jeden to najlepszy ruch, jeden jest "niezły", a jeden to gafa. Na początku wszystkie wyglądają tak samo, więc musisz znaleźć ten najsilniejszy.
 
 Wybierz ruch, a odsłoni się jego jakość:
 • Zielony = najlepszy ruch

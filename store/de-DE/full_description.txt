@@ -4,7 +4,7 @@ Kein ratloses Starren mehr auf ein verwirrendes Brett, ohne zu wissen, was du zi
 
 SO FUNKTIONIERT ES
 
-Jede Runde werden drei Züge direkt auf dem Brett als neutrale, nummerierte Pfeile eingezeichnet. Einer ist der beste Zug, einer ist "nicht schlecht", und einer ist ein Patzer. Zuerst sehen sie alle gleich aus, du musst herausfinden, welcher der stärkste ist.
+Jede Runde werden drei Züge direkt auf dem Brett als neutrale Pfeile eingezeichnet. Einer ist der beste Zug, einer ist "nicht schlecht", und einer ist ein Patzer. Zuerst sehen sie alle gleich aus, du musst herausfinden, welcher der stärkste ist.
 
 Wähle einen Zug, und er zeigt seine Qualität:
 • Grün = der beste Zug

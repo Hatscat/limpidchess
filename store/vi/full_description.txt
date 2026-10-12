@@ -4,7 +4,7 @@ Không còn cảnh nhìn chằm chằm vào bàn cờ rối rắm, đơ người
 
 CÁCH CHƠI
 
-Mỗi lượt, ba nước đi được vẽ ngay trên bàn cờ dưới dạng những mũi tên đánh số trung tính. Một nước là hay nhất, một nước "không tệ", và một nước là sai lầm nặng. Ban đầu trông chúng giống hệt nhau, nên bạn phải tìm ra nước nào mạnh nhất.
+Mỗi lượt, ba nước đi được vẽ ngay trên bàn cờ dưới dạng những mũi tên trung tính. Một nước là hay nhất, một nước "không tệ", và một nước là sai lầm nặng. Ban đầu trông chúng giống hệt nhau, nên bạn phải tìm ra nước nào mạnh nhất.
 
 Chọn một nước và chất lượng của nó sẽ hiện ra:
 • Xanh lá = nước hay nhất

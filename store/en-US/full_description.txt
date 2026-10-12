@@ -4,7 +4,7 @@ No more staring at a confusing board, frozen, not knowing what to play. Three cl
 
 HOW IT WORKS
 
-Each turn, three moves are drawn right on the board as neutral numbered arrows. One is the best move, one is "not bad", and one is a blunder. They all look the same at first, so you have to find which one is strongest.
+Each turn, three moves are drawn right on the board as neutral arrows. One is the best move, one is "not bad", and one is a blunder. They all look the same at first, so you have to find which one is strongest.
 
 Pick a move and it reveals the quality:
 • Green = the best move

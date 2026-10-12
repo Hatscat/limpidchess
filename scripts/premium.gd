@@ -14,6 +14,7 @@ extends Control
 @onready var restore_button: Button = %RestoreButton
 @onready var status_label: Label = %StatusLabel
 @onready var price_label: Label = %PriceLabel
+@onready var _button_font_size: int = get_button.get_theme_font_size("font_size")  ## the scene's own
 
 
 func _ready() -> void:
@@ -73,6 +74,19 @@ func _refresh() -> void:
 	else:
 		get_button.disabled = false
 		get_button.text = tr("Unlock Premium  ·  %s") % Billing.price_text
+	_fit_get_button()
+
+
+## The button never wraps, and a localized Play price can be long ("COP 16.900,00"): step its
+## text down the type scale until it fits the content column, rather than let it push the whole
+## screen off both edges of a phone.
+func _fit_get_button() -> void:
+	var content := $Content as Control
+	var column: float = content.offset_right - content.offset_left
+	for size: int in [_button_font_size, UI.FONT_BODY, UI.FONT_CAPTION]:
+		get_button.add_theme_font_size_override("font_size", size)
+		if get_button.get_combined_minimum_size().x <= column:
+			return
 
 
 ## itch.io: an itch HTML5 page can only take donations, so nothing is sold in its frame. The
@@ -84,6 +98,7 @@ func _refresh_itch() -> void:
 	get_button.visible = not premium
 	get_button.disabled = false
 	get_button.text = tr("Get it on Google Play") if Itch.android else tr("Play on the website")
+	_fit_get_button()
 	restore_button.visible = false
 	status_label.visible = premium
 	if premium:

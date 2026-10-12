@@ -4,7 +4,7 @@ Chega de encarar um tabuleiro confuso, travado, sem saber o que jogar. Três op�
 
 COMO FUNCIONA
 
-A cada turno, três jogadas são desenhadas no próprio tabuleiro como setas numeradas neutras. Uma é a melhor jogada, uma é "nada mal" e uma é um erro grave. Todas parecem iguais no começo, então você precisa descobrir qual é a mais forte.
+A cada turno, três jogadas são desenhadas no próprio tabuleiro como setas neutras. Uma é a melhor jogada, uma é "nada mal" e uma é um erro grave. Todas parecem iguais no começo, então você precisa descobrir qual é a mais forte.
 
 Escolha uma jogada e ela revela a qualidade:
 • Verde = a melhor jogada

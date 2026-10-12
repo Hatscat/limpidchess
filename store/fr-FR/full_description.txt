@@ -4,7 +4,7 @@ Fini de fixer un échiquier confus, bloqué, sans savoir quoi jouer. Trois choix
 
 COMMENT ÇA MARCHE
 
-À chaque tour, trois coups sont dessinés directement sur l'échiquier sous forme de flèches numérotées et neutres. L'un est le meilleur coup, l'un est "pas mal", et l'un est une gaffe. Au début ils se ressemblent tous, alors à toi de trouver lequel est le plus fort.
+À chaque tour, trois coups sont dessinés directement sur l'échiquier sous forme de flèches neutres. L'un est le meilleur coup, l'un est "pas mal", et l'un est une gaffe. Au début ils se ressemblent tous, alors à toi de trouver lequel est le plus fort.
 
 Choisis un coup et sa qualité se révèle :
 • Vert = le meilleur coup

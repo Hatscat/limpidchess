@@ -4,7 +4,7 @@ Tidak ada lagi menatap papan membingungkan, terpaku, tidak tahu harus melangkah 
 
 CARA KERJANYA
 
-Tiap giliran, tiga langkah digambar langsung di papan sebagai panah bernomor yang netral. Satu langkah terbaik, satu "lumayan", dan satu blunder. Awalnya semua terlihat sama, jadi kamu harus menemukan mana yang terkuat.
+Tiap giliran, tiga langkah digambar langsung di papan sebagai panah yang netral. Satu langkah terbaik, satu "lumayan", dan satu blunder. Awalnya semua terlihat sama, jadi kamu harus menemukan mana yang terkuat.
 
 Pilih sebuah langkah dan kualitasnya terungkap:
 • Hijau = langkah terbaik

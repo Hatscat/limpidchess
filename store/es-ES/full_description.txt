@@ -4,7 +4,7 @@ Se acabó quedarse mirando un tablero confuso, sin saber qué jugar. Aparecen tr
 
 CÓMO FUNCIONA
 
-En cada turno se dibujan tres jugadas sobre el tablero, como flechas numeradas y neutrales. Una es la mejor jugada, otra es "no está mal" y otra es un error grave. Al principio todas se parecen, así que tienes que descubrir cuál es la más fuerte.
+En cada turno se dibujan tres jugadas sobre el tablero, como flechas neutrales. Una es la mejor jugada, otra es "no está mal" y otra es un error grave. Al principio todas se parecen, así que tienes que descubrir cuál es la más fuerte.
 
 Elige una jugada y se revela su calidad:
 • Verde = la mejor jugada

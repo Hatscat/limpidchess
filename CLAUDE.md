@@ -13,8 +13,9 @@ way to play.
 The core idea (inspired by *Lazy Chess*): instead of a blank board of 30 legal
 moves, **every turn we surface exactly three** — the **best** move, a **"not
 bad"** move, and a **blunder** — drawn as interactive arrows. The three are shown
-**neutrally** (numbered badges, one colour); the player must *find* the best one.
-On their pick we **reveal** the qualities (green / blue / red), grade the move,
+**neutrally** (one colour, no labels); the player must *find* the best one.
+On their pick we **reveal** the qualities (green / blue / red, each with a check /
+dash / cross symbol so it reads without colour), grade the move,
 and explain what the best move was. Errors are the lesson, not the punishment.
 
 > "The move is there, but you must see it." — Tartakower
@@ -282,6 +283,10 @@ godot --headless --path . -s res://scripts/dev/validate.gd
 # ...as the itch.io build (Itch.on; also checks its Premium screen: no price, no key button,
 # one button out). validate puts the player's save back as it was (some _ready()s save):
 godot --headless --path . -s res://scripts/dev/validate.gd -- --itch
+
+# Every locale loads, and the Premium screen fits a 720-wide phone in all 13 (labels there
+# don't wrap; run after any ui.csv change, then again with -- --itch for the itch screen):
+godot --headless --path . -s res://scripts/dev/test_langs_loaded.gd
 
 # Web builds: the website's PWA into build/web (--deploy also copies it to docs/play),
 # or the itch.io build into build/itch + build/limpid-chess-itch-<version>.zip:

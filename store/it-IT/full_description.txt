@@ -4,7 +4,7 @@ Basta fissare una scacchiera confusa, bloccato, senza sapere cosa giocare. Compa
 
 COME FUNZIONA
 
-A ogni turno, tre mosse vengono disegnate direttamente sulla scacchiera come frecce numerate e neutre. Una è la mossa migliore, una è "niente male" e una è un errore grave. All'inizio sembrano tutte uguali, quindi devi scoprire quale sia la più forte.
+A ogni turno, tre mosse vengono disegnate direttamente sulla scacchiera come frecce neutre. Una è la mossa migliore, una è "niente male" e una è un errore grave. All'inizio sembrano tutte uguali, quindi devi scoprire quale sia la più forte.
 
 Scegli una mossa e si rivela la qualità:
 • Verde = la mossa migliore

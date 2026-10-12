@@ -4,7 +4,7 @@ Kafa karıştıran bir tahtaya donup kalarak ne oynayacağını bilememek artık
 
 NASIL ÇALIŞIR
 
-Her turda üç hamle, doğrudan tahtanın üzerine numaralı ve tarafsız oklar olarak çizilir. Biri en iyi hamle, biri "fena değil", biri de bir gaftır. İlk bakışta hepsi aynı görünür, bu yüzden hangisinin en güçlü olduğunu senin bulman gerekir.
+Her turda üç hamle, doğrudan tahtanın üzerine tarafsız oklar olarak çizilir. Biri en iyi hamle, biri "fena değil", biri de bir gaftır. İlk bakışta hepsi aynı görünür, bu yüzden hangisinin en güçlü olduğunu senin bulman gerekir.
 
 Bir hamle seç ve kalitesi ortaya çıksın:
 • Yeşil = en iyi hamle

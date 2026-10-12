@@ -27,7 +27,7 @@
 
 Most chess apps drop a beginner onto a blank board of thirty legal moves, and they freeze.
 Limpid Chess removes that friction: **every turn it surfaces exactly three moves**, the best, a
-"not bad" one, and a blunder, drawn as plain numbered arrows. You don't get told which is which.
+"not bad" one, and a blunder, drawn as plain arrows in one color. You don't get told which is which.
 You pick, and only then do the colors, a symbol, and a grade reveal how you did. Mistakes are the
 lesson, never the punishment.
 
