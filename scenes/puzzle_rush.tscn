@@ -351,6 +351,7 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Leave Puzzles?"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="ConfirmMessage" type="Label" parent="ConfirmOverlay/Card/VBox" unique_id=80724855]
 unique_name_in_owner = true

@@ -6,6 +6,8 @@ extends SceneTree
 ## frame (labels only show their translation inside the tree), the Premium screen's column must fit
 ## in every locale, with a long localized Play price on the buy button. That is the website/Android
 ## screen; run it again with `-- --itch` (and `-- --itch --itch-android`) for the itch.io build's.
+## The other lines that once overflowed are checked too: the Bots header, the Home Puzzles card in
+## both its states, and the two confirmation dialogs' titles, which must wrap.
 ##   godot --headless --path . -s res://scripts/dev/test_langs_loaded.gd
 
 const NEW := ["pt", "de", "it", "ru", "tr", "pl", "id", "vi", "uk", "el"]
@@ -120,6 +122,48 @@ func _process(_delta: float) -> bool:
 		print("  FAIL Premium screen wider than its column: %s" % [wide])
 	print("  premium column (%s, price %s): checked %d locales"
 			% ["itch" if Itch.on else "website/Android", LONG_PRICE, ALL.size() + 1])
+
+	# The other non-wrapping lines that once overflowed. The Bots header (back button + title) must
+	# fit its own width, or the back arrow leaves the screen (es, fr did); the Home Puzzles card's
+	# two-line title ("New"/"Resume" + "puzzle streak") must fit its fixed-size card, in both
+	# states, or it spills out of the card (pt did).
+	var spill: Array[String] = []
+	var puzzle_index: int = gm.get("puzzle_index")
+	for code: String in ["en"] + ALL:
+		TranslationServer.set_locale(code)
+		var bots: Node = load("res://scenes/bots.tscn").instantiate()
+		root.add_child(bots)
+		var header := bots.get_node("Header") as Control
+		var header_room := int(header.offset_right - header.offset_left)
+		var header_width := int(header.get_combined_minimum_size().x)
+		if header_width > header_room:
+			spill.append("%s Bots header %d px > %d" % [code, header_width, header_room])
+		root.remove_child(bots)
+		bots.free()
+		var home: Node = load("res://scenes/home.tscn").instantiate()
+		root.add_child(home)
+		var card := home.get_node("Center/VBox/PuzzleRush") as Control
+		for parked: int in [-1, 0]:   # no run parked ("New"), then one parked ("Resume")
+			gm.set("puzzle_index", parked)
+			home.call("_refresh_puzzle_button")
+			var row_width := int((card.get_node("Row") as Control).get_combined_minimum_size().x)
+			if row_width > int(card.custom_minimum_size.x):
+				spill.append("%s Home Puzzles card%s %d px > %d"
+						% [code, " (resume)" if parked >= 0 else "", row_width, int(card.custom_minimum_size.x)])
+		root.remove_child(home)
+		home.free()
+	gm.set("puzzle_index", puzzle_index)
+	# The confirmation dialogs' titles wrap inside their fixed cards rather than widen them (el did),
+	# and the two dialogs stay identical. Not in the tree: puzzle_rush's _ready() would save.
+	for path: String in ["res://scenes/game.tscn", "res://scenes/puzzle_rush.tscn"]:
+		var scene: Node = load(path).instantiate()
+		if (scene.get_node("ConfirmOverlay/Card/VBox/ConfirmTitle") as Label).autowrap_mode == TextServer.AUTOWRAP_OFF:
+			spill.append("%s ConfirmTitle does not wrap" % path.get_file())
+		scene.free()
+	if not spill.is_empty():
+		_ok = false
+		print("  FAIL wider than their space: %s" % [spill])
+	print("  Bots header, Home Puzzles card, confirm titles: checked %d locales" % [ALL.size() + 1])
 
 	TranslationServer.set_locale("en")
 	print("LANGS LOADED TEST: ", "PASS" if _ok else "FAIL")

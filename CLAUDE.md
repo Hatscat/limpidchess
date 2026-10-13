@@ -284,8 +284,9 @@ godot --headless --path . -s res://scripts/dev/validate.gd
 # one button out). validate puts the player's save back as it was (some _ready()s save):
 godot --headless --path . -s res://scripts/dev/validate.gd -- --itch
 
-# Every locale loads, and the Premium screen fits a 720-wide phone in all 13 (labels there
-# don't wrap; run after any ui.csv change, then again with -- --itch for the itch screen):
+# Every locale loads, and the lines that once overflowed a 720-wide phone still fit in all 13
+# (Premium screen, Bots header, Home Puzzles card; confirm titles wrap). Run after any ui.csv
+# change, then again with -- --itch for the itch Premium screen:
 godot --headless --path . -s res://scripts/dev/test_langs_loaded.gd
 
 # Web builds: the website's PWA into build/web (--deploy also copies it to docs/play),
