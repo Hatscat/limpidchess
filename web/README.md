@@ -45,7 +45,8 @@ Size: 10 files, about 48 MB unpacked, a 17.5 MB zip, against itch's limits of 1,
 it unpacks an upload, so a first visit downloads about 18 MB. It never serves brotli (`.br`
 files come back re-encoded), so don't ship any.
 
-On the itch page's edit screen:
+The page itself (every field, the description, the cover) is in
+[store/itch/page.md](../store/itch/page.md). On its edit screen, the settings that matter for the build:
 
 - Kind of project **HTML**. Upload the zip and tick "This file will be played in the
   browser", or push the folder with butler instead

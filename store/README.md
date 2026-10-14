@@ -7,6 +7,9 @@ but this is the single source of truth to copy from and to edit when features ch
 The one-time Premium in-app product copy (title + 200-char description) is versioned separately in
 [`premium_unlock.md`](premium_unlock.md).
 
+The itch.io page (lone-bee.itch.io/limpid-chess) has its own folder, [`itch/`](itch/page.md): every
+field of the page, the description ready to paste, the cover and the click-to-play background.
+
 ## Layout
 
 One folder per Play Console locale, with plain-text files named to match the

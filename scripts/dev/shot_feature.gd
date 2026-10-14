@@ -10,6 +10,10 @@ extends SceneTree
 ## off the WIDTH (so the one-line title always fits) and the whole block is vertically centred:
 ##   LIMPID_FEAT_W / LIMPID_FEAT_H  -> canvas size   (default 1024 x 500)
 ##   LIMPID_FEAT_OUT                -> output png     (default /tmp/limpid_feature.png)
+##   LIMPID_FEAT_LAYOUT=stacked     -> the title on two big lines above the boards, for small
+##                                     covers: the itch.io cover (630x500, shown at 315x250 in browse)
+##     LIMPID_FEAT_W=630 LIMPID_FEAT_H=500 LIMPID_FEAT_LAYOUT=stacked \
+##       LIMPID_FEAT_OUT=store/itch/cover_630x500.png godot --path . -s res://scripts/dev/shot_feature.gd
 
 const Rules := preload("res://scripts/chess/chess_rules.gd")
 const BoardScript := preload("res://scripts/ui/chess_board.gd")
@@ -89,6 +93,10 @@ func _initialize() -> void:
 	bg.size = Vector2(W, H)
 	host.add_child(bg)
 
+	if OS.get_environment("LIMPID_FEAT_LAYOUT") == "stacked":
+		_stacked(host)
+		return
+
 	# Row 1: "Limpid Chess  •  find the best move" on a single centred line.
 	var cc := CenterContainer.new()
 	cc.position = Vector2(0, 10.0 * scale + y_off)
@@ -131,6 +139,46 @@ func _initialize() -> void:
 	var cap_col := Color(0.80, 0.84, 0.88)
 	_text(host, "Your move", cap_sz, cap_col, Vector2(left, top + BOARD + 12.0 * scale), BOARD, HORIZONTAL_ALIGNMENT_CENTER)
 	_text(host, "The answer", cap_sz, cap_col, Vector2(bx, top + BOARD + 12.0 * scale), BOARD, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+## The stacked layout, designed at 630x500 and scaled off the width: "Limpid Chess" over "find the
+## best move", then the same two boards and arrow, so the title still reads in a 315x250 thumbnail.
+func _stacked(host: Control) -> void:
+	var s := float(W) / 630.0
+	var y0 := (float(H) - 500.0 * s) / 2.0
+	var title := _lbl("Limpid Chess", int(round(50 * s)), Color(0.93, 0.95, 0.97))
+	title.position = Vector2(0, 16.0 * s + y0)
+	title.size = Vector2(W, 76.0 * s)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	host.add_child(title)
+	var sub := _lbl("find the best move", int(round(32 * s)), UI.ACCENT)
+	sub.position = Vector2(0, 90.0 * s + y0)
+	sub.size = Vector2(W, 50.0 * s)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	host.add_child(sub)
+
+	var board := 244.0 * s
+	var gap := 70.0 * s
+	var left := (W - (board * 2 + gap)) / 2.0
+	var top := 160.0 * s + y0
+	var bx := left + board + gap
+	var ba := _board(false)
+	ba.position = Vector2(left, top)
+	ba.size = Vector2(board, board)
+	host.add_child(ba)
+	var bb := _board(true)
+	bb.position = Vector2(bx, top)
+	bb.size = Vector2(board, board)
+	host.add_child(bb)
+	var arrow := Arrow.new()
+	arrow.size = Vector2(54, 40) * s
+	arrow.position = Vector2(left + board + (gap - 54.0 * s) * 0.5, top + board * 0.5 - 20.0 * s)
+	host.add_child(arrow)
+	arrow.queue_redraw()
+	var cap_sz := int(round(20 * s))
+	var cap_col := Color(0.80, 0.84, 0.88)
+	_text(host, "Your move", cap_sz, cap_col, Vector2(left, top + board + 10.0 * s), board, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(host, "The answer", cap_sz, cap_col, Vector2(bx, top + board + 10.0 * s), board, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _lbl(s: String, sz: int, col: Color) -> Label:
