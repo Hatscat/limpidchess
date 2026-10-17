@@ -204,12 +204,13 @@ Avoid: "level" (use **bot** / **tier**), "energy/lives" (use **daily games**), a
     revokes; every ambiguous answer (offline, rate limit, 5xx) keeps Premium, and the
     key is never deleted, so a mistaken revoke self-heals. `WEB_PRICE` mirrors the
     dashboard price by hand, and `build_web.sh --deploy` and `--itch` refuse to build
-    while `TEST_STORE` is true.
+    while `TEST_STORE` is true. Below the purchase, the website's Premium screen also offers
+    the Android app (Google Play, UTM-tagged) as its second choice: more Android players.
   - **itch.io** (`lone-bee.itch.io`): nothing is sold in itch's frame (an itch HTML5 page
     can only take donations), and no Lemon Squeezy client is started. Same free tier; the
-    Premium screen links out instead, to the Play listing on Android (UTM-tagged) and to the
-    website elsewhere: the itch page is a funnel to the Android app. All of it behind
-    [`Itch.on`](scripts/itch.gd).
+    Premium screen links out instead: Google Play on its main button (UTM-tagged), the
+    website on the second one, for players without an Android device. The itch page is a
+    funnel to the Android app. All of it behind [`Itch.on`](scripts/itch.gd).
 - No ads, ever. Don't add them.
 - **GPL is fine for a paid Android game** — GPL lets you sell the binary; you just
   must also offer the source. (We target Google Play, not the Apple App Store,
@@ -281,7 +282,8 @@ godot --headless --path . -s res://scripts/dev/perft_test.gd
 # Whole-project smoke (instantiates every scene + drives the game pipeline):
 godot --headless --path . -s res://scripts/dev/validate.gd
 # ...as the itch.io build (Itch.on; also checks its Premium screen: no price, no key button,
-# one button out). validate puts the player's save back as it was (some _ready()s save):
+# Google Play first, the website second). validate puts the player's save back as it was
+# (some _ready()s save):
 godot --headless --path . -s res://scripts/dev/validate.gd -- --itch
 
 # Every locale loads, and the lines that once overflowed a 720-wide phone still fit in all 13

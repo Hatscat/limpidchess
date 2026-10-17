@@ -19,8 +19,8 @@ extends Node
 ## then only when we could actually reach the store; anything ambiguous keeps Premium.
 ##
 ## The itch.io build sells nothing: an itch HTML5 page can only take donations, so no Lemon
-## Squeezy client is started, nothing is ever granted, and buy() opens where Premium is sold
-## for this device instead (Itch.premium_url: the Play listing on Android, else the website).
+## Squeezy client is started, nothing is ever granted, and buy() opens the Android app's Play
+## listing instead (Itch.PLAY_URL); the Premium screen offers the website as its second choice.
 
 signal price_updated(formatted: String)   ## the localized price string changed
 signal purchase_succeeded                  ## Premium granted (buy or restore)
@@ -101,10 +101,10 @@ func can_purchase() -> bool:
 
 ## Launch the Google Play purchase flow for Premium. The outcome arrives via on_purchase_updated.
 ## On web, open the Lemon Squeezy checkout instead; the player returns with a key by email.
-## On itch.io, open where Premium is sold; no signal follows, as nothing is bought here.
+## On itch.io, open the Android app's Play listing; no signal follows, as nothing is bought here.
 func buy() -> void:
 	if Itch.on:
-		OS.shell_open(Itch.premium_url())
+		OS.shell_open(Itch.PLAY_URL)
 		return
 	if _ls != null:
 		_open_checkout()

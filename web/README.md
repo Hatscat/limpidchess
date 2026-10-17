@@ -23,8 +23,9 @@ in [`scripts/itch.gd`](../scripts/itch.gd) (`Itch.on`, from the preset's feature
   10 files against the website's 18.
 - **Nothing sold.** An itch HTML5 page can only take donations. Billing starts no Lemon
   Squeezy client, and the Premium screen keeps the benefits, shows no price, and leads out:
-  the Google Play listing on Android (`utm_source=itch.io&utm_campaign=premium`), the website
-  everywhere else. The itch page is a funnel to the Android app.
+  the Google Play listing on its main button (`utm_source=itch.io&utm_campaign=premium`), the
+  website on the second, for players without an Android device. The itch page is a funnel
+  to the Android app.
 - **Its own save database.** Every Godot game on itch shares the IndexedDB database
   `/userfs`, and Emscripten's sync deletes or rewinds the files a game does not hold in
   memory, so a second Godot game open in another tab could roll back or delete our save. The
@@ -76,7 +77,7 @@ Before uploading, `tools/itch_check.mjs` runs the build the way itch serves it, 
 Firefox and WebKit: from a folder of another site, in a frame with itch's own attributes,
 storage partitioned and the popup blocker on, with nothing leaving the machine. It checks the
 boot, the paths, Stockfish and a game's option arrows, that no service worker exists, the save
-in its own database, the Premium screen's link-out (on desktop and on an Android phone), the
+in its own database, the Premium screen's two ways out (on desktop and on an Android phone), the
 tab re-read, the stalled-boot "Download again", and that the console shows no GDScript error.
 Labels drawn on the canvas are only in its screenshots: look at them.
 
@@ -89,7 +90,7 @@ web/build_web.sh --itch
 PW_DIR=/tmp/pwtest node web/tools/itch_check.mjs              # all three browsers, ~6 min
 PW_DIR=/tmp/pwtest node web/tools/itch_check.mjs chromium     # or name some
 web/build_web.sh && PW_DIR=/tmp/pwtest node web/tools/itch_check.mjs --website   # the website
-                                         # build's tab re-read must still open '/userfs'
+                       # build: its tab re-read opens '/userfs', its Premium screen leads out
 ```
 
 ## Service worker: navigations are network-first

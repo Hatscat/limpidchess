@@ -6,8 +6,8 @@ extends SceneTree
 ## parse errors) and drives a few full turns through ChessRules + ChessBot so the
 ## game pipeline is exercised. Watch the log for ERROR / SCRIPT ERROR lines.
 ## `... validate.gd -- --itch` runs the same pass as the itch.io build (see Itch), and also
-## checks that its Premium screen shows no price and no key button, and that its one button
-## leads out (`-- --itch --itch-android` for the Android variant).
+## checks that its Premium screen shows no price and no key button, and leads out: Google Play
+## on the main button, the website on the second.
 ##
 ## Everything runs on the first frame, not in _initialize(): the root only enters the tree
 ## after _initialize() returns, so a scene added and freed there never gets its _ready().
@@ -52,18 +52,20 @@ func _validate() -> bool:
 		print("  ", s, "  ready ok" if inst.is_node_ready() else "  *** NOT READY ***")
 		ok = ok and inst.is_node_ready()
 		if s == "premium" and Itch.on:
-			# itch.io: no price, no key button, and one button out, unless already Premium.
+			# itch.io: no price, no key button, and two ways out (Google Play first, then the
+			# website), unless already Premium.
 			var premium: bool = root.get_node("GameManager").get("is_premium")
 			var get_button: Button = inst.get_node("%GetButton")
+			var secondary_button: Button = inst.get_node("%SecondaryButton")
 			var restore_button: Button = inst.get_node("%RestoreButton")
 			var price_label: Label = inst.get_node("%PriceLabel")
-			var label: String = inst.tr("Get it on Google Play") if Itch.android \
-					else inst.tr("Play on the website")
 			var no_price: String = inst.tr("Premium is a one-time purchase in the Android app or on the website.")
-			var links_out := not restore_button.visible and get_button.visible != premium \
-					and (premium or get_button.text == label) and price_label.text == no_price
+			var links_out := not restore_button.visible and price_label.text == no_price \
+					and get_button.visible != premium and secondary_button.visible != premium \
+					and (premium or (get_button.text == inst.tr("Get it on Google Play")
+						and secondary_button.text == inst.tr("Play on the website")))
 			print("  premium (itch)  ", "links out ok" if links_out
-					else "*** WRONG: '%s' / '%s' ***" % [get_button.text, price_label.text])
+					else "*** WRONG: '%s' / '%s' / '%s' ***" % [get_button.text, secondary_button.text, price_label.text])
 			ok = ok and links_out
 		root.remove_child(inst)
 		inst.free()

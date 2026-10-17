@@ -8,9 +8,17 @@ extends Control
 ## link, then picked up by Billing's launch/resume reconcile (no in-app redeem button). On
 ## desktop/dev (no Play) Billing degrades gracefully and a debug build grants locally.
 ## The itch.io build sells nothing here: the screen lists the benefits and leads out to where
-## Premium is sold (see _refresh_itch and Itch).
+## Premium is sold, the Android app first (see _refresh_itch and Itch). The website build offers
+## the Android app too, as the secondary choice below its own purchase: more Android players.
+
+const PHONE_ICON := preload("res://assets/icons/phone.png")
+const GLOBE_ICON := preload("res://assets/icons/globe.png")
+## The website's link to the Android app, tagged so Play Console tells its installs apart from
+## itch.io's (Itch.PLAY_URL).
+const WEB_PLAY_URL := "https://play.google.com/store/apps/details?id=game.limpidchess&utm_source=limpidchess.lonebee.games&utm_campaign=premium"
 
 @onready var get_button: Button = %GetButton
+@onready var secondary_button: Button = %SecondaryButton
 @onready var restore_button: Button = %RestoreButton
 @onready var status_label: Label = %StatusLabel
 @onready var price_label: Label = %PriceLabel
@@ -69,6 +77,10 @@ func _refresh() -> void:
 	# the same button, the same redeem flow, whether they just bought or are returning on
 	# a new browser.
 	restore_button.text = tr("I have a key") if web else tr("Restore purchase")
+	# The website also offers the Android app, below its own purchase.
+	secondary_button.visible = web and not premium
+	secondary_button.text = tr("Get it on Google Play")
+	secondary_button.icon = PHONE_ICON
 	if premium:
 		_set_status(tr("✓ You're Premium. Thank you!"))
 	else:
@@ -90,15 +102,20 @@ func _fit_get_button() -> void:
 
 
 ## itch.io: an itch HTML5 page can only take donations, so nothing is sold in its frame. The
-## benefits stay, the price goes, and the one button leads to where Premium is sold for this
-## device: the Google Play listing on Android, the website everywhere else (Billing.buy opens it).
+## benefits stay, the price goes, and the screen leads out to where Premium is sold: the Android
+## app first (the main button, Billing.buy opens the Play listing), then the website, for players
+## without an Android device.
 func _refresh_itch() -> void:
 	var premium := GameManager.is_premium
 	price_label.text = tr("Premium is a one-time purchase in the Android app or on the website.")
 	get_button.visible = not premium
 	get_button.disabled = false
-	get_button.text = tr("Get it on Google Play") if Itch.android else tr("Play on the website")
+	get_button.text = tr("Get it on Google Play")
+	get_button.icon = PHONE_ICON
 	_fit_get_button()
+	secondary_button.visible = not premium
+	secondary_button.text = tr("Play on the website")
+	secondary_button.icon = GLOBE_ICON
 	restore_button.visible = false
 	status_label.visible = premium
 	if premium:
@@ -123,6 +140,11 @@ func _on_get_pressed() -> void:
 	get_button.disabled = true
 	get_button.text = tr("Processing…")
 	Billing.buy()
+
+
+## The secondary way to Premium: the website on itch.io, the Android app on the website.
+func _on_secondary_pressed() -> void:
+	OS.shell_open(Itch.WEBSITE_URL if Itch.on else WEB_PLAY_URL)
 
 
 func _on_restore_pressed() -> void:

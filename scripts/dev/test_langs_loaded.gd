@@ -5,7 +5,7 @@ extends SceneTree
 ## the .translation files imported cleanly and project.godot lists them all. Then, on the first
 ## frame (labels only show their translation inside the tree), the Premium screen's column must fit
 ## in every locale, with a long localized Play price on the buy button. That is the website/Android
-## screen; run it again with `-- --itch` (and `-- --itch --itch-android`) for the itch.io build's.
+## screen; run it again with `-- --itch` for the itch.io build's.
 ## The other lines that once overflowed are checked too: the Bots header, the Home Puzzles card in
 ## both its states, and the two confirmation dialogs' titles, which must wrap.
 ##   godot --headless --path . -s res://scripts/dev/test_langs_loaded.gd

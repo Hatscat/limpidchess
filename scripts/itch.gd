@@ -11,9 +11,9 @@ extends RefCounted
 ##   GameManager._check_web_update() stays off (its navigator.locks.query() also throws in
 ##   Firefox's third-party frame);
 ## - nothing sold: an itch.io HTML5 page can only take donations, so Billing never starts the
-##   Lemon Squeezy client, and the Premium screen sends the player where Premium is sold instead
-##   (premium_url): the Google Play listing on Android, the website everywhere else. The itch
-##   page is a funnel to the Android app;
+##   Lemon Squeezy client, and the Premium screen sends the player where Premium is sold instead:
+##   the Google Play listing first (PLAY_URL, the main button), the website second (WEBSITE_URL),
+##   for players without an Android device. The itch page is a funnel to the Android app;
 ## - its own save database: every Godot game on itch shares the IndexedDB database "/userfs", and
 ##   Emscripten's sync deletes or rewinds the files a game does not hold in memory, so
 ##   build_web.sh mounts our user folder as its own database (GODOT_CONFIG.persistentPaths);
@@ -27,17 +27,9 @@ extends RefCounted
 ## True in the itch.io export. Custom feature tags are off when running from the editor or a
 ## script, so `-- --itch` turns it on there (validate.gd, screenshot.gd, desktop previews).
 static var on: bool = OS.has_feature("itch") or "--itch" in OS.get_cmdline_user_args()
-## An Android browser, where the Premium screen offers the Google Play listing. `-- --itch-android`
-## previews that variant on desktop.
-static var android: bool = OS.has_feature("web_android") or "--itch-android" in OS.get_cmdline_user_args()
 
 ## utm_source/utm_campaign let Play Console's store-listing report count the installs that came
 ## from itch.io (it only counts people who did not have the app yet).
 const PLAY_URL := "https://play.google.com/store/apps/details?id=game.limpidchess&utm_source=itch.io&utm_campaign=premium"
+## The website, where Premium is sold too and saves last.
 const WEBSITE_URL := "https://limpidchess.lonebee.games/play/"
-
-
-## Where the Premium screen sends the player: the Android app's listing on Android, the website
-## (where Premium is sold and saves last) everywhere else, iPhones and desktops included.
-static func premium_url() -> String:
-	return PLAY_URL if android else WEBSITE_URL

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://ctrl7ehxmhjtu" path="res://scripts/premium.gd" id="1_premium"]
 [ext_resource type="Texture2D" uid="uid://cbckurxxoom7n" path="res://assets/icons/chevron_left.svg" id="2_back"]
 [ext_resource type="Texture2D" uid="uid://cn4xvwxwrw4l2" path="res://assets/icons/crown.png" id="3_crown"]
+[ext_resource type="Texture2D" uid="uid://bs1cegtfp6sjl" path="res://assets/icons/phone.png" id="4_phone"]
 
 [sub_resource type="StyleBoxFlat" id="sb_primary"]
 content_margin_left = 18.0
@@ -139,6 +140,20 @@ theme_override_styles/disabled = SubResource("sb_ghost")
 text = "Unlock Premium  ·  $3.99"
 icon = ExtResource("3_crown")
 
+[node name="SecondaryButton" type="Button" parent="Content" unique_id=1588402733]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+focus_mode = 0
+theme_override_constants/h_separation = 12
+theme_override_constants/icon_max_width = 28
+theme_override_styles/normal = SubResource("sb_ghost")
+theme_override_styles/pressed = SubResource("sb_ghost")
+theme_override_styles/hover = SubResource("sb_ghost")
+text = "Get it on Google Play"
+icon = ExtResource("4_phone")
+
 [node name="RestoreButton" type="Button" parent="Content" unique_id=2059540680]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
@@ -177,4 +192,5 @@ expand_icon = true
 
 [connection signal="pressed" from="Content/GetButton" to="." method="_on_get_pressed"]
 [connection signal="pressed" from="Content/RestoreButton" to="." method="_on_restore_pressed"]
+[connection signal="pressed" from="Content/SecondaryButton" to="." method="_on_secondary_pressed"]
 [connection signal="pressed" from="Back" to="." method="_on_back_pressed"]

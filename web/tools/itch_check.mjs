@@ -60,15 +60,23 @@ const SAVE_KEY = SAVE_DB + '/limpid_chess.cfg';   // the same key in '/userfs' o
 // leave stale names behind.
 const ENGINE = fs.readdirSync(path.join(ROOT, 'web/engine')).filter((f) => /\.(js|wasm)$/.test(f));
 const ENGINE_JS = ENGINE.find((f) => f.endsWith('.js'));
-const WEBSITE_URL = 'https://limpidchess.lonebee.games/play/';
-const PLAY_URL = 'https://play.google.com/store/apps/details?id=game.limpidchess&utm_source=itch.io&utm_campaign=premium';
+// Where the Premium screens lead, read from the game's own scripts.
+const constant = (file, name) => new RegExp(`^const ${name} := "([^"]*)"$`, 'm')
+	.exec(fs.readFileSync(path.join(ROOT, file), 'utf8'))[1];
+const PLAY_URL = constant('scripts/itch.gd', 'PLAY_URL');             // itch: the main button
+const WEBSITE_URL = constant('scripts/itch.gd', 'WEBSITE_URL');       // itch: the second one
+const WEB_PLAY_URL = constant('scripts/premium.gd', 'WEB_PLAY_URL');  // the website's second one
+const CHECKOUT = 'https://lonebee.lemonsqueezy.com/checkout/';         // the website's main one
 const ALLOW = 'autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; '
 	+ 'xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated; web-share';
-// Tap targets in CSS px inside the frame, read off this build's screenshots.
-const DESKTOP = { newGame: [250, 450], coco: [250, 144], gamesPill: [367, 46], premiumButton: [250, 703] };
-const PHONE = { gamesPill: [300, 40], premiumButton: [206, 627] };   // Pixel 7: 412x839, frame covering it
+// Tap targets in CSS px inside the frame, read off this build's screenshots. The Premium screen's
+// buttons are found by colour instead (premiumButtons), so its layout can change.
+const DESKTOP = { newGame: [250, 450], coco: [250, 144], gamesPill: [367, 46] };
+const PHONE = { gamesPill: [300, 40] };   // Pixel 7: 412x839, frame covering it
 const BOARD_DARK = [117, 145, 168];   // UI.BOARD_DARK: ~70k pixels of the game's board in the desktop frame
 const ACCENT = [102, 189, 217];       // UI.ACCENT: the option arrows before the reveal, hundreds of pixels each
+const PRIMARY = [71, 148, 179];       // premium.tscn sb_primary: the main button's fill
+const GHOST = [33, 36, 43];           // premium.tscn sb_ghost: the secondary button's fill
 // What the boot watchdog's reset downloads again (build_web.sh stamps the same list into OWN_FILES).
 const OWN_FILES = fs.readdirSync(BUILD).filter((f) => /\.(js|wasm|pck)$/.test(f));
 // Playwright 1.63's --disable-features list, less ThirdPartyStoragePartitioning (and Edge's own):
@@ -260,18 +268,23 @@ async function waitFor(fn, seconds) {
 	return null;
 }
 
+// What the game is drawn in: itch's frame, or the page's own canvas for the website build.
+async function surface(page) {
+	return page.locator((await page.$('#game_drop')) ? '#game_drop' : '#canvas');
+}
+
 async function tap(page, [x, y], touch = false) {
-	const box = await page.locator('#game_drop').boundingBox();
+	const box = await (await surface(page)).boundingBox();
 	return touch ? page.touchscreen.tap(box.x + x, box.y + y) : page.mouse.click(box.x + x, box.y + y);
 }
 
-function shot(page, name) {
-	return page.locator('#game_drop').screenshot({ path: path.join(OUT, name + '.png') });
+async function shot(page, name) {
+	return (await surface(page)).screenshot({ path: path.join(OUT, name + '.png') });
 }
 
-// Decodes a screenshot and returns a counter of the pixels close to a colour. Playwright writes
-// 8-bit, non-interlaced RGB(A) PNGs, so undoing the row filters is all the decoding there is.
-function pixelCounter(png) {
+// Decodes a screenshot. Playwright writes 8-bit, non-interlaced RGB(A) PNGs, so undoing the row
+// filters is all the decoding there is.
+function decodePng(png) {
 	if (png[24] !== 8 || png[28] !== 0 || ![2, 6].includes(png[25])) {
 		throw new Error('unexpected PNG format: the decoder below only handles 8-bit RGB(A)');
 	}
@@ -300,14 +313,50 @@ function pixelCounter(png) {
 			px[at] = raw[y * (stride + 1) + 1 + x] + [0, left, up, (left + up) >> 1, paeth][filter];
 		}
 	}
+	return { width, height, bpp, px };
+}
+
+const near = (px, i, [r, g, b], tolerance) => Math.abs(px[i] - r) <= tolerance
+	&& Math.abs(px[i + 1] - g) <= tolerance && Math.abs(px[i + 2] - b) <= tolerance;
+
+// A counter of the pixels close to a colour.
+function pixelCounter(png) {
+	const { bpp, px } = decodePng(png);
 	return ([r, g, b], tolerance = 10) => {
 		let n = 0;
 		for (let i = 0; i < px.length; i += bpp) {
-			n += Math.abs(px[i] - r) <= tolerance && Math.abs(px[i + 1] - g) <= tolerance
-				&& Math.abs(px[i + 2] - b) <= tolerance ? 1 : 0;
+			n += near(px, i, [r, g, b], tolerance) ? 1 : 0;
 		}
 		return n;
 	};
+}
+
+// The Premium screen's buttons, by their fill: the middle of the tallest band of rows that are at
+// least 40% `rgb` (the main button's blue, the secondary's ghost grey), as a tap point in CSS px.
+// The tallest, not the first: an antialiased edge can leave a one-row sliver of the same grey.
+async function premiumButton(page, png, rgb) {
+	const { width, height, bpp, px } = decodePng(png);
+	let best = null;
+	let start = -1;
+	for (let y = 0; y <= height; y++) {
+		let n = 0;
+		for (let x = 0; y < height && x < width; x++) {
+			n += near(px, (y * width + x) * bpp, rgb, 6) ? 1 : 0;
+		}
+		if (n > width * 0.4) {
+			start = start < 0 ? y : start;
+		} else if (start >= 0) {
+			if (!best || y - start > best[1] - best[0]) {
+				best = [start, y];
+			}
+			start = -1;
+		}
+	}
+	if (!best) {
+		return null;
+	}
+	const box = await (await surface(page)).boundingBox();
+	return [box.width / 2, (best[0] + best[1]) / 2 * box.height / height];
 }
 
 // The option arrows: once the board is up, the only UI.ACCENT on the game screen (the Bots screen
@@ -395,6 +444,16 @@ async function popupFrom(ctx, action, timeout = 10000) {
 	return url;
 }
 
+// On the Premium screen: screenshot it, then tap its main button and its secondary one, each a real
+// tap (a popup blocker lets it through), and return the two popups' URLs.
+async function premiumPopups(ctx, page, name, touch = false) {
+	const png = await shot(page, name);
+	const main = await premiumButton(page, png, PRIMARY);
+	const second = await premiumButton(page, png, GHOST);
+	return [main && await popupFrom(ctx, () => tap(page, main, touch)),
+		second && await popupFrom(ctx, () => tap(page, second, touch))];
+}
+
 const results = [];
 function check(name, ok, detail = '') {
 	results.push({ name, ok });
@@ -407,7 +466,7 @@ async function itchRun(name) {
 	const page = await ctx.newPage();
 	const fromRequest = requests.length;
 	const fromExternal = external.length;
-	const popups = name === 'chromium' ? [WEBSITE_URL, PLAY_URL] : [WEBSITE_URL];   // what check 6 opens
+	const popups = [PLAY_URL, WEBSITE_URL];   // what check 6 opens
 	try {
 		await page.goto(`${PAGE}/limpid-chess`);
 		let frame = await booted(page);
@@ -478,12 +537,12 @@ async function itchRun(name) {
 		await page.waitForTimeout(6000);
 		await tap(page, DESKTOP.gamesPill);
 		await page.waitForTimeout(2500);
-		await shot(page, `${name}-5-premium`);
-		const opened = await popupFrom(ctx, () => tap(page, DESKTOP.premiumButton));
+		const [main, second] = await premiumPopups(ctx, page, `${name}-5-premium`);
 		const sold = lemonSqueezy(fromExternal);
 		// No price and no key button are drawn on the canvas: the screenshot is the only check of those.
-		check('6 Premium screen: its one button opens the website in a popup', opened === WEBSITE_URL,
-			`popup ${opened || 'NONE'}; Lemon Squeezy requests: ${sold.length}; price and key button: see ${name}-5-premium.png`);
+		check('6 Premium screen: Google Play first, the website second', main === PLAY_URL && second === WEBSITE_URL,
+			`main button: ${main || 'NONE'}; second: ${second || 'NONE'}; Lemon Squeezy requests: ${sold.length}; `
+				+ `price and key button: see ${name}-5-premium.png`);
 		// Control: a window.open() with no gesture behind it must be blocked, or the above proves nothing.
 		const control = await popupFrom(ctx, () => frame.evaluate((url) => {
 			setTimeout(() => window.open(url), 6000);
@@ -515,9 +574,9 @@ async function itchRun(name) {
 	}
 }
 
-// Chromium as an Android phone, the frame covering the screen. An out-of-process frame gets the
-// phone's user agent and touch but devicePixelRatio 1, so the frame stays in-process (as on most
-// Android Chrome sites) for faithful screenshots. Itch.android reads the user agent either way.
+// Chromium as an Android phone, the frame covering the screen, tapped by touch. An out-of-process
+// frame gets the phone's user agent and touch but devicePixelRatio 1, so the frame stays in-process
+// (as on most Android Chrome sites) for faithful screenshots.
 async function phoneRun() {
 	const browser = await pw.chromium.launch(launchOptions('chromium', ['--disable-site-isolation-trials']));
 	const ctx = await newContext(browser, pw.devices['Pixel 7']);
@@ -535,12 +594,13 @@ async function phoneRun() {
 		await shot(page, 'chromium-phone-1-home');
 		await tap(page, PHONE.gamesPill, true);
 		await page.waitForTimeout(2500);
-		await shot(page, 'chromium-phone-2-premium');
-		const opened = await popupFrom(ctx, () => tap(page, PHONE.premiumButton, true));
+		const [main, second] = await premiumPopups(ctx, page, 'chromium-phone-2-premium', true);
 		const sold = lemonSqueezy(fromExternal);
-		check('6 Premium screen on an Android phone: its button opens the Play listing', opened === PLAY_URL,
-			`popup ${opened || 'NONE'}; Lemon Squeezy requests: ${sold.length}; frame: ${/Android/.test(ua) ? 'Android' : 'NOT Android'} `
-				+ `user agent, devicePixelRatio ${dpr}; label: see chromium-phone-2-premium.png`);
+		check('6 Premium screen on an Android phone: Google Play first, the website second',
+			main === PLAY_URL && second === WEBSITE_URL,
+			`main button: ${main || 'NONE'}; second: ${second || 'NONE'}; Lemon Squeezy requests: ${sold.length}; `
+				+ `frame: ${/Android/.test(ua) ? 'Android' : 'NOT Android'} user agent, devicePixelRatio ${dpr}; `
+				+ 'labels: see chromium-phone-2-premium.png');
 	} finally {
 		await browser.close();
 	}
@@ -613,6 +673,17 @@ async function websiteRun(name) {
 			!!saved && rr.cfg === saved && rr.opened.includes('/userfs'),
 			`booted: ${!!frame}; save in '/userfs': ${!!saved}; opened ${JSON.stringify(rr.opened)}, `
 				+ `handed the game ${rr.cfg ? (rr.cfg === saved ? 'the save' : 'ANOTHER text') : 'nothing'}`);
+		if (!frame) {
+			return;
+		}
+		// Its Premium screen: the purchase first (the checkout, answered here), Google Play second.
+		await page.waitForTimeout(6000);   // no evaluate() gesture left for the taps (see check 6)
+		await tap(page, DESKTOP.gamesPill);
+		await page.waitForTimeout(2500);
+		const [main, second] = await premiumPopups(ctx, page, `${name}-website-premium`);
+		check('6 Premium screen on the website build: the checkout first, Google Play second',
+			!!main && main.startsWith(CHECKOUT) && second === WEB_PLAY_URL,
+			`main button: ${main || 'NONE'}; second: ${second || 'NONE'}; labels: see ${name}-website-premium.png`);
 	} finally {
 		await browser.close();
 	}
